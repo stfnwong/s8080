@@ -20,23 +20,23 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             fprintf(stdout, "NOP");
             break;
         case 0x01:
-            fprintf(stdout, "LXI    B,#$%02X%02X", code[2], code[1]);
+            fprintf(stdout, "LXI   B,#$%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0x02:
-            fprintf(stdout, "STAX   B");
+            fprintf(stdout, "STAX  B");
             break;
         case 0x03:
-            fprintf(stdout, "INX    B");
+            fprintf(stdout, "INX   B");
             break;
         case 0x04:
-            fprintf(stdout, "INR    B");
+            fprintf(stdout, "INR   B");
             break;
         case 0x05:
-            fprintf(stdout, "DCR    B");
+            fprintf(stdout, "DCR   B");
             break;
         case 0x06:
-            fprintf(stdout, "MVI    B,#0x%02X", code[1]);
+            fprintf(stdout, "MVI   B,#0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0x07:
@@ -123,9 +123,11 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             break;
         case 0x21:
             fprintf(stdout, "LXI   H,#$%02X%02X", code[2], code[1]);
+            opbytes = 3;
             break;
         case 0x22:
-            fprintf(stdout, "SHLD  #$%02X%02X", code[2], code[1]);
+            fprintf(stdout, "SHLD    #$%02X%02X", code[2], code[1]);
+            opbytes = 3;
             break;
         case 0x23:
             fprintf(stdout, "INX   H");
@@ -138,6 +140,7 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             break;
         case 0x26:
             fprintf(stdout, "MVI   H,#$%02X", code[1]);
+            opbytes = 2;
             break;
         case 0x27:
             fprintf(stdout, "DAA");
@@ -150,6 +153,7 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             break;
         case 0x2A:
             fprintf(stdout, "LHLD  #$%02X%02X", code[2], code[1]);
+            opbytes = 3;
             break;
         case 0x2B:
             fprintf(stdout, "DCX   H");
@@ -175,7 +179,7 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             opbytes = 3;
             break;
         case 0x32:
-            fprintf(stdout, "SHLD,  #$%02X%02X", code[2], code[1]);
+            fprintf(stdout, "SHLD,   #$%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0x33:
@@ -201,7 +205,7 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             fprintf(stdout, "DAD   SP");
             break;
         case 0x3A:
-            fprintf(stdout, "LDA    #$%02X%02X", code[2], code[1]);
+            fprintf(stdout, "LDA     #$%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0x3B:
@@ -271,52 +275,52 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
 
         /* ======== 0x50 ======== */
         case 0x50:
-            fprintf(stdout, "MOV   D, B");
+            fprintf(stdout, "MOV   D,B");
             break;
         case 0x51:
-            fprintf(stdout, "MOV   D, C");
+            fprintf(stdout, "MOV   D,C");
             break;
         case 0x52:
-            fprintf(stdout, "MOV   D, D");
+            fprintf(stdout, "MOV   D,D");
             break;
         case 0x53:
-            fprintf(stdout, "MOV   D, E");
+            fprintf(stdout, "MOV   D,E");
             break;
         case 0x54:
-            fprintf(stdout, "MOV   D, H");
+            fprintf(stdout, "MOV   D,H");
             break;
         case 0x55:
-            fprintf(stdout, "MOV   D, L");
+            fprintf(stdout, "MOV   D,L");
             break;
         case 0x56:
-            fprintf(stdout, "MOV   D, M");
+            fprintf(stdout, "MOV   D,M");
             break;
         case 0x57:
-            fprintf(stdout, "MOV   D, A");
+            fprintf(stdout, "MOV   D,A");
             break;
         case 0x58:
-            fprintf(stdout, "MOV   E, B");
+            fprintf(stdout, "MOV   E,B");
             break;
         case 0x59:
-            fprintf(stdout, "MOV   E, C");
+            fprintf(stdout, "MOV   E,C");
             break;
         case 0x5A:
-            fprintf(stdout, "MOV   E, D");
+            fprintf(stdout, "MOV   E,D");
             break;
         case 0x5B:
-            fprintf(stdout, "MOV   E, E");
+            fprintf(stdout, "MOV   E,E");
             break;
         case 0x5C:
-            fprintf(stdout, "MOV   E, H");
+            fprintf(stdout, "MOV   E,H");
             break;
         case 0x5D:
-            fprintf(stdout, "MOV   E, L");
+            fprintf(stdout, "MOV   E,L");
             break;
         case 0x5E:
-            fprintf(stdout, "MOV   E, M");
+            fprintf(stdout, "MOV   E,M");
             break;
         case 0x5F:
-            fprintf(stdout, "MOV,  E, A");
+            fprintf(stdout, "MOV,  E,A");
             break;
         //case 0x5F:
         //    fprintf(stdout, "MOV   C, A");
@@ -324,100 +328,100 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
 
 
         case 0x60:
-            fprintf(stdout, "MOV   H, B");
+            fprintf(stdout, "MOV   H,B");
             break;
         case 0x61:
-            fprintf(stdout, "MOV   H, C");
+            fprintf(stdout, "MOV   H,C");
             break;
         case 0x62:
-            fprintf(stdout, "MOV   H, D");
+            fprintf(stdout, "MOV   H,D");
             break;
         case 0x63:
-            fprintf(stdout, "MOV   H, E");
+            fprintf(stdout, "MOV   H,E");
             break;
         case 0x64:
-            fprintf(stdout, "MOV   H, H");
+            fprintf(stdout, "MOV   H,H");
             break;
         case 0x65:
-            fprintf(stdout, "MOV   H, L");
+            fprintf(stdout, "MOV   H,L");
             break;
         case 0x66:
-            fprintf(stdout, "MOV   H, M");
+            fprintf(stdout, "MOV   H,M");
             break;
         case 0x67:
-            fprintf(stdout, "MOV   H, A");
+            fprintf(stdout, "MOV   H,A");
             break;
         case 0x68:
-            fprintf(stdout, "MOV   L, B");
+            fprintf(stdout, "MOV   L,B");
             break;
         case 0x69:
-            fprintf(stdout, "MOV   L, C");
+            fprintf(stdout, "MOV   L,C");
             break;
         case 0x6A:
-            fprintf(stdout, "MOV   L, D");
+            fprintf(stdout, "MOV   L,D");
             break;
         case 0x6B:
-            fprintf(stdout, "MOV   L, E");
+            fprintf(stdout, "MOV   L,E");
             break;
         case 0x6C:
-            fprintf(stdout, "MOV   L, H");
+            fprintf(stdout, "MOV   L,H");
             break;
         case 0x6D:
-            fprintf(stdout, "MOV   L, L");
+            fprintf(stdout, "MOV   L,L");
             break;
         case 0x6E:
-            fprintf(stdout, "MOV   L, M");
+            fprintf(stdout, "MOV   L,M");
             break;
         case 0x6F:
-            fprintf(stdout, "MOV   L, A");
+            fprintf(stdout, "MOV   L,A");
             break;
         case 0x70:
-            fprintf(stdout, "MOV   M, B");
+            fprintf(stdout, "MOV   M,B");
             break;
         case 0x71:
-            fprintf(stdout, "MOV   M, C");
+            fprintf(stdout, "MOV   M,C");
             break;
         case 0x72:
-            fprintf(stdout, "MOV   M, D");
+            fprintf(stdout, "MOV   M,D");
             break;
         case 0x73:
-            fprintf(stdout, "MOV   M, E");
+            fprintf(stdout, "MOV   M,E");
             break;
         case 0x74:
-            fprintf(stdout, "MOV   M, H");
+            fprintf(stdout, "MOV   M,H");
             break;
         case 0x75:
-            fprintf(stdout, "MOV   M, L");
+            fprintf(stdout, "MOV   M,L");
             break;
         case 0x76:
             fprintf(stdout, "HLT");
             break;
         case 0x77:
-            fprintf(stdout, "MOV   M, A");
+            fprintf(stdout, "MOV   M,A");
             break;
         case 0x78:
-            fprintf(stdout, "MOV   A, B");
+            fprintf(stdout, "MOV   A,B");
             break;
         case 0x79:
-            fprintf(stdout, "MOV   A, C");
+            fprintf(stdout, "MOV   A,C");
             break;
         case 0x7A:
-            fprintf(stdout, "MOV   A, D");
+            fprintf(stdout, "MOV   A,D");
             break;
         case 0x7B:
-            fprintf(stdout, "MOV   A, E");
+            fprintf(stdout, "MOV   A,E");
             break;
         case 0x7C:
-            fprintf(stdout, "MOV   A, H");
+            fprintf(stdout, "MOV   A,H");
             break;
         case 0x7D:
-            fprintf(stdout, "MOV   A, L");
+            fprintf(stdout, "MOV   A,L");
             break;
         case 0x7E:
-            fprintf(stdout, "MOV   A, M");
+            fprintf(stdout, "MOV   A,M");
             break;
         case 0x7F:
-            fprintf(stdout, "MOV   A, A");
+            fprintf(stdout, "MOV   A,A");
             break;
         case 0x80:
             fprintf(stdout, "ADD   B");
@@ -631,49 +635,49 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             opbytes = 3;
             break;
         case 0xC5:
-            fprintf(stdout, "PUSH   B");
+            fprintf(stdout, "PUSH  B");
             break;
         case 0xC6:
             fprintf(stdout, "ADI   #0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0xC7:
-            fprintf(stdout, "RST    0");
+            fprintf(stdout, "RST   0");
             break;
         case 0xC8:
-            fprintf(stdout, "RZ      ");
+            fprintf(stdout, "RZ    ");
             break;
         case 0xC9:
-            fprintf(stdout, "RET     ");
+            fprintf(stdout, "RET   ");
             break;
         case 0xCA:
-            fprintf(stdout, "JZ     #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "JZ    #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xCB:
-            fprintf(stdout, "*JMP   #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "*JMP  #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xCC:
-            fprintf(stdout, "CZ     #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "CZ    #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xCD:
-            fprintf(stdout, "CALL   #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "CALL  #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xCE:
-            fprintf(stdout, "ACI    #0x%02X", code[1]);
+            fprintf(stdout, "ACI   #0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0xCF:
-            fprintf(stdout, "RST     1");
+            fprintf(stdout, "RST   1");
             break;
 
 
         /* ======== 0xD0 ======== */
         case 0xD0:
-            fprintf(stdout, "RNZ    ");
+            fprintf(stdout, "RNZ   ");
             break;
         case 0xD1:
             fprintf(stdout, "POP   D");
@@ -691,48 +695,48 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             opbytes = 3;
             break;
         case 0xD5:
-            fprintf(stdout, "PUSH   D");
+            fprintf(stdout, "PUSH  D");
             break;
         case 0xD6:
             fprintf(stdout, "SUI   #0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0xD7:
-            fprintf(stdout, "RST    2");
+            fprintf(stdout, "RST   2");
             break;
         case 0xD8:
-            fprintf(stdout, "RC      ");
+            fprintf(stdout, "RC    ");
             break;
         case 0xD9:
-            fprintf(stdout, "*RET    ");
+            fprintf(stdout, "*RET  ");
             break;
         case 0xDA:
-            fprintf(stdout, "JC     #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "JC    #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xDB:
-            fprintf(stdout, "IN     #0x%02x", code[1]);
+            fprintf(stdout, "IN    #0x%02x", code[1]);
             opbytes = 2;
             break;
         case 0xDC:
-            fprintf(stdout, "CC     #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "CC    #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xDD:
-            fprintf(stdout, "*CALL  #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "*CALL #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xDE:
-            fprintf(stdout, "XRI    #0x%02X", code[1]);
+            fprintf(stdout, "XRI   #0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0xDF:
-            fprintf(stdout, "RST     5");
+            fprintf(stdout, "RST   5");
             break;
 
         /* ======== 0xE0 ======== */
         case 0xE0:
-            fprintf(stdout, "RPO    ");
+            fprintf(stdout, "RPO   ");
             break;
         case 0xE1:
             fprintf(stdout, "POP   H");
@@ -742,49 +746,49 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             opbytes = 3;
             break;
         case 0xE3:
-            fprintf(stdout, "XTHL    ");
+            fprintf(stdout, "XTHL  ");
             break;
         case 0xE4:
             fprintf(stdout, "CPO   #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xE5:
-            fprintf(stdout, "PUSH   H");
+            fprintf(stdout, "PUSH  H");
             break;
         case 0xE6:
             fprintf(stdout, "ANI   #0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0xE7:
-            fprintf(stdout, "RST    4");
+            fprintf(stdout, "RST   4");
             break;
         case 0xE8:
-            fprintf(stdout, "RPE      ");
+            fprintf(stdout, "RPE   ");
             break;
         case 0xE9:
-            fprintf(stdout, "PCHL     ");
+            fprintf(stdout, "PCHL  ");
             break;
         case 0xEA:
-            fprintf(stdout, "JPE    #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "JPE   #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xEB:
-            fprintf(stdout, "XCHG     ");
+            fprintf(stdout, "XCHG  ");
             break;
         case 0xEC:
-            fprintf(stdout, "CPE    #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "CPE   #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xED:
-            fprintf(stdout, "*CALL  #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "*CALL #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xEE:
-            fprintf(stdout, "XRI     #0x%02X", code[1]);
+            fprintf(stdout, "XRI   #0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0xEF:
-            fprintf(stdout, "RST     5");
+            fprintf(stdout, "RST   5");
             break;
 
         /* ======== 0xF0 ======== */
@@ -806,42 +810,42 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
             opbytes = 3;
             break;
         case 0xF5:
-            fprintf(stdout, "PUSH   PSW");
+            fprintf(stdout, "PUSH  PSW");
             break;
         case 0xF6:
             fprintf(stdout, "ORI   #0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0xF7:
-            fprintf(stdout, "RST    6");
+            fprintf(stdout, "RST   6");
             break;
         case 0xF8:
-            fprintf(stdout, "RM       ");
+            fprintf(stdout, "RM    ");
             break;
         case 0xF9:
-            fprintf(stdout, "SPHL     ");
+            fprintf(stdout, "SPHL  ");
             break;
         case 0xFA:
-            fprintf(stdout, "JM     #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "JM    #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xFB:
-            fprintf(stdout, "EI     ");
+            fprintf(stdout, "EI    ");
             break;
         case 0xFC:
-            fprintf(stdout, "CM     #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "CM    #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xFD:
-            fprintf(stdout, "*CALL  #0x%02X%02X", code[2], code[1]);
+            fprintf(stdout, "*CALL #0x%02X%02X", code[2], code[1]);
             opbytes = 3;
             break;
         case 0xFE:
-            fprintf(stdout, "CPI    #0x%02X", code[1]);
+            fprintf(stdout, "CPI   #0x%02X", code[1]);
             opbytes = 2;
             break;
         case 0xFF:
-            fprintf(stdout, "RST     7");
+            fprintf(stdout, "RST   7");
             break;
     }
 
