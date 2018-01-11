@@ -224,47 +224,48 @@ int disassemble_8080_op(unsigned char *codebuffer, int pc)
         case 0x3F:
             fprintf(stdout, "CMC");
             break;
+        /* ======== 0x40 ======== */
         case 0x40:
             fprintf(stdout, "MOV   B,B");
             break;
         case 0x41:
-            fprintf(stdout, "MOV   B,B");
-            break;
-        case 0x42:
-            fprintf(stdout, "MOV   B,B");
-            break;
-        case 0x43:
-            fprintf(stdout, "MOV   B,B");
-            break;
-        case 0x44:
-            fprintf(stdout, "MOV   B,B");
-            break;
-        case 0x45:
-            fprintf(stdout, "MOV   B,B");
-            break;
-        case 0x46:
-            fprintf(stdout, "MOV   B,B");
-            break;
-        case 0x47:
             fprintf(stdout, "MOV   B,C");
             break;
-        case 0x48:
+        case 0x42:
             fprintf(stdout, "MOV   B,D");
             break;
-        case 0x49:
+        case 0x43:
             fprintf(stdout, "MOV   B,E");
             break;
-        case 0x4A:
+        case 0x44:
             fprintf(stdout, "MOV   B,H");
             break;
-        case 0x4B:
+        case 0x45:
             fprintf(stdout, "MOV   B,L");
             break;
-        case 0x4C:
+        case 0x46:
             fprintf(stdout, "MOV   B,M");
             break;
-        case 0x4D:
+        case 0x47:
             fprintf(stdout, "MOV   B,A");
+            break;
+        case 0x48:
+            fprintf(stdout, "MOV   C,B");
+            break;
+        case 0x49:
+            fprintf(stdout, "MOV   C,C");
+            break;
+        case 0x4A:
+            fprintf(stdout, "MOV   C,D");
+            break;
+        case 0x4B:
+            fprintf(stdout, "MOV   C,E");
+            break;
+        case 0x4C:
+            fprintf(stdout, "MOV   C,H");
+            break;
+        case 0x4D:
+            fprintf(stdout, "MOV   C,L");
             break;
         case 0x4E:
             fprintf(stdout, "MOV   C,M");
