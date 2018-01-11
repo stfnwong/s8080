@@ -4,7 +4,7 @@
 #
 
 CC=gcc
-CFLAGS=-Wall -g2 -O0 
+CFLAGS=-Wall -g2 -O0 -std=c99
 LDFLAGS=
 LIBS=
 

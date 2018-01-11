@@ -1,6 +1,6 @@
 /* 
- *
- *
+ * DIS_MAIN
+ * Entry point for disassembler 
  *
  */
 
@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
     {
         pc += disassemble_8080_op(buffer, pc);
     }
+
+    free(buffer);
 
     return 0;
 }
