@@ -29,7 +29,7 @@ $(OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 
 obj: $(OBJECTS)
 
-all : $(OBJECTS)
+all : obj disassem
 	$(CC) $(LDFLAGS) $(INCLUDES) $(OBJECTS) -o emu101 $(LIBS)
 
 disassem: $(DISASSEM_OBJ)

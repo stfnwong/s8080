@@ -37,4 +37,11 @@ typedef struct State8080
 } State8080;
 
 
+
+void UnimplementedInstruction(State8080 *state);
+int Emulate8080(State8080 *state);
+
+
+
+
 #endif /*__EMU_SHELL_H*/

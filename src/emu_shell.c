@@ -9,7 +9,7 @@
 
 
 // Simple parity loop. Probably can replace this with a faster routine later 
-inline uint8_t Parity(uint8_t inp)
+static inline uint8_t Parity(uint8_t inp)
 {
     uint8_t n = 0;
     while(inp)
@@ -22,7 +22,7 @@ inline uint8_t Parity(uint8_t inp)
 }
 
 // Common instructions in arithmetic group
-inline void arith_set_flags(State8080 *state, uint16_t ans)
+static inline void arith_set_flags(State8080 *state, uint16_t ans)
 {
     state->cc.z = ((ans & 0xFF) == 0);
     // Sign flag: if bit 7 is set then set the sign flag
@@ -83,16 +83,7 @@ int Emulate8080(State8080 *state)
         case 0x80:      // ADD B
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->b;
-                // Zero flag: if the result is zero 
-                // set the zero flag, otherwise clear it
-                state->cc.z = ((ans & 0xFF) == 0);
-                // Sign flag: if bit 7 is set then set the 
-                // sign flag
-                state->cc.s =  ((ans & 0x80) != 0);
-                // Carry flag
-                state->cc.cy = ((ans > 0xff) != 0);
-                // Handle parity in a subroutine 
-                state->cc.p = Parity(ans & 0xFF);
+                arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
         case 0x81:  // ADD C 
@@ -119,8 +110,11 @@ int Emulate8080(State8080 *state)
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
+        case 0x85:      // ADD L
+            {
 
 
+            }
         case 0x86:      // ADD M    (memory form)
             {
                 uint16_t offset = (state->h << 8) | (state->l);
@@ -128,13 +122,27 @@ int Emulate8080(State8080 *state)
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
+        case 0x87:      // ADD A
+            {
+                uint16_t ans = (uint16_t) state->a + (uint16_t) state->a;
+                arith_set_flags(state, ans);
+                state->a = ans & 0xFF;
+            }
+        case 0x88:      // ADC B  (A <- A + B + CY)
+            {
+                uint16_t ans = (uint16_t) state->a + (uint16_t) state->b;
+                arith_set_flags(state, ans);
+
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+
+
 
 
         case 0xC6:      // ADD ADI (immediate form)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
                 arith_set_flags(state, ans);
-                state->a = ans & 0xFF;
             }
 
 
