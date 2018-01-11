@@ -8,10 +8,17 @@
 #include "emu_shell.h"
 
 
+// Simple parity loop. Probably can replace this with a faster routine later 
 uint8_t Parity(uint8_t inp)
 {
+    uint8_t n = 0;
+    while(inp)
+    {
+        ++n;
+        inp &= inp - 1;
+    }
 
-
+    return n;
 }
 
 // Trap unimplemented instructions 
@@ -68,9 +75,9 @@ int Emulate8080(State8080 *state)
                 state->cc.z = ((ans & 0xFF) == 0);
                 // Sign flag: if bit 7 is set then set the 
                 // sign flag
-                state->cc.s = ((ans & 0x80) != 0);
+                state->cc.s =  ((ans & 0x80) != 0);
                 // Carry flag
-                state->cc.cy = (ans > 0xff != 0);
+                state->cc.cy = ((ans > 0xff) != 0);
                 // Handle parity in a subroutine 
                 state->cc.p = Parity(ans & 0xFF);
             }
@@ -78,4 +85,6 @@ int Emulate8080(State8080 *state)
 
     }
     state->pc += 1;     
+
+    return 0;       // TODO : what is the correct thing to return here?
 }

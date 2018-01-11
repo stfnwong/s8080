@@ -17,6 +17,12 @@ HEADERS := $(wildcard $(SRC_DIR)/*.h)
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
+
+# Disassembler 
+DISASSEM_SRC_DIR=$(SRC_DIR)/disassem
+DISASSEM_SRC := $(wildcard $(DISASSEM_SRC_DIR)/*.c)
+DISASSEM_OBJ := $(DISASSEM_SRC:$(DISASSM_SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+
 # Build object files 
 $(OBJECTS): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< $(INCLUDES) -o $@ $(LIBS)
@@ -26,7 +32,8 @@ obj: $(OBJECTS)
 all : $(OBJECTS)
 	$(CC) $(LDFLAGS) $(INCLUDES) $(OBJECTS) -o emu101 $(LIBS)
 
-diss: $(OBJECTS)
+disassem: $(DISASSEM_OBJ)
+	$(CC) $(LFLAGS) $(INCLUDES) $(DISASSEM_OBJ) -o disassem $(LIBS)
 
 .PHONY: clean
 
