@@ -161,6 +161,22 @@ int Emulate8080(State8080 *state)
                 uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
                 arith_set_flags(state, ans);
             }
+        case 0xF5:      // PUSH PSW
+            {
+                uint8_t psw;
+                state->memory[state->sp-1] = state->a;
+                psw = (state->cc.z       |
+                       state->cc.s  << 1 | 
+                       state->cc.p  << 2 | 
+                       state->cc.cy << 3 | 
+                       state->cc.ac << 4);
+                state->memory[state->sp-2] = psw;
+                state->sp = state->sp - 2;
+            }
+        case 0xFE:      // CPI D8
+            {
+                uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
+            }
         default:
             UnimplementedInstruction(state);
             return -1;
