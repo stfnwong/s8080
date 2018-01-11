@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "emu_shell.h"
+#include "disassem/disassem.h"
 
 
 // Simple parity loop. Probably can replace this with a faster routine later 
@@ -24,9 +25,9 @@ static inline uint8_t Parity(uint8_t inp)
 // Common instructions in arithmetic group
 static inline void arith_set_flags(State8080 *state, uint16_t ans)
 {
-    state->cc.z = ((ans & 0xFF) == 0);
+    state->cc.z  = ((ans & 0xFF) == 0);
     // Sign flag: if bit 7 is set then set the sign flag
-    state->cc.s =  ((ans & 0x80) != 0);
+    state->cc.s  = ((ans & 0x80) != 0);
     // Carry flag
     state->cc.cy = ((ans > 0xff) != 0);
     // Handle parity in a subroutine 
@@ -38,8 +39,11 @@ static inline void arith_set_flags(State8080 *state, uint16_t ans)
 void UnimplementedInstruction(State8080 *state)
 {
     // PC will have advanced by one, so undo that 
+    state->pc--;
     fprintf(stderr, "Unimplemented instruction\n");
-    exit(1);
+    fprintf(stderr, "PC   INSTR\n");
+    disassemble_8080_op(state->memory, state->pc);
+    //exit(1);
 }
 
 int Emulate8080(State8080 *state)
@@ -49,18 +53,32 @@ int Emulate8080(State8080 *state)
     opcode = &state->memory[state->pc];
     switch(*opcode)
     {
-        case 0x00:
-            UnimplementedInstruction(state);
+        case 0x00:      // NOP
             break;
         case 0x01:
             UnimplementedInstruction(state);
-            break;
+            return -1;
         case 0x02:
             UnimplementedInstruction(state);
-            break;
+            return -1;
         case 0x03:
             UnimplementedInstruction(state);
+            return -1;
+
+        case 0x07:      // RLC
+            {
+                uint8_t a_prev = state->a;
+                state->a = (state->a << 1) | (a_prev & 0x80);
+                state->cc.cy = (a_prev & 0x80);
+            }
+        case 0x08:
             break;
+
+        case 0x0C:      // INCR C
+            {
+                state->c += 1;
+                // TODO : set flags....
+            }
         // Implement a few and see
         case 0x41:      // MOV B, C
             state->b = state->c;
@@ -132,7 +150,6 @@ int Emulate8080(State8080 *state)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->b;
                 arith_set_flags(state, ans);
-
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
 
@@ -144,6 +161,10 @@ int Emulate8080(State8080 *state)
                 uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
                 arith_set_flags(state, ans);
             }
+        default:
+            UnimplementedInstruction(state);
+            return -1;
+
 
 
 

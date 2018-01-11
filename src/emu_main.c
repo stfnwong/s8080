@@ -37,10 +37,12 @@ int main(int argc, char *argv[])
     fread(emu_state.memory, fsize, 1, fp);
     fclose(fp);
 
-
+    int status = 0;
     while(emu_state.pc < fsize)
     { 
-        Emulate8080(&emu_state);
+        status = Emulate8080(&emu_state);
+        if(status < 0)
+            break;
     }
 
     free(emu_state.memory);
