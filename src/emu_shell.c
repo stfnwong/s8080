@@ -91,18 +91,194 @@ int Emulate8080(State8080 *state)
         case 0x07:      // RLC
             {
                 uint8_t a_prev = state->a;
-                state->a = (state->a << 1) | (a_prev & 0x80);
-                state->cc.cy = (a_prev & 0x80);         // TODO: fix overflow here
+                state->a = (a_prev << 1) | (a_prev & 0x80);
+                state->cc.cy = (a_prev >> 7) ? 1 : 0;
             }
-        case 0x08:
+        case 0x08:      // NOP
             break;
 
+        case 0x09:      // DAD B
+            {
+                // HL = HL + BC 
+                uint32_t hl, bc, res;
+                hl = (state->h << 8) | state->l;
+                bc = (state->b << 8) | state->c;
+                res = hl + bc;
+                state->h = (res & 0xFF00) >> 8;
+                state->l = res & 0xFF;
+                state->cc.cy = ((res & 0xFFFF0000) > 0);
+            }
+            break;
         case 0x0C:      // INCR C
             {
-                state->c += 1;
-                // TODO : set flags....
+                uint8_t res = state->c + 1;
+                arith_set_flags(state, res);
+                state->c = res;
             }
-        // Implement a few and see
+            break;
+        case 0x0D:      // DCR C
+            {
+                uint8_t res = state->c - 1;
+                arith_set_flags(state, res);
+                state->c = res;
+            }
+            break;
+        case 0x0E:      // MVI, C, #d8
+            {
+                state->c = opcode[1];
+            }
+            break;
+        case 0x0F:      // RRC 
+            {
+                uint8_t a_prev = state->a;
+                state->a = a_prev >> 1;
+                state->a = state->a | (a_prev & 0x01);
+                state->cc.cy = (a_prev & 0x01) != 0;
+            }
+        case 0x10:      // NOP
+            break;
+        case 0x11:      // LXI, D,D16
+            {
+                state->d = opcode[2];
+                state->e = opcode[1];
+            }
+            break;
+        case 0x13:      // INX D
+            {
+                state->e++;
+                if(state->e == 0)
+                    state->d++;
+                break;
+            }
+
+        case 0x19:      // DAD D
+            {
+                uint32_t hl, de, res;
+                hl = (state->h << 8) | state->l;
+                de = (state->d << 8) | state->e;
+                res = hl + de;
+                state->h = (res & 0xFF00) >> 8;
+                state->l = res & 0xFF;
+                state->cc.cy = ((res & 0xFFFF0000) != 0);
+            }
+            break;
+
+        case 0x1A:      // LDAX D
+            {
+                uint16_t offset = (state->d << 8) | state->e;
+                state->a = state->memory[offset];
+            }
+            break;
+        case 0x1B:      // DCX D 
+            {
+                uint32_t de, res;
+                de = (state->d << 8) | state->e;
+                res = de - 1;
+                state->d = (res & 0xFF00) >> 8;
+                state->e = res & 0xFF;
+                state->cc.cy = ((res & 0xFFFF0000) != 0);
+            }
+            break;
+
+        case 0x21:      // LXI H, word
+            {
+                state->l = opcode[1];
+                state->h = opcode[2];
+                state->pc += 2;
+            }
+            break;
+
+        case 0x23:      // INX H
+            {
+                state->l++;
+                if(state->l == 0)
+                    state->h++;
+            }
+            break;
+        case 0x24:      // INR H
+            {
+                uint16_t hl;
+                hl = (state->h << 8) | state->l;
+                hl += 1;
+                arith_set_flags(state, hl);
+                state->h = (hl & 0xFF00) >> 8;
+                state->l = hl & 0xFF;  
+            }
+            break;
+        case 0x25:      // DCR H
+            {
+                uint8_t res = state->h - 1;
+                arith_set_flags(state, res);
+                state->h = res;
+            }
+            break;
+
+        case 0x26:      // MVI, H, byte
+            {
+                state->h = opcode[1];
+                state->pc++;
+            }
+            break;
+
+        case 0x29:      // DAD H
+            {
+                uint32_t hl, res;
+                hl = (state->h << 8) | state->l;
+                res = hl + hl;
+                state->h = (res & 0xFF00) >> 8;
+                state->l = res & 0xFF;
+                state->cc.cy = ((res & 0xFFFF0000) != 0);
+            }
+            break;
+
+
+        case 0x32:      // STA, adr
+            {
+                state->memory[opcode[1]] = state->a;
+            }
+            break;
+
+        case 0x36:      // MVI, M byte
+            {
+                // AC set if lower half-byte was zero before decrement 
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->memory[offset] = opcode[1];
+                state->pc++;
+            }
+            break;
+
+        case 0x3A:      // LDA (word)
+            {
+                uint16_t offset;
+                offset = (opcode[2] << 8) | opcode[1];
+                state->a = state->memory[offset];
+                state->pc += 2;
+            }
+            break;
+
+        case 0x3B:      // DCX SP
+            {
+                state->sp -= 1;
+            }
+            break;
+
+        case 0x3C:      // INR A
+            {
+                uint8_t res = state->a + 1;
+                arith_set_flags(state, res);
+                state->a = res;
+            }
+            break;
+
+        case 0x3D:      // DCR A
+            {
+                uint8_t res = state->a - 1;
+                arith_set_flags(state, res);
+                state->a = res;
+            }
+            break;
+
         case 0x41:      // MOV B, C
             state->b = state->c;
             break;
