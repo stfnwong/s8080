@@ -13,10 +13,13 @@
 static inline uint8_t Parity(uint8_t inp)
 {
     uint8_t n = 0;
-    while(inp)
+    uint8_t x;
+
+    x = inp;
+    while(x)
     {
         ++n;
-        inp &= inp - 1;
+        x &= x - 1;
     }
 
     return n;
@@ -87,7 +90,13 @@ int Emulate8080(State8080 *state)
         case 0x03:
             UnimplementedInstruction(state, opcode[0]);
             return -1;
-
+        case 0x05:      // DCR B
+            {
+                uint8_t res = state->b - 1;
+                arith_set_flags(state, res);
+                state->b = res;
+            }
+            break;
         case 0x06:      // MVI B, d8
             {
                 state->b = opcode[1];
