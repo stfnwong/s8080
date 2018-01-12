@@ -38,7 +38,7 @@ typedef struct State8080
 
 
 
-void UnimplementedInstruction(State8080 *state);
+void UnimplementedInstruction(State8080 *state, unsigned char opcode);
 int Emulate8080(State8080 *state);
 
 
