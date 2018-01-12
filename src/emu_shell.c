@@ -88,6 +88,13 @@ int Emulate8080(State8080 *state)
             UnimplementedInstruction(state, opcode[0]);
             return -1;
 
+        case 0x06:      // MVI B, d8
+            {
+                state->b = opcode[1];
+                state->pc++;
+            }
+            break;
+
         case 0x07:      // RLC
             {
                 uint8_t a_prev = state->a;
@@ -279,6 +286,9 @@ int Emulate8080(State8080 *state)
             }
             break;
 
+        case 0x40:      // MOV B, B
+            state->b = state->b;
+            break;
         case 0x41:      // MOV B, C
             state->b = state->c;
             break;
@@ -288,13 +298,238 @@ int Emulate8080(State8080 *state)
         case 0x43:      // MOV B,E
             state->b = state->e;
             break;
-        case 0x44:      // MOV B,L
+        case 0x44:      // MOV B, H
+            state->b = state->h;
+            break;
+        case 0x45:      // MOV B,L
             state->b = state->l;
             break;
-        case 0x45:      // MOV B,M
-            // TODO : Need to deference HL
-            //state->b = state->m;
+        case 0x46:      // MOV B,M
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->b = state->memory[offset];
+            }
             break;
+        case 0x47:      // MOV B,A
+            state->b = state->a;
+            break;
+        case 0x48:      // MOV C, B
+            state->c = state->b;
+            break;
+        case 0x49:      // MOV C, C
+            state->c = state->c;
+            break;
+        case 0x4A:      // MOV C, D
+            state->c = state->d;
+            break;
+        case 0x4B:      // MOV C, E
+            state->c = state->e;
+            break;
+        case 0x4C:      // MOV C, H
+            state->c = state->h;
+            break;
+        case 0x4D:      // MOV C, L
+            state->c = state->l;
+            break;
+        case 0x4E:      // MOV C, M
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->c = state->memory[offset];
+            }
+            break;
+        case 0x4F:      // MOV C, A
+            state->c = state->a;
+            break;
+        case 0x50:      // MOV D, B
+            state->d = state->b;
+            break;
+        case 0x51:      // MOV, D, C
+            state->d = state->c;
+            break;
+        case 0x52:      // MOV D, D
+            state->d = state->d;
+            break;
+        case 0x53:      // MOV D,E
+            state->d = state->e;
+            break;
+        case 0x54:      // MOV D H
+            state->d = state->h;
+            break;
+        case 0x55:      // MOV D, L
+            state->d = state->l;
+            break;
+        case 0x56:      // MOV D, M
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->d = state->memory[offset];
+            }
+            break;
+        case 0x57:      // MOV D, A
+            state->d = state->a;
+            break;
+        case 0x58:      // MOV E, B
+            state->e = state->b;
+            break;
+        case 0x59:      // MOV E,C
+            state->e = state->c;
+            break;
+        case 0x5A:      // MOV E,D
+            state->e = state->d;
+            break;
+        case 0x5B:      // MOV E,E
+            state->e = state->e;
+            break;
+        case 0x5C:      // MOV E, H
+            state->e = state->h;
+            break;
+        case 0x5D:      // MOV E, L
+            state->e = state->l;
+            break;
+        case 0x5E:      // MOV, E, H
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->e = state->memory[offset];
+            }
+            break;
+        case 0x5F:      // MOV E,A
+            state->e = state->a;
+            break;
+        case 0x60:      // MOV H,B
+            state->h = state->b;
+            break;
+        case 0x61:      // MOV H, C
+            state->h = state->c;
+            break;
+        case 0x62:      // MOV H, D
+            state->h = state->d;
+            break;
+        case 0x63:      // MOV H, E
+            state->h = state->e;
+            break;
+        case 0x64:      // MOV H, H
+            state->h = state->h;
+            break;
+        case 0x65:      // MOV, H, L
+            state->h = state->l;
+            break;
+        case 0x66:      // MOV H, M
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->h = state->memory[offset];
+            }
+            break;
+        case 0x67:      // MOV H,A
+            state->h = state->a;
+            break;
+        case 0x68:      // MOV L,B
+            state->l = state->b;
+            break;
+        case 0x69:      // MOV L, C
+            state->l = state->c;
+            break;
+        case 0x6A:      // MOV L, D
+            state->l = state->d;
+            break;
+        case 0x6B:      // MOV L,E
+            state->l = state->e;
+            break;
+        case 0x6C:      // MOV L, H
+            state->l = state->h;
+            break;
+        case 0x6D:      // MOV L,L
+            state->l = state->l;
+            break;
+        case 0x6E:      // MOV L, M
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->l = state->memory[offset];
+            }
+            break;
+        case 0x6F:      // MOV L,A
+            state->l = state->a;
+            break;
+        case 0x70:      // MOV M,B
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->memory[offset] = state->b;
+            }
+            break;
+        case 0x71:      // MOV M, C
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->memory[offset] = state->c;
+            }
+            break;
+        case 0x72:      // MOV M, D
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->memory[offset] = state->d;
+            }
+            break;
+        case 0x73:      // MOV M, E
+            {
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
+                state->memory[offset] = state->e;
+            }
+            break;
+        case 0x74:      // MOV M, H
+            {
+                uint16_t offset = (state->h << 8) | state->l;
+                state->memory[offset] = state->h;
+            }
+            break;
+        case 0x75:      // MOV M, L
+            {
+                uint16_t offset = (state->h << 8) | state->l;
+                state->memory[offset] = state->l;
+            }
+            break;
+
+        case 0x77:      // MOV M, A
+            {
+                uint16_t offset = (state->h << 8) | state->l;
+                state->memory[offset] = state->a;
+            }
+            break;
+        case 0x78:      // MOV A,B
+            state->a = state->b;
+            break;
+        case 0x79:      // MOV A, C
+            state->a = state->c;
+            break;
+        case 0x7A:      // MOV A, D
+            state->a = state->d;
+            break;
+        case 0x7B:      // MOV A, E
+            state->a = state->e;
+            break;
+        case 0x7C:      // MOV A,H
+            state->a = state->h;
+            break;
+        case 0x7D:      // MOV A, L
+            state->a = state->l;
+            break;
+        case 0x7E:      // MOV A, M
+            {
+                uint16_t offset = (state->h << 8) | state->l;
+                state->a = state->memory[offset];
+            }
+            break;
+        case 0x7F:      // MOV A, A
+            state->a = state->a;
+            break;
+
+
 
         // ======== ARITHMETIC GROUP ======== //
         case 0x80:      // ADD B
@@ -380,7 +615,22 @@ int Emulate8080(State8080 *state)
                 state->pc = (opcode[2] << 8) | opcode[1];
             }
             break;
-
+        case 0xC4:      // CNZ ADR
+            {
+                if(state->cc.z == 0)
+                {
+                    // TODO : I've implemented the call instruciton here, 
+                    // but I'm not sure if that is completely correct.
+                    uint16_t ret = state->pc + 2;
+                    state->memory[state->sp-1] = (ret >> 8) & 0xFF;
+                    state->memory[state->sp-2] = ret & 0xFF;
+                    state->sp -= 2;
+                    state->pc = (opcode[2] << 8) | opcode[1];
+                }
+                else
+                    state->pc += 2;
+            }
+            break;
         case 0xC5:     // PUSH B
             {
                 state->memory[state->sp-1] = state->b;
@@ -394,6 +644,17 @@ int Emulate8080(State8080 *state)
                 uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
                 arith_set_flags(state, ans);
             }
+            break;
+        case 0xCD:      // CALL ADR
+            {
+                // save reutrn address
+                uint16_t ret = state->pc + 2;
+                state->memory[state->sp-1] = (ret >> 8) & 0xFF;
+                state->memory[state->sp-2] = ret & 0xFF;
+                state->sp -= 2;
+                state->pc = (opcode[2] << 8) | opcode[1];
+            }
+            break;
         case 0xF5:      // PUSH PSW
             {
                 uint8_t psw;
@@ -406,22 +667,14 @@ int Emulate8080(State8080 *state)
                 state->memory[state->sp-2] = psw;
                 state->sp = state->sp - 2;
             }
+            break;
         case 0xFE:      // CPI D8
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
             }
-
-
-        case 0xCD:      // CALL ADR
-            {
-                // save reutrn address
-                uint16_t ret = state->pc+2;
-                state->memory[state->sp-1] = (ret >> 8) & 0xFF;
-                state->memory[state->sp-2] = ret & 0xFF;
-                state->sp -= 2;
-                state->pc = (opcode[2] << 8) | opcode[1];
-            }
             break;
+
+
 
         case 0xD1:      // POP D
             {
