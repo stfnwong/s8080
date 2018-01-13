@@ -61,6 +61,7 @@ static inline void logic_set_flags(State8080 *state)
 }
 
 
+// ==== Setup initial state
 State8080 *initState(void)
 {
     State8080 *state = calloc(1, sizeof(State8080));
@@ -734,6 +735,50 @@ int Emulate8080(State8080 *state)
                 arith_set_flags(state, ans);
             }
             break;
+        case 0xC7:      // RST 0
+            state->pc = 0;          // TODO : possibly not correct...
+            break;
+        case 0xC8:      // RZ  (if Z, RET)
+            {
+                if(state->cc.z == 1)
+                {
+                    state->pc = state->memory[state->sp] | (state->memory[state->sp+1] << 8);
+                    state->sp += 2;
+                }
+            }
+            break;
+        case 0xC9:      // RET
+            {
+                state->pc = state->memory[state->sp] | (state->memory[state->sp+1] << 8);
+                state->sp += 2;
+            }
+            break;
+        case 0xCA:      // JZ adr
+            {
+                if(state->cc.z == 1)
+                {
+                    uint16_t ret = state->pc + 2;
+                    state->memory[state->sp-1] = (ret >> 8) & 0xFF;
+                    state->memory[state->sp-2] = ret & 0xFF;
+                    state->sp -= 2;
+                    state->pc = (opcode[2] << 8) | opcode[1];
+                }
+            }
+            break;
+        case 0xCC:      // CZ ADR
+            {
+                if(state->cc.z)
+                {
+                    uint16_t ret = state->pc + 2;
+
+                    state->memory[state->sp-1] = (ret >> 8) & 0xFF;
+                    state->memory[state->sp-2] = ret & 0xFF;
+                    state->sp -= 2;
+                    state->pc = (opcode[2] << 8) | opcode[1];
+                }
+            }
+            break;
+
         case 0xCD:      // CALL ADR
             {
                 // save reutrn address
@@ -744,6 +789,48 @@ int Emulate8080(State8080 *state)
                 state->pc = (opcode[2] << 8) | opcode[1];
             }
             break;
+        case 0xCE:      // ACI, d8
+            {
+                uint16_t res;
+                res = state->a + opcode[1];
+                arith_set_flags(state, res);
+                state->a = res + state->cc.cy;
+            }
+            break;
+
+
+
+
+
+        case 0xD1:      // POP D
+            {
+                state->e = state->memory[state->sp];
+                state->d = state->memory[state->sp-1];
+                state->sp += 2;
+            }
+            break;
+        case 0xD2:      // JNC adr
+            {
+                if(!state->cc.cy)
+                    state->pc = (opcode[2] << 8) | opcode[1];
+            }
+            break;
+        case 0xD4:      // CNC (if NCY, CALL adr)
+            {
+                UnimplementedInstruction(state, opcode[0]);
+                return -1;
+            }
+            break;
+
+        case 0xD5:      // PUSH D
+            {
+
+                state->memory[state->sp-1] = state->d;
+                state->memory[state->sp-2] = state->e;
+                state->sp -= 2;
+            }
+            break;
+
         case 0xF5:      // PUSH PSW
             {
                 uint8_t psw;
@@ -762,33 +849,6 @@ int Emulate8080(State8080 *state)
                 uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
             }
             break;
-
-
-
-        case 0xD1:      // POP D
-            {
-                state->e = state->memory[state->sp];
-                state->d = state->memory[state->sp-1];
-                state->sp += 2;
-            }
-            break;
-
-        case 0xD4:      // CNC (if NCY, CALL adr)
-            {
-                UnimplementedInstruction(state, opcode[0]);
-                return -1;
-            }
-            break;
-
-        case 0xD5:      // PUSH D
-            {
-
-                state->memory[state->sp-1] = state->d;
-                state->memory[state->sp-2] = state->e;
-                state->sp -= 2;
-            }
-            break;
-
 
         default:
             UnimplementedInstruction(state, opcode[0]);
