@@ -36,7 +36,10 @@ typedef struct State8080
     uint8_t        int_enable;
 } State8080;
 
-
+// Get a new emulator state
+State8080 *initState(void);
+void freeState(State8080 *state);
+void loadFileToMem(void);
 
 void UnimplementedInstruction(State8080 *state, unsigned char opcode);
 int Emulate8080(State8080 *state);

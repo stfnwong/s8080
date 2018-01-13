@@ -24,28 +24,26 @@ int main(int argc, char *argv[])
     int fsize = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
 
-    State8080 emu_state; 
-    emu_state.pc = 0;
-    emu_state.memory = malloc(fsize * sizeof(uint8_t));
-    if(emu_state.memory == NULL)
+    // TODO : need to init state..
+    State8080 *emu_state = initState();
+    if(emu_state == NULL)
     {
-        fprintf(stderr, "Failed to allocate memory for buffer\n");
-        fclose(fp);
-        exit(1);
+        fprintf(stderr, "Failed to create state, exiting\n");
+        exit(-1);
     }
 
-    fread(emu_state.memory, fsize, 1, fp);
+    fread(emu_state->memory, fsize, 1, fp);
     fclose(fp);
 
     int status = 0;
-    while(emu_state.pc < fsize)
+    while(status == 0)
     { 
-        status = Emulate8080(&emu_state);
-        if(status < 0)
+        status = Emulate8080(emu_state);
+        if(status < 0)          // trap an unimplmented instruction
             break;
     }
 
-    free(emu_state.memory);
+    freeState(emu_state);
 
     return 0;
 }

@@ -61,6 +61,24 @@ static inline void logic_set_flags(State8080 *state)
 }
 
 
+State8080 *initState(void)
+{
+    State8080 *state = calloc(1, sizeof(State8080));
+    if(!state)
+        return NULL;
+    state->memory = malloc(0x10000);        // 16K
+    if(!state->memory)
+        return NULL;
+
+    return state;
+}
+
+void freeState(State8080 *state)
+{
+    free(state->memory);
+    free(state);
+}
+
 // Trap unimplemented instructions 
 void UnimplementedInstruction(State8080 *state, unsigned char opcode)
 {
