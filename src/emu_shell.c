@@ -127,14 +127,14 @@ int Emulate8080(State8080 *state)
             break;
         case 0x0C:      // INCR C
             {
-                uint8_t res = state->c + 1;
+                uint16_t res = state->c + 1;
                 arith_set_flags(state, res);
                 state->c = res;
             }
             break;
         case 0x0D:      // DCR C
             {
-                uint8_t res = state->c - 1;
+                uint16_t res = state->c - 1;
                 arith_set_flags(state, res);
                 state->c = res;
             }
@@ -223,7 +223,7 @@ int Emulate8080(State8080 *state)
             break;
         case 0x25:      // DCR H
             {
-                uint8_t res = state->h - 1;
+                uint16_t res = state->h - 1;
                 arith_set_flags(state, res);
                 state->h = res;
             }
@@ -247,12 +247,75 @@ int Emulate8080(State8080 *state)
             }
             break;
 
+        case 0x2A:      // LHLD ADR
+            {
+                state->l = state->memory[opcode[1]];
+                state->h = state->memory[opcode[1] + 1];
+            }
+            break;
+
+        case 0x2B:      // DCX H
+            {
+                uint16_t hl;
+                hl = (state->h << 8) | state->l;
+                hl = hl + 1;
+                state->h = (hl >> 8) & 0xFF;
+                state->l = hl & 0xFF;
+            }
+            break;
+        case 0x2C:      // INR L
+            {
+                uint16_t res = state->l + 1;
+                arith_set_flags(state, res);
+                state->l = res;
+            }
+            break;
+
+        case 0x2D:      // DCR L 
+            {
+                uint16_t res = state->l - 1;
+                arith_set_flags(state, res);
+                state->l = res;
+            }
+            break;
+
+        case 0x2E:      // MVI L, D8
+            state->l = opcode[1];
+            break;
+        case 0x2F:      // CMA A
+            state->a = ~state->a;
+            break;
+
+        case 0x31:      // LXI, SP, D16
+            {
+                uint16_t sp;
+                sp = (opcode[3] << 8) | opcode[2];
+                state->sp = sp;
+            }
+            break;
 
         case 0x32:      // STA, adr
             {
                 state->memory[opcode[1]] = state->a;
             }
             break;
+
+        case 0x33:      // INX SP
+            state->sp += 1;
+            break;
+
+        case 0x34:      // INR M
+            {
+                // TODO  : the implementation of this may not be correct
+                uint16_t hl; 
+                hl = (state->h << 8) | state->l;
+                hl += 1;
+                arith_set_flags(state, hl);
+                state->h = (hl >> 8) & 0xFF;
+                state->l = 0xFF;
+            }
+            break;
+
 
         case 0x36:      // MVI, M byte
             {
@@ -281,7 +344,7 @@ int Emulate8080(State8080 *state)
 
         case 0x3C:      // INR A
             {
-                uint8_t res = state->a + 1;
+                uint16_t res = state->a + 1;
                 arith_set_flags(state, res);
                 state->a = res;
             }
@@ -289,7 +352,7 @@ int Emulate8080(State8080 *state)
 
         case 0x3D:      // DCR A
             {
-                uint8_t res = state->a - 1;
+                uint16_t res = state->a - 1;
                 arith_set_flags(state, res);
                 state->a = res;
             }
@@ -503,7 +566,6 @@ int Emulate8080(State8080 *state)
                 state->memory[offset] = state->l;
             }
             break;
-
         case 0x77:      // MOV M, A
             {
                 uint16_t offset = (state->h << 8) | state->l;
