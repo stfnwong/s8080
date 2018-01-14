@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "emu_shell.h"
 
+#define TEST_CYCLE_LIMIT 200000
 
 int main(int argc, char *argv[])
 {
@@ -36,11 +37,19 @@ int main(int argc, char *argv[])
     fclose(fp);
 
     int status = 0;
+    unsigned long int num_cycles = 0;
     while(status == 0)
     { 
         status = Emulate8080(emu_state);
         if(status < 0)          // trap an unimplmented instruction
             break;
+        num_cycles++;
+        if(num_cycles > TEST_CYCLE_LIMIT)
+        {
+            fprintf(stdout, "Hit max cycles (%d)\n", TEST_CYCLE_LIMIT);
+            break;
+        }
+
     }
 
     freeState(emu_state);

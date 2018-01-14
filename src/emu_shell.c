@@ -8,59 +8,6 @@
 #include "emu_shell.h"
 #include "disassem/disassem.h"
 
-
-// Simple parity loop. Probably can replace this with a faster routine later 
-static inline uint8_t Parity(uint8_t inp)
-{
-    uint8_t n = 0;
-    uint8_t x;
-
-    x = inp;
-    while(x)
-    {
-        ++n;
-        x &= x - 1;
-    }
-
-    return n;
-}
-
-static inline int Parity2(int x, int size)
-{
-    int i, p = 0;
-
-    x = (x && ((1 << size)-1));
-    for(i = 0; i < size; i++)
-    {
-        if(x & 0x01)
-            p++;
-        x = x >> 1;
-    }
-
-    return (0 == (p & 0x1));
-}
-
-// Common instructions in arithmetic group
-static inline void arith_set_flags(State8080 *state, uint16_t ans)
-{
-    state->cc.z  = ((ans & 0xFF) == 0);
-    // Sign flag: if bit 7 is set then set the sign flag
-    state->cc.s  = ((ans & 0x80) != 0);
-    // Carry flag
-    state->cc.cy = ((ans > 0xff) != 0);
-    // Handle parity in a subroutine 
-    state->cc.p = Parity(ans & 0xFF);
-} 
-
-static inline void logic_set_flags(State8080 *state)
-{
-    state->cc.cy = 0;
-    state->cc.ac = 0;
-    state->cc.s = (0x80 == (state->a & 0x80));
-    state->cc.p = Parity(state->a);
-}
-
-
 // ==== Setup initial state
 State8080 *initState(void)
 {
@@ -628,23 +575,27 @@ int Emulate8080(State8080 *state)
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
+            break;
         case 0x81:  // ADD C 
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->c;
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
+            break;
         case 0x82:  // ADD D
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->d;
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
+            break;
         case 0x83:  // ADD E
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->e;
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
+            break;
             }
         case 0x84:      // ADD H
             {
@@ -652,11 +603,14 @@ int Emulate8080(State8080 *state)
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
+            break;
         case 0x85:      // ADD L
             {
-
-
+                uint16_t ans = (uint16_t) state->a + (uint16_t) state->l;
+                arith_set_flags(state, ans);
+                state->a = ans;
             }
+            break;
         case 0x86:      // ADD M    (memory form)
             {
                 uint16_t offset = (state->h << 8) | (state->l);
@@ -664,22 +618,292 @@ int Emulate8080(State8080 *state)
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
+            break;
         case 0x87:      // ADD A
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->a;
                 arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
+            break;
         case 0x88:      // ADC B  (A <- A + B + CY)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->b;
                 arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
+            break;
+        case 0x8A:      // ADC D (A <- A + D + CY
+            {
+                    uint16_t ans = (uint16_t) state->a + (uint16_t) state->d;
+                    arith_set_flags(state, ans);
+                    state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x8B:      // ADC E (A <- A + E + CY)
+            {
+                uint16_t ans = (uint16_t) state->a + (uint16_t) state->e;
+                arith_set_flags(state, ans);
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x8C:      //ADC H (A <- A + H + CY)
+            {
+                uint16_t ans = (uint16_t) state->a + (uint16_t) state->h;
+                arith_set_flags(state, ans);
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x8D:      // ADC L (A <- A + L + CY)
+            {
+                uint16_t ans = (uint16_t) state->a + (uint16_t) state->l;
+                arith_set_flags(state, ans);
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x8E:      // ADC M (A <- (HL) + CY)
+            {
+                uint16_t hl;
+                uint32_t ans;
+                hl = (state->h << 8) | state->l;
+                ans = state->a + hl;
+                state->cc.z  = (ans == 0);
+                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.p  = Parity(state->a);
+                state->cc.cy = ((ans & 0xFFFF0000) > 0);
+                state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
+            }
+            break;
+        case 0x8F:      // ADC A (A <- A _+ A + CY)
+            {
+                uint16_t ans = (uint16_t) state->a + (uint16_t) state->a;
+                arith_set_flags(state, ans);
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x90:      // SUB B 
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->b;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0x91:      // SUB C
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->c;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0x92:       // SUB D
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->d;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0x93:      // SUB E
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->e;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0x94:      // SUB H
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->h;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0x95:      // SUB L
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->l;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0x96:      // SUB M
+            {
+                uint32_t ans;
+                uint16_t hl;
+                hl = (state->h << 8) | state->l;
+                ans = (uint32_t) state->a + hl;
+                state->cc.z  = (ans == 0);
+                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.p  = Parity(state->a);
+                state->cc.cy = ((ans & 0xFFFF0000) > 0);
+                state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
+            }
+            break;
+        case 0x97:      // SUB A
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->a;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
 
+        case 0x98:      // SBB B
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->b;
+                arith_set_flags(state, ans);
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x99:      // SBB C 
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->c;
+                arith_set_flags(state, ans);
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x9A:      // SBB D
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->d;
+                arith_set_flags(state, ans);
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x9B:      // SBB E
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->e;
+                arith_set_flags(state, ans);
+                state->a = (ans + state->cc.cy) & 0xFF;
+            }
+            break;
+        case 0x9C:      // SBB H
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->h;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0x9D:      // SBB L
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->l;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0x9E:      // SBB M
+            {
+                uint32_t ans;
+                uint16_t hl;
+                hl = (state->h << 8) | state->l;
+                ans = (uint32_t) state->a - (uint32_t) hl;
+                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.p  = Parity(state->a);
+                state->cc.cy = ((ans & 0xFFFF0000) > 0);
+                state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
+            }
+            break;
+        case 0x9F:      // SBB A
+            {
+                uint16_t ans = (uint16_t) state->a - (uint16_t) state->a;
+                arith_set_flags(state, ans);
+                state->a = ans;
+            }
+            break;
+        case 0xA0:      // ANA B
+            {
+                state->a = state->a & state->b;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xA1:      // ANA C 
+            {
+                state->a = state->a & state->c;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xA2:      // ANA D
+            {
+                state->a = state->a & state->d;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xA3:      // ANA E
+            {
+                state->a = state->a & state->e;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xA4:      // ANA H
+            {
+                state->a = state->a & state->h;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xA5:      // ANA L 
+            {
+                state->a = state->a & state->l;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xA6:      // ANA M
+            {
+                uint16_t hl, ans;
+                hl = (state->h << 8) | state->l;
+                ans = (uint16_t) state->a & hl;
+                state->a = (ans >> 8) & 0xFF;
+                logic_set_flags(state);         // <- TODO : not sure if this is correct
+            }
+            break;
         case 0xA7:      // ANA A
             {
                 state->a = state->a & state->a;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xA8:      // XRA B 
+            {
+                state->a = state->a ^ state->b;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xA9:      // XRA C
+            {
+                state->a = state->a ^ state->c;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xAA:      // XRA  D
+            {
+                state->a = state->a ^ state->d;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xAB:      // XRA E 
+            {
+                state->a = state->a ^ state->e;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xAC:      // XRA H
+            {
+                state->a = state->a ^ state->h;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xAD:      // XRA L
+            {
+                state->a = state->a ^ state->l;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xAE:      // XRA M 
+            {
+                uint16_t ans, hl;
+                hl = (state->h << 8) | state->l;
+                ans = (uint16_t) state->a ^ hl;
+                logic_set_flags(state);
+                state->a = (ans >> 8) & 0xFF;
+            }
+            break;
+        case 0xAF:      // XRA A
+            {
+                state->a = state->a ^ state->a;
                 logic_set_flags(state);
             }
             break;
@@ -846,7 +1070,9 @@ int Emulate8080(State8080 *state)
             break;
         case 0xFE:      // CPI D8
             {
-                uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
+                UnimplementedInstruction(state, opcode[0]);
+                // TODO : This instruction
+                //uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
             }
             break;
 
