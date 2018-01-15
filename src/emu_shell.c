@@ -1165,6 +1165,37 @@ int Emulate8080(State8080 *state)
             }
             break;
 
+        case 0xF1:      // POP PSW
+            {
+                uint8_t psw;
+                state->a = state->memory[state->sp+1];
+                psw = state->memory[state->sp];
+                state->cc.z  = ((psw & 0x01) == 0x01);
+                state->cc.s  = ((psw & 0x02) == 0x02);
+                state->cc.p  = ((psw & 0x04) == 0x04);
+                state->cc.cy = ((psw & 0x05) == 0x05);
+                state->cc.ac = ((psw & 0x10) == 0x10);
+                state->pc += 2;
+            }
+            break;
+
+        case 0xF2:      // JP ADR
+            {
+                if(state->cc.p)
+                    state->pc = (opcode[1] << 8) | opcode[2];
+            }
+            break;
+
+        case 0xF3:      // DI (disable interrupts)
+            state->int_enable = 0;
+            break;
+        case 0xF4:      // CP ADR
+            {
+                if(state->cc.p)
+                    state->pc = (opcode[1] << 8) | opcode[2];
+            }
+            break;
+
         case 0xF5:      // PUSH PSW
             {
                 uint8_t psw;
@@ -1176,6 +1207,16 @@ int Emulate8080(State8080 *state)
                        state->cc.ac << 4);
                 state->memory[state->sp-2] = psw;
                 state->sp = state->sp - 2;
+            }
+            break;
+        case 0xFB:      // EI (enable interrupt)
+            state->int_enable = 1;
+            break;
+        case 0xF9:      // SPHL     sp <- hl
+            {
+                uint16_t hl;
+                hl = (state->h << 8) | state->l;
+                state->sp = hl;
             }
             break;
         case 0xFE:      // CPI D8
