@@ -108,6 +108,7 @@ int Emulate8080(State8080 *state)
         case 0x0E:      // MVI, C, #d8
             {
                 state->c = opcode[1];
+                state->pc++;
             }
             break;
         case 0x0F:      // RRC 
@@ -123,6 +124,7 @@ int Emulate8080(State8080 *state)
             {
                 state->d = opcode[2];
                 state->e = opcode[1];
+                state->pc += 2;
             }
             break;
         case 0x13:      // INX D
@@ -217,6 +219,7 @@ int Emulate8080(State8080 *state)
             {
                 state->l = state->memory[opcode[1]];
                 state->h = state->memory[opcode[1] + 1];
+                state->pc++;
             }
             break;
 
@@ -246,7 +249,10 @@ int Emulate8080(State8080 *state)
             break;
 
         case 0x2E:      // MVI L, D8
-            state->l = opcode[1];
+            {
+                state->l = opcode[1];
+                state->pc++;
+            }
             break;
         case 0x2F:      // CMA A
             state->a = ~state->a;
@@ -257,12 +263,14 @@ int Emulate8080(State8080 *state)
                 uint16_t sp;
                 sp = (opcode[3] << 8) | opcode[2];
                 state->sp = sp;
+                state->pc += 3;
             }
             break;
 
         case 0x32:      // STA, adr
             {
                 state->memory[opcode[1]] = state->a;
+                state->pc++;
             }
             break;
 
@@ -315,7 +323,6 @@ int Emulate8080(State8080 *state)
                 state->a = res;
             }
             break;
-
         case 0x3D:      // DCR A
             {
                 uint16_t res = state->a - 1;
@@ -324,6 +331,7 @@ int Emulate8080(State8080 *state)
             }
             break;
 
+        // ======== MOV GROUP ======== //
         case 0x40:      // MOV B, B
             state->b = state->b;
             break;
@@ -532,6 +540,10 @@ int Emulate8080(State8080 *state)
                 state->memory[offset] = state->l;
             }
             break;
+        case 0x76:      //HLT
+            // For now, we just halt the emulation and return a negative code. 
+            // In future this might become  "wait for interrupt" or something
+            return -2;  
         case 0x77:      // MOV M, A
             {
                 uint16_t offset = (state->h << 8) | state->l;
@@ -565,8 +577,6 @@ int Emulate8080(State8080 *state)
         case 0x7F:      // MOV A, A
             state->a = state->a;
             break;
-
-
 
         // ======== ARITHMETIC GROUP ======== //
         case 0x80:      // ADD B
@@ -805,6 +815,8 @@ int Emulate8080(State8080 *state)
                 state->a = ans;
             }
             break;
+
+        // ======== LOGIC GROUP ======== //
         case 0xA0:      // ANA B
             {
                 state->a = state->a & state->b;
@@ -1060,6 +1072,8 @@ int Emulate8080(State8080 *state)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
                 arith_set_flags(state, ans);
+                state->a = (ans >> 8) & 0xFF;
+                state->pc++;
             }
             break;
         case 0xC7:      // RST 0
@@ -1122,12 +1136,9 @@ int Emulate8080(State8080 *state)
                 res = state->a + opcode[1];
                 arith_set_flags(state, res);
                 state->a = res + state->cc.cy;
+                state->pc++;
             }
             break;
-
-
-
-
 
         case 0xD1:      // POP D
             {
@@ -1142,6 +1153,9 @@ int Emulate8080(State8080 *state)
                     state->pc = (opcode[2] << 8) | opcode[1];
             }
             break;
+        case 0xD3:      // OUT 
+            state->pc++;            // TODO implement actual logic 
+            break;
         case 0xD4:      // CNC (if NCY, CALL adr)
             {
                 UnimplementedInstruction(state, opcode[0]);
@@ -1154,6 +1168,23 @@ int Emulate8080(State8080 *state)
                 state->memory[state->sp-1] = state->d;
                 state->memory[state->sp-2] = state->e;
                 state->sp -= 2;
+            }
+            break;
+
+        case 0xDB:      // IN 
+            state->pc += 2;         // TODO : implement actual logic 
+            break;
+        case 0xE3:      // XTHL  L <-> SP, H <-> SP+1
+            {
+                uint8_t l   = state->l;
+                uint8_t h   = state->h;
+                uint8_t sp1 = state->memory[state->sp];
+                uint8_t sp2 = state->memory[state->sp+1];
+                // swap 
+                state->l = sp1;
+                state->h = sp2;
+                state->memory[sp1] = l;
+                state->memory[sp2] = h;
             }
             break;
 
@@ -1209,6 +1240,14 @@ int Emulate8080(State8080 *state)
                 state->sp = state->sp - 2;
             }
             break;
+        case 0xF6:      // ORI D8
+            {
+                uint16_t ans = state->a | opcode[1];
+                logic_set_flags(state);
+                state->a = ans;
+                state->pc++;
+            }
+            break;
         case 0xFB:      // EI (enable interrupt)
             state->int_enable = 1;
             break;
@@ -1230,10 +1269,6 @@ int Emulate8080(State8080 *state)
         default:
             UnimplementedInstruction(state, opcode[0]);
             return -1;
-
-
-
-
     }
     state->pc += 1;     
 

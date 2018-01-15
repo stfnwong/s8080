@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
         }
 
     }
+    fprintf(stdout, "Emulator finishd with exit code %d\n", status);
 
     freeState(emu_state);
 
