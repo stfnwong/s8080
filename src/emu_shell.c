@@ -908,6 +908,111 @@ int Emulate8080(State8080 *state)
             }
             break;
 
+        case 0xB0:      // ORA B 
+            {
+                state->a = state->a | state->b;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xB1:      // ORA C
+            {
+                state->a = state->a | state->c;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xB2:      // ORA D 
+            {
+                state->a = state->a | state->d;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xB3:      // ORA E 
+            {
+                state->a = state->a | state->e;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xB4:      // ORA H
+            {
+                state->a = state->a | state->h;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xB5:      // ORA L 
+            {
+                state->a = state->a | state->l;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xB6:      // ORA M 
+            {
+                uint16_t ans, hl;
+                hl = (state->h << 8) | state->l;
+                ans = (uint16_t) state->a ^ hl;
+                logic_set_flags(state);
+                state->a = (ans >> 8) & 0xFF;
+            }
+            break;
+        case 0xB7:      // ORA A 
+            {
+                state->a = state->a ^ state->a;
+                logic_set_flags(state);
+            }
+            break;
+                    
+        case 0xB8:      // CMP B
+            {
+                state->a = ~state->b;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xB9:      // CMP C
+            {
+                state->a = ~state->c;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xBA:      // CMP D
+            {
+                state->a = ~state->d;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xBB:      // CMP E
+            {
+                state->a = ~state->e;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xBC:      // CMP H 
+            {
+                state->a = ~state->h;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xBD:      // CMP L
+            {
+                state->a = ~state->l;
+                logic_set_flags(state);
+            }
+            break;
+        case 0xBE:      // CMP M
+            {
+                uint16_t ans, hl;
+                hl = (state->h << 8) | state->l;
+                ans = ~hl;
+                logic_set_flags(state);
+                state->a = (ans >> 8) & 0xFF;
+            }
+            break;
+        case 0xBF:      // CMP A
+            {
+                state->a = ~state->a;
+                logic_set_flags(state);
+            }
+            break;
+
+
         case 0xC1:      // POP B
             {
                 state->c = state->memory[state->sp];
@@ -925,9 +1030,7 @@ int Emulate8080(State8080 *state)
             }
             break;
         case 0xC3:      // JMP ADR
-            {
-                state->pc = (opcode[2] << 8) | opcode[1];
-            }
+            state->pc = (opcode[2] << 8) | opcode[1];
             break;
         case 0xC4:      // CNZ ADR
             {
@@ -1048,9 +1151,16 @@ int Emulate8080(State8080 *state)
 
         case 0xD5:      // PUSH D
             {
-
                 state->memory[state->sp-1] = state->d;
                 state->memory[state->sp-2] = state->e;
+                state->sp -= 2;
+            }
+            break;
+
+        case 0xE5:      // PUSH H 
+            {
+                state->memory[state->sp-1] = state->h;
+                state->memory[state->sp-2] = state->l;
                 state->sp -= 2;
             }
             break;
