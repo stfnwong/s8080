@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "emu_shell.h"
+#include "emu_utils.h"
 
 #define TEST_CYCLE_LIMIT 200000
 
@@ -49,9 +50,10 @@ int main(int argc, char *argv[])
             fprintf(stdout, "Hit max cycles (%d)\n", TEST_CYCLE_LIMIT);
             break;
         }
-
+        PrintState(emu_state);
     }
     fprintf(stdout, "Emulator finishd with exit code %d\n", status);
+    PrintState(emu_state); 
 
     freeState(emu_state);
 

@@ -10,24 +10,23 @@
 
 void PrintState(State8080 *state)
 {
-    fprintf(stdout, "\t");
+    fprintf(stdout, "PC : %04X\t[", state->pc);
     // print status flags in a row 
     fprintf(stdout, "%c", state->cc.z  ? 'z' : '.');
     fprintf(stdout, "%c", state->cc.s  ? 's' : '.');
     fprintf(stdout, "%c", state->cc.p  ? 'p' : '.');
     fprintf(stdout, "%c", state->cc.cy ? 'c' : '.');
     fprintf(stdout, "%c", state->cc.ac ? 'a' : '.');
-    fprintf(stdout, "\n");
-    // Print register contents 
-    fprintf(stdout, "A: %02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X\n", state->a,
+    fprintf(stdout, "]\t");
+    // Print register contents + stack pointer 
+    fprintf(stdout, "A:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X SP:%04X\n", state->a,
          state->b,
          state->c,
          state->d,
          state->e,
          state->h,
-         state->l);
-    // stack pointer 
-    fprintf(stdout, "SP:%04X\n", state->sp);
+         state->l, 
+         state->sp);
 }
 
 void ReadFileToMemory(State8080 *state, const char *filename, int offset)
