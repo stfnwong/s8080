@@ -91,6 +91,17 @@ int Emulate8080(State8080 *state)
                 state->cc.cy = ((res & 0xFFFF0000) > 0);
             }
             break;
+
+        case 0x0A:      // LDAX B
+            {
+                uint16_t bc;
+                uint8_t  data;
+
+                bc   = (state->b << 8) | state->c;
+                state->a = state->memory[bc];
+            }
+            break;
+
         case 0x0C:      // INCR C
             {
                 uint16_t res = state->c + 1;
@@ -153,7 +164,8 @@ int Emulate8080(State8080 *state)
                 state->a = state->memory[offset];
             }
             break;
-        case 0x1B:      // DCX D 
+
+        case 0x1B:      // DCX D
             {
                 uint32_t de, res;
                 de = (state->d << 8) | state->e;
@@ -162,6 +174,9 @@ int Emulate8080(State8080 *state)
                 state->e = res & 0xFF;
                 state->cc.cy = ((res & 0xFFFF0000) != 0);
             }
+            break;
+
+        case 0x20:      // NOP
             break;
 
         case 0x21:      // LXI H, word
@@ -186,7 +201,7 @@ int Emulate8080(State8080 *state)
                 hl += 1;
                 arith_set_flags(state, hl);
                 state->h = (hl & 0xFF00) >> 8;
-                state->l = hl & 0xFF;  
+                state->l = hl & 0xFF;
             }
             break;
         case 0x25:      // DCR H
@@ -202,7 +217,10 @@ int Emulate8080(State8080 *state)
                 state->h = opcode[1];
                 state->pc++;
             }
+
+        case 0x28:      // NOP
             break;
+
 
         case 0x29:      // DAD H
             {
@@ -258,6 +276,9 @@ int Emulate8080(State8080 *state)
             state->a = ~state->a;
             break;
 
+        case 0x30:      // NOP
+            break;
+
         case 0x31:      // LXI, SP, D16
             {
                 uint16_t sp;
@@ -290,6 +311,17 @@ int Emulate8080(State8080 *state)
             }
             break;
 
+        case 0x35:      // DCR M
+            {
+                uint16_t hl;
+
+                hl = (state->h << 8) | state->l;
+                hl -= 1;
+                arith_set_flags(state, hl);
+                state->h = (hl >> 8) & 0xFF;
+                state->l = 0xFF;
+            }
+            break;
 
         case 0x36:      // MVI, M byte
             {
@@ -299,6 +331,9 @@ int Emulate8080(State8080 *state)
                 state->memory[offset] = opcode[1];
                 state->pc++;
             }
+            break;
+
+        case 0x38:      // NOP
             break;
 
         case 0x3A:      // LDA (word)

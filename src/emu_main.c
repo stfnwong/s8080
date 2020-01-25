@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
             fprintf(stdout, "Hit max cycles (%d)\n", TEST_CYCLE_LIMIT);
             break;
         }
+        fprintf(stdout, "[I %04X]  ", emu_state->memory[emu_state->pc]);
         PrintState(emu_state);
     }
     fprintf(stdout, "Emulator finishd with exit code %d\n", status);
