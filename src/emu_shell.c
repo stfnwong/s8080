@@ -8,6 +8,7 @@
 #include "emu_shell.h"
 #include "disassem/disassem.h"
 
+
 // ==== Setup initial state
 State8080 *initState(void)
 {
@@ -1157,12 +1158,36 @@ int Emulate8080(State8080 *state)
 
         case 0xCD:      // CALL ADR
             {
+#ifdef CPU_DIAG
+                fprintf(stdout, "[%s] debug message follows : \n", __func__);
+                // Emulate the printing in CPM/OS
+                if(((opcode[2] << 8) | (opcode[1])) == 5)
+                {
+                    uint16_t offset = (state->d << 8) | (state->e);
+                    char* str       = &state->memory[offset+3];  // skips prefix byte
+                    while(*str != '$')
+                    {
+                        fprintf(stdout, "%c", *str);
+                        str++;
+                    }
+                    fprintf(stdout, "\n");
+                }
+                else if(state->c == 2)
+                {
+                    fprintf(stdout, "putchar() routine here\n");
+                }
+                else if(((opcode[2] << 8) | opcode[1]) == 0)
+                {
+                    return -2;      // halt the machine and exit
+                }
+#else
                 // save reutrn address
                 uint16_t ret = state->pc + 2;
                 state->memory[state->sp-1] = (ret >> 8) & 0xFF;
                 state->memory[state->sp-2] = ret & 0xFF;
                 state->sp -= 2;
                 state->pc = (opcode[2] << 8) | opcode[1];
+#endif /*CPU_DIAG*/
             }
             break;
         case 0xCE:      // ACI, d8

@@ -6,6 +6,8 @@
 #ifndef __EMU_SHELL_H
 #define __EMU_SHELL_H
 
+#define CPU_DIAG
+
 #include <stdint.h>
 
 // Condition code
