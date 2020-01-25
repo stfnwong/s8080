@@ -2,3 +2,5 @@
 *.swp
 # Ignore zip files 
 *.zip
+# Ignore tags files
+tags
