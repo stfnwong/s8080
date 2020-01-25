@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "emu_shell.h"
-#include "disassem/disassem.h"
+#include "disassem.h"
 
 
 // ==== Setup initial state

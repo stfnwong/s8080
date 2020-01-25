@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 // Condition code
+// TODO : re-implement without bitfields
 typedef struct 
 {
     uint8_t z   :1;         //zero
