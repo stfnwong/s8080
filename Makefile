@@ -34,25 +34,19 @@ obj: $(OBJECTS)
 TESTS=
 
 # ======== TOOLS ======== #
-TOOLS=dis_main  
+TOOLS=dis8080 emu8080  
 TOOL_SOURCES := $(wildcard $(TOOL_DIR)/*.c)
 TOOL_OBJECTS := $(TOOL_SOURCES:$(TOOL_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 $(TOOL_OBJECTS) : $(OBJ_DIR)/%.o : $(TOOL_DIR)/%.c
-	$(CC) $(CFLAGS) $(INCS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 $(TOOLS): $(OBJECTS) $(TOOL_OBJECTS) 
 	$(CC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o\
 		-o $(BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
-# NOTE: because of the way that I split the disassember and emulator, I have
-# this awkward extra object line in the final build
-#all : obj disassem
-#	$(CC) $(LDFLAGS) $(INCLUDES) $(OBJECTS) $(OBJ_DIR)/disassem.o -o emu101 $(LIBS)
-#
-#disassem: $(DISASSEM_OBJ)
-#	$(CC) $(LFLAGS) $(INCLUDES) $(DISASSEM_OBJ) -o disassem $(LIBS)
 
+# ======== TARGETS ======== #
 .PHONY: clean
 
 all : obj tools
@@ -67,5 +61,3 @@ clean:
 # Debug 
 print-%:
 	@echo $* = $($*)
-
-

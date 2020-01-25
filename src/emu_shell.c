@@ -96,8 +96,6 @@ int Emulate8080(State8080 *state)
         case 0x0A:      // LDAX B
             {
                 uint16_t bc;
-                uint8_t  data;
-
                 bc   = (state->b << 8) | state->c;
                 state->a = state->memory[bc];
             }
@@ -714,7 +712,7 @@ int Emulate8080(State8080 *state)
                 hl = (state->h << 8) | state->l;
                 ans = state->a + hl;
                 state->cc.z  = (ans == 0);
-                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
                 state->cc.p  = Parity(state->a);
                 state->cc.cy = ((ans & 0xFFFF0000) > 0);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
@@ -776,7 +774,7 @@ int Emulate8080(State8080 *state)
                 hl = (state->h << 8) | state->l;
                 ans = (uint32_t) state->a + hl;
                 state->cc.z  = (ans == 0);
-                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
                 state->cc.p  = Parity(state->a);
                 state->cc.cy = ((ans & 0xFFFF0000) > 0);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
@@ -838,7 +836,7 @@ int Emulate8080(State8080 *state)
                 uint16_t hl;
                 hl = (state->h << 8) | state->l;
                 ans = (uint32_t) state->a - (uint32_t) hl;
-                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
                 state->cc.p  = Parity(state->a);
                 state->cc.cy = ((ans & 0xFFFF0000) > 0);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
@@ -1164,7 +1162,7 @@ int Emulate8080(State8080 *state)
                 if(((opcode[2] << 8) | (opcode[1])) == 5)
                 {
                     uint16_t offset = (state->d << 8) | (state->e);
-                    char* str       = &state->memory[offset+3];  // skips prefix byte
+                    unsigned char* str       = &state->memory[offset+3];  // skips prefix byte
                     while(*str != '$')
                     {
                         fprintf(stdout, "%c", *str);
