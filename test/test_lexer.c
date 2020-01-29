@@ -23,7 +23,7 @@ spec("Lexer")
         Lexer* lexer = create_lexer();
         check(lexer != NULL);
         check(lexer->cur_pos == 0);
-        check(lexer->cur_line == 0);
+        check(lexer->cur_line == 1);
         check(lexer->cur_char == '\0');
         check(lexer->token_buf_ptr == 0);
         check(lexer->text_addr == 0);
@@ -59,7 +59,57 @@ spec("Lexer")
     {
         Lexer* lexer = create_lexer();
 
+        // get the source text into a buffer
+        // TODO: probably factor this out into a before_each or something
+        char* src_buf;
+        int src_file_size = asm_get_file_size(test_filename);
 
+        fprintf(stdout, "[%s] file [%s] is %d bytes long\n", __func__, test_filename, src_file_size);
+
+        src_buf = malloc(src_file_size * sizeof(char));
+        check(src_buf != NULL);
+
+        int status = asm_read_file(test_filename, src_buf, src_file_size); 
+        check(status == 0); // make sure we read correctly
+
+        // Scan a token and see what it is. We should be skipping over a lot of whitespace, so so the line number of first line should be 8
+
+        free(src_buf);
+        destroy_lexer(lexer);
+    }
+
+    it("Correctly skips comments")
+    {
+        Lexer* lexer = create_lexer();
+
+        char* src_buf;
+        int src_file_size = asm_get_file_size(test_filename);
+
+        fprintf(stdout, "[%s] file [%s] is %d bytes long\n", __func__, test_filename, src_file_size);
+
+        src_buf = malloc(src_file_size * sizeof(char));
+        check(src_buf != NULL);
+
+        int status = asm_read_file(test_filename, src_buf, src_file_size); 
+        check(status == 0); // make sure we read correctly
+
+        check(lexer->cur_line == 1);
+        // Skip over the comments
+        lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
+        fprintf(stdout, "[%s] cur_line = %d\n", __func__, lexer->cur_line);
+        check(lexer->cur_line == 2);
+
+        lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
+        fprintf(stdout, "[%s] cur_line = %d\n", __func__, lexer->cur_line);
+        check(lexer->cur_line == 3);
+
+        lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
+        fprintf(stdout, "[%s] cur_line = %d\n", __func__, lexer->cur_line);
+        check(lexer->cur_line == 4);
+
+
+
+        free(src_buf);
         destroy_lexer(lexer);
     }
 

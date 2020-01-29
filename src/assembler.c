@@ -101,7 +101,7 @@ Lexer* create_lexer(void)
 
     // init params
     lexer->cur_pos       = 0;
-    lexer->cur_line      = 0;
+    lexer->cur_line      = 1;
     lexer->cur_char      = '\0';
     lexer->token_buf_ptr = 0;
     lexer->text_addr     = 0;
@@ -133,6 +133,37 @@ void lex_advance(Lexer* lexer, const char* src, size_t src_size)
     if(lexer->cur_char == '\n')
         lexer->cur_line++;
 }
+
+/*
+ * lex_is_whitespace()
+ */
+int lex_is_whitespace(const char c)
+{
+    if(c == ' ' || c == '\t' || c == '\n')
+        return 1;
+    return 0;
+}
+
+/*
+ * lex_skip_whitespace()
+ */
+void lex_skip_whitespace(Lexer* lexer, const char* src, size_t src_size)
+{
+    while(lex_is_whitespace(src[lexer->cur_pos]))
+        lex_advance(lexer, src, src_size);
+}
+
+/*
+ * lex_skip_comment()
+ */
+void lex_skip_comment(Lexer* lexer, const char* src, size_t src_size)
+{
+    while(src[lexer->cur_pos] != '\n')
+        lex_advance(lexer, src, src_size);
+    // advance one more to get the line count up
+    lex_advance(lexer, src, src_size);
+}
+
 
 /*
  * lex_scan_token()

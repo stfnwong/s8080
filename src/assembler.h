@@ -8,7 +8,8 @@
 #ifndef __EMU_ASSEM_H
 #define __EMU_ASSEM_H
 
-#define LEXER_TOKEN_BUF_SIZE 128
+// This was reduced for debugging, but we can expand it back to 128 later
+#define LEXER_TOKEN_BUF_SIZE 32 
 
 #include <stdint.h>
 
@@ -60,7 +61,10 @@ void   destroy_lexer(Lexer* lexer);
 
 
 // Move through source
+int  lex_is_whitespace(const char c);
 void lex_advance(Lexer* lexer, const char* src, size_t src_size);
+void lex_skip_whitespace(Lexer* lexer, const char* src, size_t src_size);
+void lex_skip_comment(Lexer* lexer, const char* src, size_t src_size);
 void lex_scan_token(Lexer* lexer, const char* src, size_t src_size);
 void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size);
 
