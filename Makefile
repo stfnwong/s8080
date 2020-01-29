@@ -1,7 +1,7 @@
 # EMULATOR 101
 # Makefile for projects 
 #
-#
+# Stefan Wong 
 
 # Directories
 BIN_DIR=bin
@@ -31,10 +31,19 @@ $(DISASSEM_OBJ): $(OBJ_DIR)/%.o : $(DISASSEM_SRC_DIR)/%.c
 obj: $(OBJECTS) 
 
 # ======== TEST ======== #
-TESTS=
+TESTS=test_lexer
+TEST_SOURCES=$(wildcard test/*.c)	
+TEST_OBJECTS  := $(TEST_SOURCES:test/%.c=$(OBJ_DIR)/%.o)
+
+$(TEST_OBJECTS): $(OBJ_DIR)/%.o : test/%.c 
+	$(CC) $(CFLAGS) $(INCS) -c $< -o $@ 
+
+$(TESTS): $(TEST_OBJECTS) $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o\
+		-o bin/test/$@ $(LIBS) $(TEST_LIBS)
 
 # ======== TOOLS ======== #
-TOOLS=dis8080 emu8080  
+TOOLS=asm8080 dis8080 emu8080  
 TOOL_SOURCES := $(wildcard $(TOOL_DIR)/*.c)
 TOOL_OBJECTS := $(TOOL_SOURCES:$(TOOL_DIR)/%.c=$(OBJ_DIR)/%.o)
 
@@ -49,14 +58,19 @@ $(TOOLS): $(OBJECTS) $(TOOL_OBJECTS)
 # ======== TARGETS ======== #
 .PHONY: clean
 
-all : obj tools
+all : obj tools test
 
 tools: $(TOOLS)
+
+test: $(TESTS)
 
 #test: $(TESTS)
 
 clean:
 	rm -fv $(OBJ_DIR)/*.o
+	rm -f $(BIN_DIR)/asm8080
+	rm -f $(BIN_DIR)/dis8080
+	rm -f $(BIN_DIR)/emu8080
 
 # Debug 
 print-%:

@@ -4,3 +4,7 @@
 *.zip
 # Ignore tags files
 tags
+# Ignore output binaries
+bin/asm8080
+bin/dis8080
+bin/emu8080
