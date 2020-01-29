@@ -1,12 +1,12 @@
 /*
- * ASSEMBLER
- * 8080 Assembler implementation.
+ * LEXER
+ * Lexer for 8080 Assembler implementation.
  *
  * Stefan Wong 2020
  */
 
-#ifndef __EMU_ASSEM_H
-#define __EMU_ASSEM_H
+#ifndef __EMU_LEXER_H
+#define __EMU_LEXER_H
 
 // This was reduced for debugging, but we can expand it back to 128 later
 #define LEXER_TOKEN_BUF_SIZE 32 
@@ -14,8 +14,8 @@
 #include <stdint.h>
 
 // ======= File handling functions 
-int asm_get_file_size(const char* filename);
-int asm_read_file(const char* filename, char* buf, int buf_size);
+int lex_get_file_size(const char* filename);
+int lex_read_file(const char* filename, char* buf, int buf_size);
 
 
 // ======== Parsing ========= //
@@ -83,4 +83,4 @@ void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size
 int lex_file(Lexer* lexer, const char* src, size_t src_size);
 
 
-#endif /*__EMU_ASSEM_H*/
+#endif /*__EMU_LEXER_H*/

@@ -1,6 +1,6 @@
 /*
- * ASSEMBLER
- * 8080 Assembler implementation.
+ * LEXER
+ * Lexer for 8080 Assembler implementation.
  *
  * Stefan Wong 2020
  */
@@ -8,13 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "assembler.h"
+#include "lexer.h"
 
 
 /*
- * asm_get_file_size()
+ * lex_get_file_size()
  */
-int asm_get_file_size(const char* filename)
+int lex_get_file_size(const char* filename)
 {
     int fsize;
     FILE* fp;
@@ -35,11 +35,11 @@ int asm_get_file_size(const char* filename)
 }
 
 /*
- * asm_read_file()
+ * lex_read_file()
  * Note that we expect the caller to have allocated enough memory here 
  * to hold the contents of the file.
  */
-int asm_read_file(const char* filename, char* buf, int buf_size)
+int lex_read_file(const char* filename, char* buf, int buf_size)
 {
     size_t nread;
     FILE* fp;

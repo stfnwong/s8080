@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "assembler.h"
+#include "lexer.h"
 
 
 int main(int argc, char *argv[])

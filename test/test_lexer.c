@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "assembler.h"
+#include "lexer.h"
 // testing framework
 #include "bdd-for-c.h"
 
@@ -24,11 +24,11 @@ spec("Lexer")
     before()
     {
         // make a buffer where we can place the text from the source file
-        src_file_size = asm_get_file_size(test_filename);
+        src_file_size = lex_get_file_size(test_filename);
         fprintf(stdout, "[%s] file [%s] is %d bytes long\n", __func__, test_filename, src_file_size);
         src_buf = malloc(src_file_size * sizeof(char));
         check(src_buf != NULL);
-        int status = asm_read_file(test_filename, src_buf, src_file_size); 
+        int status = lex_read_file(test_filename, src_buf, src_file_size); 
         check(status == 0); // make sure we read correctly
     }
 
@@ -71,18 +71,13 @@ spec("Lexer")
         check(lexer->cur_line == 1);
         // Skip over the comments
         lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
-        fprintf(stdout, "[%s] cur_line = %d\n", __func__, lexer->cur_line);
         check(lexer->cur_line == 2);
 
         lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
-        fprintf(stdout, "[%s] cur_line = %d\n", __func__, lexer->cur_line);
         check(lexer->cur_line == 3);
 
         lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
-        fprintf(stdout, "[%s] cur_line = %d\n", __func__, lexer->cur_line);
         check(lexer->cur_line == 4);
-
-
 
         destroy_lexer(lexer);
     }
@@ -100,18 +95,13 @@ spec("Lexer")
         check(lexer->cur_line == 7);
         // Starting from line 7 we expect to see MOVI: MVI A 077H
         lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
-        
         check(strncmp(lexer->token_buf, "MOVI:", 5));
-        fprintf(stdout, "[%s] line %d, char %d : lexer->cur_token = %s\n", 
-                __func__, lexer->cur_line, lexer->cur_char, lexer->token_buf);
 
         lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
         check(strncmp(lexer->token_buf, "MVI", 3));
 
         lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
         check(strncmp(lexer->token_buf, "A", 1));
-
-
 
         destroy_token(cur_token);
         destroy_lexer(lexer);
