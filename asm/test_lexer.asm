@@ -3,7 +3,6 @@
 ;
 ; Stefan Wong 2020
 
-
 ; This is just taken from lines 259 onwards of the CPU test
 MOVI:	MVI	A,077H
 		INR	A

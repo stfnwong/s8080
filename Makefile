@@ -31,7 +31,7 @@ $(DISASSEM_OBJ): $(OBJ_DIR)/%.o : $(DISASSEM_SRC_DIR)/%.c
 obj: $(OBJECTS) 
 
 # ======== TEST ======== #
-TESTS=test_lexer
+TESTS=test_lexer test_token
 TEST_SOURCES=$(wildcard test/*.c)	
 TEST_OBJECTS  := $(TEST_SOURCES:test/%.c=$(OBJ_DIR)/%.o)
 

@@ -28,6 +28,9 @@ typedef enum {
 } TokenType;
 
 
+/*
+ * Token object
+ */
 typedef struct 
 {
     TokenType type;
@@ -37,12 +40,17 @@ typedef struct
 
 Token* create_token(void);
 void   init_token(Token* token);
+void   destroy_token(Token* token);
 
+/*
+ * Lexer object
+ */
 typedef struct
 {
     // position info
     int  cur_pos;
     int  cur_line;
+    int  cur_col;
     char cur_char;
 
     // Token buffers
@@ -62,9 +70,12 @@ void   destroy_lexer(Lexer* lexer);
 
 // Move through source
 int  lex_is_whitespace(const char c);
+int  lex_is_comment(const char c);
 void lex_advance(Lexer* lexer, const char* src, size_t src_size);
 void lex_skip_whitespace(Lexer* lexer, const char* src, size_t src_size);
 void lex_skip_comment(Lexer* lexer, const char* src, size_t src_size);
+
+//  extract tokens
 void lex_scan_token(Lexer* lexer, const char* src, size_t src_size);
 void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size);
 
