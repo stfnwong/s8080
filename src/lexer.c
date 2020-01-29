@@ -187,7 +187,6 @@ void lex_skip_whitespace(Lexer* lexer, const char* src, size_t src_size)
 {
     while(lex_is_whitespace(src[lexer->cur_pos]))
         lex_advance(lexer, src, src_size);
-    //lex_advance(lexer, src, src_size);
 }
 
 /*
@@ -229,7 +228,10 @@ void lex_scan_token(Lexer* lexer, const char* src, size_t src_size)
         if(lexer->cur_char == ',')      // seperator
             break;
         if(lexer->cur_char == ':')      // end of label
+        {
+            lex_advance(lexer, src, src_size);
             break;
+        }
 
         lexer->token_buf[idx] = lexer->cur_char;
         lex_advance(lexer, src, src_size);
@@ -238,7 +240,7 @@ void lex_scan_token(Lexer* lexer, const char* src, size_t src_size)
 
     lexer->token_buf[idx] = '\0';
     // move the cursor forward by one if we landed on a seperator
-    if(lexer->cur_char == ',')
+    if(lexer->cur_char == ',' || lexer->cur_char == ':' || lexer->cur_char == ' ')
         lex_advance(lexer, src, src_size);
 }
 
@@ -255,7 +257,7 @@ void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size
     fprintf(stdout, "[%s] line %d:%d token_buf : %s\n",
             __func__, lexer->cur_line, lexer->cur_col, lexer->token_buf
     );
-    lex_scan_token(lexer, src, src_size);
+    //lex_scan_token(lexer, src, src_size);
 }
 
 

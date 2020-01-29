@@ -95,13 +95,51 @@ spec("Lexer")
         check(lexer->cur_line == 7);
         // Starting from line 7 we expect to see MOVI: MVI A 077H
         lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
-        check(strncmp(lexer->token_buf, "MOVI:", 5));
+        check(strncmp(lexer->token_buf, "MOVI", 4) == 0)
 
         lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
-        check(strncmp(lexer->token_buf, "MVI", 3));
+        check(strncmp(lexer->token_buf, "MVI", 3) == 0);
 
         lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
-        check(strncmp(lexer->token_buf, "A", 1));
+        check(strncmp(lexer->token_buf, "A", 1) == 0);
+
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "077H", 4) == 0);
+
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(lexer->cur_line == 8);
+        check(strncmp(lexer->token_buf, "INR", 3) == 0);
+
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "A", 1) == 0);
+
+        check(lexer->cur_line == 9);
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "MOV", 3) == 0);
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "B", 1) == 0);
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "A", 1) == 0);
+
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "INR", 3) == 0);
+        check(lexer->cur_line == 10);
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "B", 1) == 0);
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "MOV", 3) == 0);
+        
+        check(lexer->cur_line == 11);
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "C", 1) == 0);
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "B", 1) == 0);
+
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "DCR", 3) == 0);
+        check(lexer->cur_line == 12);
+        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        check(strncmp(lexer->token_buf, "C", 1) == 0);
 
         destroy_token(cur_token);
         destroy_lexer(lexer);
