@@ -18,7 +18,7 @@ spec("Lexer")
 {
     static const char test_filename[] = "asm/test_lexer.asm";
 
-    it("Reads the ROM file correctly")
+    it("Reads the asm file correctly")
     {
         Lexer* lexer = create_lexer();
         check(lexer != NULL);
@@ -52,6 +52,15 @@ spec("Lexer")
         fprintf(stdout, "\n\n");
 
         free(src_buf);
+        destroy_lexer(lexer);
+    }
+
+    it("Scans tokens into the token buffer")
+    {
+        Lexer* lexer = create_lexer();
+
+
+        destroy_lexer(lexer);
     }
 
     //it("Scans through the ROM file and collects each token")

@@ -91,7 +91,14 @@ Lexer* create_lexer(void)
 {
     Lexer* lexer;
 
-    lexer = malloc(sizeof(lexer));
+    lexer = malloc(sizeof(*lexer));
+    if(!lexer)
+    {
+        fprintf(stderr, "[%s] failed to allocate memory for lexer\n",
+                __func__);
+        return NULL;
+    }
+
     // init params
     lexer->cur_pos       = 0;
     lexer->cur_line      = 0;

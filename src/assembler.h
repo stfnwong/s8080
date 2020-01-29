@@ -56,7 +56,7 @@ typedef struct
 
 
 Lexer* create_lexer(void);
-void destroy_lexer(Lexer* lexer);
+void   destroy_lexer(Lexer* lexer);
 
 
 // Move through source
