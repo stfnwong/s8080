@@ -207,11 +207,9 @@ void lex_skip_comment(Lexer* lexer, const char* src, size_t src_size)
  */
 void lex_scan_token(Lexer* lexer, const char* src, size_t src_size)
 {
-    int idx;
-
-    idx = 0;
+    lexer->token_buf_ptr = 0;
     lex_skip_whitespace(lexer, src, src_size);
-    while(idx < LEXER_TOKEN_BUF_SIZE-1)
+    while(lexer->token_buf_ptr < LEXER_TOKEN_BUF_SIZE-1)
     {
         if(lexer->cur_char == ' ')      // space
             break;
@@ -233,12 +231,12 @@ void lex_scan_token(Lexer* lexer, const char* src, size_t src_size)
             break;
         }
 
-        lexer->token_buf[idx] = lexer->cur_char;
+        lexer->token_buf[lexer->token_buf_ptr] = lexer->cur_char;
         lex_advance(lexer, src, src_size);
-        idx++;
+        lexer->token_buf_ptr++;
     }
 
-    lexer->token_buf[idx] = '\0';
+    lexer->token_buf[lexer->token_buf_ptr] = '\0';
     // move the cursor forward by one if we landed on a seperator
     if(lexer->cur_char == ',' || lexer->cur_char == ':' || lexer->cur_char == ' ')
         lex_advance(lexer, src, src_size);
@@ -252,16 +250,12 @@ void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size
     // lex the next token, this places a new string into lexer->token_buf
     lex_scan_token(lexer, src, src_size);
 
+
+    //fprintf(stdout, "[%s] line %d:%d token_buf : %s\n",
+    //        __func__, lexer->cur_line, lexer->cur_col, lexer->token_buf
+    //);
     // Now check the token in the buffer
-
-    fprintf(stdout, "[%s] line %d:%d token_buf : %s\n",
-            __func__, lexer->cur_line, lexer->cur_col, lexer->token_buf
-    );
-    //lex_scan_token(lexer, src, src_size);
 }
-
-
-
 
 // TODO : this will be the entry point for the lexer
 int lex_file(Lexer* lexer, const char* src, size_t src_size)

@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 
+
 // ======= File handling functions 
 int lex_get_file_size(const char* filename);
 int lex_read_file(const char* filename, char* buf, int buf_size);
@@ -24,7 +25,8 @@ typedef enum {
     SYM_NONE, 
     SYM_LITERAL, 
     SYM_LABEL, 
-    SYM_INSTR
+    SYM_INSTR,
+    SYM_EOF
 } TokenType;
 
 
