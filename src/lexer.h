@@ -12,6 +12,32 @@
 #define LEXER_TOKEN_BUF_SIZE 32 
 
 #include <stdint.h>
+#include "opcode.h"
+
+// Text segment
+typedef struct 
+{
+    Opcode* opcode;
+    char args[3];
+    int line_num;
+    int addr;
+} LineInfo;
+
+LineInfo* line_info_create(void);
+void      line_info_destroy(LineInfo* info);
+void      line_info_init(LineInfo* info);
+
+
+// Data segment
+typedef struct
+{
+    uint8_t* data;
+    int      data_size;
+    int      addr;
+} DataSegment;
+
+DataSegment* data_segment_create(int size);
+void data_segment_destroy(DataSegment* segment);
 
 
 // ======= File handling functions 
@@ -39,7 +65,6 @@ typedef struct
     char      token_str[LEXER_TOKEN_BUF_SIZE];
 } Token;
 
-
 Token* create_token(void);
 void   init_token(Token* token);
 void   destroy_token(Token* token);
@@ -63,6 +88,13 @@ typedef struct
     int text_addr;
     int data_addr;
 
+    // current line information
+    LineInfo*    text_seg;
+    //DataSegment* data_seg;
+    
+    // misc settings
+    int verbose;
+
 } Lexer;
 
 
@@ -81,6 +113,8 @@ void lex_skip_comment(Lexer* lexer, const char* src, size_t src_size);
 void lex_scan_token(Lexer* lexer, const char* src, size_t src_size);
 void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size);
 
+// Lex a line in the source 
+void lex_line(Lexer* lexer, const char* src, size_t src_size);
 
 int lex_file(Lexer* lexer, const char* src, size_t src_size);
 

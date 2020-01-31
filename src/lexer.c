@@ -5,11 +5,99 @@
  * Stefan Wong 2020
  */
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "lexer.h"
 
+// ================ LINE INFO ================ //
+LineInfo* line_info_create(void)
+{
+    LineInfo* info;
+
+    info = malloc(sizeof(*info));
+    if(!info)
+        goto INFO_END;
+
+    info->opcode = malloc(sizeof(*info->opcode));
+    if(!info->opcode)
+        goto INFO_END;
+
+    line_info_init(info);
+    //init_opcode(info->opcode);      // TODO : name change to opcode_init
+
+INFO_END:
+    if(!info || !info->opcode)
+    {
+        fprintf(stderr, "[%s] failed to allocate memory while creating LineInfo\n", __func__);
+        return NULL;
+    }
+
+    return info;
+}
+
+/*
+ * line_info_destroy()
+ */
+void line_info_destroy(LineInfo* info)
+{
+    free(info->opcode);
+    free(info);
+}
+
+/*
+ * line_info_init()
+ */
+void line_info_init(LineInfo* info)
+{
+    init_opcode(info->opcode);
+    info->line_num = 0;
+    info->addr     = 0;
+    for(int a = 0; a < 3; ++a)
+        info->args[a] = '\0';
+}
+
+
+/*
+ * data_segment_create()
+ */
+DataSegment* data_segment_create(int size)
+{
+    DataSegment* segment;
+
+    segment = malloc(sizeof(*segment));
+    if(!segment)
+        goto SEGMENT_END;
+
+    segment->data = malloc(size * sizeof(uint8_t));
+    if(!segment->data)
+        goto SEGMENT_END;
+
+    segment->data_size = size;
+    segment->addr      = 0;
+
+SEGMENT_END:
+    if(!segment || ! segment->data)
+    {
+        fprintf(stderr, "[%s] failed to allocate memory for DataSegment\n", __func__);
+        return NULL;
+    }
+
+    return segment;
+}
+
+/*
+ * data_segment_destroy()
+ */
+void data_segment_destroy(DataSegment* segment)
+{
+    free(segment->data);
+    free(segment);
+}
+
+
+// ================ FILE HANDLING ================ //
 
 /*
  * lex_get_file_size()
@@ -114,11 +202,7 @@ Lexer* create_lexer(void)
 
     lexer = malloc(sizeof(*lexer));
     if(!lexer)
-    {
-        fprintf(stderr, "[%s] failed to allocate memory for lexer\n",
-                __func__);
-        return NULL;
-    }
+        goto LEXER_END;
 
     // init params
     lexer->cur_pos       = 0;
@@ -130,6 +214,25 @@ Lexer* create_lexer(void)
     lexer->data_addr     = 0;
     // Make the token buffer equal to an empty string
     lexer->token_buf[0]  = '\0';
+
+    // misc settings
+    lexer->verbose = 0;
+
+    // Allocate the line info structure
+    lexer->text_seg = line_info_create();
+    if(!lexer->text_seg)
+        goto LEXER_END;
+
+    //lexer->data_seg = data_segment_create(5);
+    //if(!lexer->data_seg)
+    //    goto LEXER_END;
+
+LEXER_END:
+    if(!lexer || !lexer->text_seg)      // TODO : add data seg
+    {
+        fprintf(stderr, "[%s] failed to allocate memory for Lexer\n", __func__);
+        return NULL;
+    }
 
     return lexer;
 }
@@ -243,24 +346,87 @@ void lex_scan_token(Lexer* lexer, const char* src, size_t src_size)
 }
 
 /*
+ * lex_extract_literal()
+ */
+int lex_extract_literal(Lexer* lexer, Token* token, const char* src, size_t src_size)
+{
+    int tok_ptr;
+    int literal;
+    char* end;
+
+    tok_ptr = lexer->cur_char;
+    while(isdigit(lexer->token_buf[tok_ptr]))
+        tok_ptr++;
+
+    if(tok_ptr == lexer->cur_char)      // we didn't move
+    {
+        token->type = SYM_NONE;
+        return 0;
+    }
+
+    token->type = SYM_LITERAL;
+    strncpy(token->token_str, src[lexer->cur_char], tok_ptr);
+    // Check if the last character is an 'H'
+    if(lexer->token_buf[tok_ptr+1] == 'H' || 
+       lexer->token_buf[tok_ptr+1] == 'h')
+    {
+        literal = (int) strtol(lexer->token_buf, &end, 16);
+    }
+    else
+        literal = (int) strtol(lexer->token_buf, &end, 10);
+
+    return literal;
+}
+
+/*
  * lex_next_token()
  */
 void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size)
 {
+    int error = 0;
     // lex the next token, this places a new string into lexer->token_buf
     lex_scan_token(lexer, src, src_size);
 
+    init_token(token);
 
-    //fprintf(stdout, "[%s] line %d:%d token_buf : %s\n",
-    //        __func__, lexer->cur_line, lexer->cur_col, lexer->token_buf
-    //);
+    // TODO : later on allow for strings, chars
+
     // Now check the token in the buffer
+    if(isdigit(lexer->token_buf[0]))
+    {
+        int literal = lex_extract_literal(lexer, token, src, src_size);
+        if(token->type == SYM_NONE)
+            error = 1;      // TODO : what am I actually going to do with this?
+
+        goto TOKEN_END;
+    }
+
+TOKEN_END:
+    if(lexer->verbose)
+    {
+        fprintf(stdout, "[%s]  line %d:%d, got token [%s] with value [%s]\n",
+               __func__, lexer->cur_line, lexer->cur_col, 
+               lexer->token_buf, token->token_str
+        );
+    }
 }
+
+
+/*
+ * lex_line()
+ */
+void lex_line(Lexer* lexer, const char* src, size_t src_size)
+{
+
+}
+
+
+
+
 
 // TODO : this will be the entry point for the lexer
 int lex_file(Lexer* lexer, const char* src, size_t src_size)
 {
-
     Token* cur_token = create_token();
     if(!cur_token)
     {
@@ -286,7 +452,7 @@ int lex_file(Lexer* lexer, const char* src, size_t src_size)
         }
 
         // This is a valid line, so start trying to get tokens together
-        lex_next_token(lexer, cur_token, src, src_size);
+        lex_line(lexer, src, src_size);
     }
 
     // TODO : labels, label resolution

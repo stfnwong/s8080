@@ -57,7 +57,7 @@ OpcodeTable* opcode_table_create(void)
     // Add instructions to to the table
     for(int instr = 0; instr < table->num_opcodes; ++instr)
     {
-        table->op_array[instr] = lex_instructions[instr];
+        table->op_array[instr] = LEX_INSTRUCTIONS[instr];
     }
 
     return table;

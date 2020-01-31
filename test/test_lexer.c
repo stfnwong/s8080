@@ -38,7 +38,7 @@ spec("Lexer")
         free(src_buf);
     }
 
-    it("Reads the asm file correctly")
+    it("Should initialize correctly")
     {
         Lexer* lexer = create_lexer();
         check(lexer != NULL);
@@ -50,6 +50,15 @@ spec("Lexer")
         check(lexer->text_addr == 0);
         check(lexer->data_addr == 0);
         check(lexer->token_buf[0] == '\0');
+        check(lexer->verbose == 0);
+        check(lexer->text_seg != NULL);
+
+        // Check the values in the text segment structure
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+
+        for(int a = 0; a < 3; ++a)
+            check(lexer->text_seg->args[a] == '\0');
 
         // Lexer object is fine, load an assembler file from disk
          
@@ -64,7 +73,7 @@ spec("Lexer")
     }
 
     // Check we can skip comments correctly
-    it("Correctly skips comments")
+    it("Should correctly skips comments")
     {
         Lexer* lexer = create_lexer();
 

@@ -33,7 +33,7 @@ typedef enum {
     LEX_NOP
 } instr_code;
 
-static Opcode lex_instructions[] = {
+const static Opcode LEX_INSTRUCTIONS[] = {
     {LEX_DCR, "DCR"},
     {LEX_INR, "INR"},
     {LEX_MOV, "MOV"},
