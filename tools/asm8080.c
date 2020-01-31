@@ -13,34 +13,16 @@
 int main(int argc, char *argv[])
 {
     int status;
-    size_t src_file_size;
-    FILE *fp;
-
-    fp = fopen(argv[1], "rb");
-    if(fp == NULL)
-    {
-        fprintf(stderr, "Couldn't open file %s\n", argv[1]);
-        exit(1);
-    }
-
-    // Get the file size and read file into a buffer
-    fseek(fp, 0L, SEEK_END);
-    src_file_size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-
-    unsigned char* buffer = malloc(src_file_size);
-    if(buffer == NULL)
-    {
-        fprintf(stderr, "Failed to allocate memory (%ld bytes) for buffer\n", src_file_size);
-        fclose(fp);
-        exit(1);
-    }
 
     // get a lexer 
     Lexer* lexer = lexer_create();
 
     status = lex_read_file(lexer, argv[1]);
-
+    if(status != 0)
+    {
+        fprintf(stderr, "[%s] failed to read file [%s]\n", __func__, argv[1]);
+        return -1;
+    }
 
 
     // Free lexer memory 
