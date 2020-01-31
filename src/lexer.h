@@ -41,8 +41,6 @@ void data_segment_destroy(DataSegment* segment);
 
 
 // ======= File handling functions 
-int lex_get_file_size(const char* filename);
-int lex_read_file(const char* filename, char* buf, int buf_size);
 
 
 // ======== Parsing ========= //
@@ -74,6 +72,9 @@ void   destroy_token(Token* token);
  */
 typedef struct
 {
+    // Source info 
+    char* src;
+    int   src_len;
     // position info
     int  cur_pos;
     int  cur_line;
@@ -98,25 +99,25 @@ typedef struct
 } Lexer;
 
 
-Lexer* create_lexer(void);
+Lexer* lexer_create(void);
 void   destroy_lexer(Lexer* lexer);
-
+int    lex_read_file(Lexer* lexer, const char* filename);
 
 // Move through source
 int  lex_is_whitespace(const char c);
 int  lex_is_comment(const char c);
-void lex_advance(Lexer* lexer, const char* src, size_t src_size);
-void lex_skip_whitespace(Lexer* lexer, const char* src, size_t src_size);
-void lex_skip_comment(Lexer* lexer, const char* src, size_t src_size);
+void lex_advance(Lexer* lexer);
+void lex_skip_whitespace(Lexer* lexer);
+void lex_skip_comment(Lexer* lexer);
 
 //  extract tokens
-void lex_scan_token(Lexer* lexer, const char* src, size_t src_size);
-void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size);
+void lex_scan_token(Lexer* lexer);
+void lex_next_token(Lexer* lexer, Token* token);    // TODO: cur token?
 
 // Lex a line in the source 
-void lex_line(Lexer* lexer, const char* src, size_t src_size);
+void lex_line(Lexer* lexer);
 
-int lex_file(Lexer* lexer, const char* src, size_t src_size);
+int lex_all(Lexer* lexer);
 
 
 #endif /*__EMU_LEXER_H*/

@@ -20,27 +20,10 @@ spec("Lexer")
 {
     static const char test_filename[] = "asm/test_lexer.asm";
 
-    // Read source text into a buffer
-    before()
-    {
-        // make a buffer where we can place the text from the source file
-        src_file_size = lex_get_file_size(test_filename);
-        fprintf(stdout, "[%s] file [%s] is %d bytes long\n", __func__, test_filename, src_file_size);
-        src_buf = malloc(src_file_size * sizeof(char));
-        check(src_buf != NULL);
-        int status = lex_read_file(test_filename, src_buf, src_file_size); 
-        check(status == 0); // make sure we read correctly
-    }
-
-    // Clean up source text memory
-    after()
-    {
-        free(src_buf);
-    }
-
     it("Should initialize correctly")
     {
-        Lexer* lexer = create_lexer();
+        Lexer* lexer = lexer_create();
+
         check(lexer != NULL);
         check(lexer->cur_pos == 0);
         check(lexer->cur_line == 1);
@@ -61,11 +44,13 @@ spec("Lexer")
             check(lexer->text_seg->args[a] == '\0');
 
         // Lexer object is fine, load an assembler file from disk
+        int status = lex_read_file(lexer, test_filename);
+        check(status == 0);
          
         fprintf(stdout, "[%s] source file [%s] contents:\n\n", __func__, test_filename);
-        for(int c = 0; c < src_file_size; ++c)
+        for(int c = 0; c < lexer->src_len; ++c)
         {
-            fprintf(stdout, "%c", src_buf[c]);
+            fprintf(stdout, "%c", lexer->src[c]);
         }
         fprintf(stdout, "\n\n");
 
@@ -75,17 +60,21 @@ spec("Lexer")
     // Check we can skip comments correctly
     it("Should correctly skips comments")
     {
-        Lexer* lexer = create_lexer();
+        int status;
+        Lexer* lexer = lexer_create();
+
+        status = lex_read_file(lexer, test_filename);
+        check(status == 0);
 
         check(lexer->cur_line == 1);
         // Skip over the comments
-        lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
+        lex_skip_comment(lexer);
         check(lexer->cur_line == 2);
 
-        lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
+        lex_skip_comment(lexer);
         check(lexer->cur_line == 3);
 
-        lex_skip_comment(lexer, src_buf, (size_t) src_file_size);
+        lex_skip_comment(lexer);
         check(lexer->cur_line == 4);
 
         destroy_lexer(lexer);
@@ -94,60 +83,63 @@ spec("Lexer")
     // Check we can perform token scans correctly
     it("Scans tokens into the token buffer")
     {
-        Lexer* lexer = create_lexer();
+        Lexer* lexer = lexer_create();
         Token* cur_token = create_token();
+
+        int status = lex_read_file(lexer, test_filename);
+        check(status == 0);
         // Scan a token and see what it is. We should be skipping over a lot of whitespace, so so the line number of first line should be 8
 
         while(lexer->cur_line < 7)
-            lex_advance(lexer, src_buf, src_file_size);
+            lex_advance(lexer);
 
         check(lexer->cur_line == 7);
         // Starting from line 7 we expect to see MOVI: MVI A 077H
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "MOVI", 4) == 0)
 
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "MVI", 3) == 0);
 
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "A", 1) == 0);
 
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "077H", 4) == 0);
 
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(lexer->cur_line == 8);
         check(strncmp(lexer->token_buf, "INR", 3) == 0);
 
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "A", 1) == 0);
 
         check(lexer->cur_line == 9);
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "MOV", 3) == 0);
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "B", 1) == 0);
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "A", 1) == 0);
 
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "INR", 3) == 0);
         check(lexer->cur_line == 10);
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "B", 1) == 0);
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "MOV", 3) == 0);
         
         check(lexer->cur_line == 11);
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "C", 1) == 0);
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "B", 1) == 0);
 
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "DCR", 3) == 0);
         check(lexer->cur_line == 12);
-        lex_next_token(lexer, cur_token, src_buf, (size_t) src_file_size); 
+        lex_next_token(lexer, cur_token);
         check(strncmp(lexer->token_buf, "C", 1) == 0);
 
         destroy_token(cur_token);

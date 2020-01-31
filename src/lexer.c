@@ -97,64 +97,6 @@ void data_segment_destroy(DataSegment* segment)
 }
 
 
-// ================ FILE HANDLING ================ //
-
-/*
- * lex_get_file_size()
- */
-int lex_get_file_size(const char* filename)
-{
-    int fsize;
-    FILE* fp;
-
-    fp = fopen(filename, "r");
-    if(!fp)
-    {
-        fprintf(stderr, "[%s] failed to open file [%s]\n",
-                __func__, filename);
-        return -1;
-    }
-
-    fseek(fp, 0, SEEK_END);
-    fsize = ftell(fp);
-    fclose(fp);
-
-    return fsize;
-}
-
-/*
- * lex_read_file()
- * Note that we expect the caller to have allocated enough memory here 
- * to hold the contents of the file.
- */
-int lex_read_file(const char* filename, char* buf, int buf_size)
-{
-    size_t nread;
-    FILE* fp;
-
-    fp = fopen(filename, "r");
-    if(!fp)
-    {
-        fprintf(stderr, "[%s] failed to open file [%s]\n",
-                __func__, filename);
-        return -1;
-    }
-
-    do
-    {
-        nread = fread(buf, 1, buf_size, fp);
-        if(ferror(fp))
-        {
-            fprintf(stderr, "[%s] error reading from file [%s]\n",
-                    __func__, filename);
-            fclose(fp);
-            return -1;
-        }
-    } while(nread > 0);
-    fclose(fp);
-
-    return 0;
-}
 
 // ================ TOKEN ================ //
 /*
@@ -196,13 +138,17 @@ void destroy_token(Token* token)
 
 
 // ================ LEXER ================ //
-Lexer* create_lexer(void)
+Lexer* lexer_create(void)
 {
     Lexer* lexer;
 
     lexer = malloc(sizeof(*lexer));
     if(!lexer)
         goto LEXER_END;
+
+    // src params 
+    lexer->src           = NULL;
+    lexer->src_len       = 0;
 
     // init params
     lexer->cur_pos       = 0;
@@ -239,7 +185,60 @@ LEXER_END:
 
 void destroy_lexer(Lexer* lexer)
 {
+    line_info_destroy(lexer->text_seg);
+    free(lexer->src);
     free(lexer);
+}
+
+
+/*
+ * lex_read_file()
+ * Note that we expect the caller to have allocated enough memory here 
+ * to hold the contents of the file.
+ */
+int lex_read_file(Lexer* lexer, const char* filename)
+{
+    size_t nread;
+    FILE* fp;
+
+    fp = fopen(filename, "r");
+    if(!fp)
+    {
+        fprintf(stderr, "[%s] failed to open file [%s]\n",
+                __func__, filename);
+        return -1;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    lexer->src_len = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if(lexer->src != NULL)
+        free(lexer->src);
+
+    lexer->src = malloc(sizeof(char) * lexer->src_len);
+    if(!lexer->src)
+    {
+        fprintf(stderr, "[%s] failed to allocate memory for lexer->src\n", __func__);
+        fclose(fp);
+        return NULL;
+    }
+
+    // Read the actual bytes into memory
+    do
+    {
+        nread = fread(lexer->src, 1, lexer->src_len, fp);
+        if(ferror(fp))
+        {
+            fprintf(stderr, "[%s] error reading from file [%s]\n",
+                    __func__, filename);
+            fclose(fp);
+            return -1;
+        }
+    } while(nread > 0);
+    fclose(fp);
+
+    return 0;
 }
 
 // ==== Source motions ===== //
@@ -247,14 +246,14 @@ void destroy_lexer(Lexer* lexer)
 /*
  * lex_advance()
  */
-void lex_advance(Lexer* lexer, const char* src, size_t src_size)
+void lex_advance(Lexer* lexer)
 {
     lexer->cur_pos++;
     lexer->cur_col++;
-    if(lexer->cur_pos >= src_size)
+    if(lexer->cur_pos >= lexer->src_len)
         lexer->cur_char = '\0';
     else
-        lexer->cur_char = src[lexer->cur_pos];
+        lexer->cur_char = lexer->src[lexer->cur_pos];
 
     if(lexer->cur_char == '\n')
     {
@@ -286,21 +285,22 @@ int lex_is_comment(const char c)
 /*
  * lex_skip_whitespace()
  */
-void lex_skip_whitespace(Lexer* lexer, const char* src, size_t src_size)
+void lex_skip_whitespace(Lexer* lexer)
 {
-    while(lex_is_whitespace(src[lexer->cur_pos]))
-        lex_advance(lexer, src, src_size);
+    while(lex_is_whitespace(lexer->src[lexer->cur_pos]))
+        lex_advance(lexer);
 }
 
 /*
  * lex_skip_comment()
  */
-void lex_skip_comment(Lexer* lexer, const char* src, size_t src_size)
+void lex_skip_comment(Lexer* lexer)
 {
-    while(src[lexer->cur_pos] != '\n')
-        lex_advance(lexer, src, src_size);
+    while(lexer->src[lexer->cur_pos] != '\n')
+        lex_advance(lexer);
+
     // advance one more to get the line count up
-    lex_advance(lexer, src, src_size);
+    lex_advance(lexer);
 }
 
 // ==== Token Handling ===== //
@@ -308,10 +308,10 @@ void lex_skip_comment(Lexer* lexer, const char* src, size_t src_size)
 /*
  * lex_scan_token()
  */
-void lex_scan_token(Lexer* lexer, const char* src, size_t src_size)
+void lex_scan_token(Lexer* lexer)
 {
     lexer->token_buf_ptr = 0;
-    lex_skip_whitespace(lexer, src, src_size);
+    lex_skip_whitespace(lexer);
     while(lexer->token_buf_ptr < LEXER_TOKEN_BUF_SIZE-1)
     {
         if(lexer->cur_char == ' ')      // space
@@ -330,25 +330,25 @@ void lex_scan_token(Lexer* lexer, const char* src, size_t src_size)
             break;
         if(lexer->cur_char == ':')      // end of label
         {
-            lex_advance(lexer, src, src_size);
+            lex_advance(lexer);
             break;
         }
 
         lexer->token_buf[lexer->token_buf_ptr] = lexer->cur_char;
-        lex_advance(lexer, src, src_size);
+        lex_advance(lexer);
         lexer->token_buf_ptr++;
     }
 
     lexer->token_buf[lexer->token_buf_ptr] = '\0';
     // move the cursor forward by one if we landed on a seperator
     if(lexer->cur_char == ',' || lexer->cur_char == ':' || lexer->cur_char == ' ')
-        lex_advance(lexer, src, src_size);
+        lex_advance(lexer);
 }
 
 /*
  * lex_extract_literal()
  */
-int lex_extract_literal(Lexer* lexer, Token* token, const char* src, size_t src_size)
+int lex_extract_literal(Lexer* lexer, Token* token)
 {
     int tok_ptr;
     int literal;
@@ -365,7 +365,7 @@ int lex_extract_literal(Lexer* lexer, Token* token, const char* src, size_t src_
     }
 
     token->type = SYM_LITERAL;
-    strncpy(token->token_str, src[lexer->cur_char], tok_ptr);
+    strncpy(token->token_str, lexer->src[lexer->cur_char], tok_ptr);
     // Check if the last character is an 'H'
     if(lexer->token_buf[tok_ptr+1] == 'H' || 
        lexer->token_buf[tok_ptr+1] == 'h')
@@ -381,20 +381,19 @@ int lex_extract_literal(Lexer* lexer, Token* token, const char* src, size_t src_
 /*
  * lex_next_token()
  */
-void lex_next_token(Lexer* lexer, Token* token, const char* src, size_t src_size)
+void lex_next_token(Lexer* lexer, Token* token)
 {
     int error = 0;
     // lex the next token, this places a new string into lexer->token_buf
-    lex_scan_token(lexer, src, src_size);
+    lex_scan_token(lexer);
 
     init_token(token);
-
     // TODO : later on allow for strings, chars
 
     // Now check the token in the buffer
     if(isdigit(lexer->token_buf[0]))
     {
-        int literal = lex_extract_literal(lexer, token, src, src_size);
+        int literal = lex_extract_literal(lexer, token);
         if(token->type == SYM_NONE)
             error = 1;      // TODO : what am I actually going to do with this?
 
@@ -415,7 +414,7 @@ TOKEN_END:
 /*
  * lex_line()
  */
-void lex_line(Lexer* lexer, const char* src, size_t src_size)
+void lex_line(Lexer* lexer)
 {
 
 }
@@ -425,7 +424,7 @@ void lex_line(Lexer* lexer, const char* src, size_t src_size)
 
 
 // TODO : this will be the entry point for the lexer
-int lex_file(Lexer* lexer, const char* src, size_t src_size)
+int lex_all(Lexer* lexer)
 {
     Token* cur_token = create_token();
     if(!cur_token)
@@ -435,24 +434,24 @@ int lex_file(Lexer* lexer, const char* src, size_t src_size)
     }
     init_token(cur_token);
 
-    while(lexer->cur_pos < src_size)
+    while(lexer->cur_pos < lexer->src_len)
     {
         // eat whitespace
         if(lex_is_whitespace(lexer->cur_char))
         {
-            lex_advance(lexer, src, src_size);
+            lex_advance(lexer);
             continue;
         }
 
         // eat comments
         if(lex_is_comment(lexer->cur_char))
         {
-            lex_skip_comment(lexer, src, src_size);
+            lex_skip_comment(lexer);
             continue;
         }
 
         // This is a valid line, so start trying to get tokens together
-        lex_line(lexer, src, src_size);
+        lex_line(lexer);
     }
 
     // TODO : labels, label resolution

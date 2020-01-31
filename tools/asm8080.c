@@ -12,6 +12,7 @@
 
 int main(int argc, char *argv[])
 {
+    int status;
     size_t src_file_size;
     FILE *fp;
 
@@ -36,7 +37,9 @@ int main(int argc, char *argv[])
     }
 
     // get a lexer 
-    Lexer* lexer = create_lexer();
+    Lexer* lexer = lexer_create();
+
+    status = lex_read_file(lexer, argv[1]);
 
 
 
