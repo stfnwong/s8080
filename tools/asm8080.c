@@ -24,9 +24,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    // Start lexing the file
+
+    // Take the lexed output and assemble it
 
     // Free lexer memory 
-    destroy_lexer(lexer);
+    lexer_destroy(lexer);
 
     return 0;
 }

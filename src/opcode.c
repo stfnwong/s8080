@@ -11,16 +11,16 @@
 #include "opcode.h"
 
 /*
- * init_opcode()
+ * opcode_init()
  * Set an Opcode back to 'initial' state.
  */
-void init_opcode(Opcode* opcode)
+void opcode_init(Opcode* opcode)
 {
     opcode->instr = 0;
     memset(opcode->mnemonic, 0, OPCODE_MNEMONIC_SIZE);
 }
 
-void print_opcode(Opcode* opcode)
+void opcode_print(Opcode* opcode)
 {
     fprintf(stdout, "[%04X] : %s", opcode->instr, opcode->mnemonic);
 }
@@ -43,7 +43,7 @@ OpcodeTable* opcode_table_create(void)
         fprintf(stderr, "[%s] failed to allocate memory for Null Opcode\n", __func__);
         return NULL;
     }
-    init_opcode(table->null_op);
+    opcode_init(table->null_op);
 
     // Creare an array of opcodes to search
     table->num_opcodes = NUM_LEX_INSTR;
@@ -73,14 +73,14 @@ void opcode_table_destroy(OpcodeTable* optable)
 }
 
 /*
- * print_opcode_table()
+ * opcode_print_table()
  */
-void print_opcode_table(OpcodeTable* optable)
+void opcode_print_table(OpcodeTable* optable)
 {
     for(int i = 0; i < optable->num_opcodes; ++i)
     {
         fprintf(stdout, "[%2d] : ", i+1);
-        print_opcode(&optable->op_array[i]);
+        opcode_print(&optable->op_array[i]);
         fprintf(stdout, "\n");
     }
 }

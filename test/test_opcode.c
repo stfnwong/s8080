@@ -24,7 +24,7 @@ spec("Opcode")
         check(optable->num_opcodes == NUM_LEX_INSTR);
 
         fprintf(stdout, "[%s] opcode table:\n\n", __func__);
-        print_opcode_table(optable);
+        opcode_print_table(optable);
 
         opcode_table_destroy(optable);
     }

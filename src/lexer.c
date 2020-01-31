@@ -25,7 +25,7 @@ LineInfo* line_info_create(void)
         goto INFO_END;
 
     line_info_init(info);
-    //init_opcode(info->opcode);      // TODO : name change to opcode_init
+    //opcode_init(info->opcode);      // TODO : name change to opcode_init
 
 INFO_END:
     if(!info || !info->opcode)
@@ -51,7 +51,7 @@ void line_info_destroy(LineInfo* info)
  */
 void line_info_init(LineInfo* info)
 {
-    init_opcode(info->opcode);
+    opcode_init(info->opcode);
     info->line_num = 0;
     info->addr     = 0;
     for(int a = 0; a < 3; ++a)
@@ -183,7 +183,10 @@ LEXER_END:
     return lexer;
 }
 
-void destroy_lexer(Lexer* lexer)
+/*
+ * lexer_destroy()
+ */
+void lexer_destroy(Lexer* lexer)
 {
     line_info_destroy(lexer->text_seg);
     free(lexer->src);

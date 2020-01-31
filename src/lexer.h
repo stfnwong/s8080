@@ -93,6 +93,8 @@ typedef struct
     LineInfo*    text_seg;
     //DataSegment* data_seg;
     
+    // Opcode table
+
     // misc settings
     int verbose;
 
@@ -100,7 +102,7 @@ typedef struct
 
 
 Lexer* lexer_create(void);
-void   destroy_lexer(Lexer* lexer);
+void   lexer_destroy(Lexer* lexer);
 int    lex_read_file(Lexer* lexer, const char* filename);
 
 // Move through source

@@ -54,7 +54,7 @@ spec("Lexer")
         }
         fprintf(stdout, "\n\n");
 
-        destroy_lexer(lexer);
+        lexer_destroy(lexer);
     }
 
     // Check we can skip comments correctly
@@ -77,7 +77,7 @@ spec("Lexer")
         lex_skip_comment(lexer);
         check(lexer->cur_line == 4);
 
-        destroy_lexer(lexer);
+        lexer_destroy(lexer);
     }
 
     // Check we can perform token scans correctly
@@ -143,6 +143,6 @@ spec("Lexer")
         check(strncmp(lexer->token_buf, "C", 1) == 0);
 
         destroy_token(cur_token);
-        destroy_lexer(lexer);
+        lexer_destroy(lexer);
     }
 }
