@@ -76,10 +76,10 @@ typedef struct
     char* src;
     int   src_len;
     // position info
-    int  cur_pos;
-    int  cur_line;
-    int  cur_col;
-    char cur_char;
+    int   cur_pos;
+    int   cur_line;
+    int   cur_col;
+    char  cur_char;
 
     // Token buffers
     char token_buf[LEXER_TOKEN_BUF_SIZE];
@@ -94,6 +94,7 @@ typedef struct
     //DataSegment* data_seg;
     
     // Opcode table
+    OpcodeTable* op_table;
 
     // misc settings
     int verbose;

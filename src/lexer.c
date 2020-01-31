@@ -173,8 +173,12 @@ Lexer* lexer_create(void)
     //if(!lexer->data_seg)
     //    goto LEXER_END;
 
+    lexer->op_table = opcode_table_create();
+    if(!lexer->op_table)
+        goto LEXER_END;
+
 LEXER_END:
-    if(!lexer || !lexer->text_seg)      // TODO : add data seg
+    if(!lexer || !lexer->text_seg || !lexer->op_table)
     {
         fprintf(stderr, "[%s] failed to allocate memory for Lexer\n", __func__);
         return NULL;
@@ -189,10 +193,10 @@ LEXER_END:
 void lexer_destroy(Lexer* lexer)
 {
     line_info_destroy(lexer->text_seg);
+    opcode_table_destroy(lexer->op_table);
     free(lexer->src);
     free(lexer);
 }
-
 
 /*
  * lex_read_file()
@@ -227,7 +231,6 @@ int lex_read_file(Lexer* lexer, const char* filename)
         return NULL;
     }
 
-    // Read the actual bytes into memory
     do
     {
         nread = fread(lexer->src, 1, lexer->src_len, fp);

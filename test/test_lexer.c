@@ -40,6 +40,9 @@ spec("Lexer")
         check(lexer->text_seg->line_num == 0);
         check(lexer->text_seg->addr == 0);
 
+        // Check the opcode table
+        check(lexer->op_table != NULL);
+
         for(int a = 0; a < 3; ++a)
             check(lexer->text_seg->args[a] == '\0');
 
