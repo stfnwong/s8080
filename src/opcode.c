@@ -123,6 +123,7 @@ OpcodeTable* opcode_table_create(void)
 void opcode_table_destroy(OpcodeTable* optable)
 {
     free(optable->null_op);
+    free(optable->op_array);
     free(optable);
 }
 

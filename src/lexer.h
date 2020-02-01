@@ -114,6 +114,7 @@ typedef struct
 
     // current line information
     LineInfo*    text_seg;      // TODO : where to put the collection of LineInfos?
+    SourceInfo*  source_repr;
     //DataSegment* data_seg;
     
     // Opcode table

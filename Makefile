@@ -11,7 +11,7 @@ TOOL_DIR=tools
 
 # Flags 
 CC=gcc
-CFLAGS=-Wall -g2 -O0 -std=c99 -I$(SRC_DIR) 
+CFLAGS=-Wall -g2 -O0 -std=c11 -I$(SRC_DIR) 
 LDFLAGS=
 LIBS=
 

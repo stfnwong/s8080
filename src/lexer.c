@@ -33,7 +33,6 @@ LineInfo* line_info_create(void)
     if(!info->opcode)
         goto INFO_END;
 
-    //memset(info, 0, sizeof(*info));
     info->label_str = NULL;
     line_info_init(info);
 
@@ -98,7 +97,7 @@ void line_info_print(LineInfo* info)
     else
         fprintf(stdout, "    no immediate\n");
 
-    if(info->label_str_len > 0)
+    if(info->label_str_len > 0 && (info->label_str != NULL))
         fprintf(stdout, "    label  : %s\n", info->label_str);
 
     fprintf(stdout, "    error  : %s\n", (info->error) ? "YES" : "NO");
@@ -132,8 +131,16 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
 
     opcode_copy(dst->opcode, src->opcode);
     dst->label_str_len = src->label_str_len;
+    // we may need to allocate some memory here for label string
     if(dst->label_str_len > 0)
+    {
+        if(dst->label_str != NULL)
+            free(dst->label_str);
+        dst->label_str = malloc(sizeof(char) * dst->label_str_len);
+        if(!dst->label_str)
+            return -1;
         strncpy(dst->label_str, src->label_str, dst->label_str_len);
+    }
 
     dst->error = src->error;
 
@@ -173,8 +180,6 @@ SourceInfo* source_info_create(int num_lines)
         info->buffer[b] = line_info_create();
     }
 
-    //memset(&info->buffer[0], 0, sizeof(LineInfo) * info->max_size);
-
 SOURCE_INFO_END:
     if(!info || !info->buffer)
     {
@@ -190,10 +195,15 @@ SOURCE_INFO_END:
  */
 void source_info_destroy(SourceInfo* info)
 {
-    for(int b = 0; b < info->max_size; ++b)
-        line_info_destroy(info->buffer[b]);
-    free(info->buffer);
-    free(info);
+    if(info == NULL)
+        free(info);
+    else
+    {
+        for(int b = 0; b < info->max_size; ++b)
+            line_info_destroy(info->buffer[b]);
+        free(info->buffer);
+        free(info);
+    }
 }
 
 /*
@@ -358,6 +368,11 @@ Lexer* lexer_create(void)
     //if(!lexer->data_seg)
     //    goto LEXER_END;
 
+    // Don't allocate the source info object here, rather we
+    // create it once we've read the source in and can guess at the 
+    // number of lines we will need
+    lexer->source_repr = NULL;
+
     lexer->op_table = opcode_table_create();
     if(!lexer->op_table)
         goto LEXER_END;
@@ -378,6 +393,7 @@ LEXER_END:
 void lexer_destroy(Lexer* lexer)
 {
     line_info_destroy(lexer->text_seg);
+    source_info_destroy(lexer->source_repr);
     opcode_table_destroy(lexer->op_table);
     free(lexer->src);
     free(lexer);
@@ -427,6 +443,26 @@ int lex_read_file(Lexer* lexer, const char* filename)
     } while(nread > 0);
     fclose(fp);
 
+    // Also try to guess the number of lines we need. We just count the
+    // number of newline chars and use that since this number is 
+    // guaranteed to be big enough to hold what we need.
+    int num_lines = 0;
+
+    for(int cur_pos = 0; cur_pos < lexer->src_len; ++cur_pos)
+    {
+        if(lexer->src[cur_pos] == '\n')
+            num_lines++;
+    }
+
+    if(lexer->source_repr != NULL)
+        source_info_destroy(lexer->source_repr);
+    lexer->source_repr = source_info_create(num_lines);
+    if(!lexer->source_repr)
+    {
+        fprintf(stderr, "[%s] failed to create new SourceInfo for lexer with %d entries\n", __func__, num_lines);
+        return -1;
+    }
+    
     return 0;
 }
 
@@ -779,10 +815,9 @@ void lex_line(Lexer* lexer)
             status = -1;
             goto LEX_LINE_END;
         }
-
-        strcpy(lexer->text_seg->label_str, cur_token.token_str);
+        // Copy label string
+        strncpy(lexer->text_seg->label_str, cur_token.token_str, strlen(cur_token.token_str));
         lexer->text_seg->label_str_len = strlen(cur_token.token_str);
-
         // Get the next token ready
         lex_next_token(lexer, &cur_token);
     }
@@ -855,6 +890,7 @@ LEX_LINE_END:
     lex_text_addr_incr(lexer);
 
     // Need to copy text_seg to some buffer, then reset
+    source_info_add_line(lexer->source_repr, lexer->text_seg);
 }
 
 

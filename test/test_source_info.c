@@ -12,10 +12,6 @@
 #include "bdd-for-c.h"
 
 
-char* src_buf;
-int src_file_size;
-
-
 spec("SourceInfo")
 {
     it("Should init with N elements, all empty")
@@ -124,7 +120,6 @@ spec("SourceInfo")
         //check(out_line->line_num == test_line->line_num);
         //for(int r = 0; r < 3; ++r)
         //    check(out_line->reg[r] == test_line->reg[r]);
-
 
         source_info_destroy(test_info);
     }

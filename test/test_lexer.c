@@ -37,16 +37,24 @@ spec("Lexer")
         // Check the values in the text segment structure
         check(lexer->text_seg->line_num == 0);
         check(lexer->text_seg->addr == 0);
+        for(int a = 0; a < 3; ++a)
+            check(lexer->text_seg->reg[a] == '\0');
 
         // Check the opcode table
         check(lexer->op_table != NULL);
 
-        for(int a = 0; a < 3; ++a)
-            check(lexer->text_seg->reg[a] == '\0');
+        // Check the SourceInfo object
+        check(lexer->source_repr == NULL);
 
         // Lexer object is fine, load an assembler file from disk
         int status = lex_read_file(lexer, test_filename);
         check(status == 0);
+
+        // We should also have a new source_repr object in the Lexer
+        check(lexer->source_repr != NULL);
+        check(lexer->source_repr->size == 0);
+        check(lexer->source_repr->cur_line == 0);
+        check(lexer->source_repr->max_size == 12);      // since there are 12 lines in the source file
          
         fprintf(stdout, "[%s] source file [%s] contents:\n\n", __func__, test_filename);
         for(int c = 0; c < lexer->src_len; ++c)
@@ -199,5 +207,6 @@ spec("Lexer")
         //lex_line(lexer);
         //lex_line(lexer);
 
+        lexer_destroy(lexer);
     } 
 }
