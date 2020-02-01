@@ -33,13 +33,26 @@ typedef enum {
     LEX_NOP
 } instr_code;
 
-const static Opcode LEX_INSTRUCTIONS[] = {
+// Move to *.c file in next commit
+//extern const char* INSTR_CODE_TO_STR[7];
+static const char* INSTR_CODE_TO_STR[] = {
+    "INVALID",
+    "DCR",
+    "INR",
+    "MOV",
+    "MVI",
+    "NOP"
+};
+
+static const Opcode LEX_INSTRUCTIONS[] = {
     {LEX_DCR, "DCR"},
     {LEX_INR, "INR"},
     {LEX_MOV, "MOV"},
     {LEX_MVI, "MVI"},
     {LEX_NOP, "NOP"}
 };
+
+
 static const int NUM_LEX_INSTR = 5;      // For now this needs to be manually updated
 
 
@@ -59,7 +72,7 @@ void         opcode_print_table(OpcodeTable* optable);
 
 // Get opcodes
 void opcode_table_find_instr(OpcodeTable* optable, Opcode* op, uint8_t instr);
-//void opcode_table_find_mnemonic(OpcodeTable* optable, Opcode* op, const char* mnemonic);
+void opcode_table_find_mnemonic(OpcodeTable* optable, Opcode* op, const char* mnemonic);
 
 
 #endif /*__EMU_OPCODE_H*/

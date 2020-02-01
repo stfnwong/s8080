@@ -44,7 +44,7 @@ spec("Lexer")
         check(lexer->op_table != NULL);
 
         for(int a = 0; a < 3; ++a)
-            check(lexer->text_seg->args[a] == '\0');
+            check(lexer->text_seg->reg[a] == '\0');
 
         // Lexer object is fine, load an assembler file from disk
         int status = lex_read_file(lexer, test_filename);
@@ -91,8 +91,8 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, test_filename);
         check(status == 0);
-        // Scan a token and see what it is. We should be skipping over a lot of whitespace, so so the line number of first line should be 8
 
+        // Skip the first few lines (which are comments and so on)
         while(lexer->cur_line < 7)
             lex_advance(lexer);
 
@@ -148,4 +148,29 @@ spec("Lexer")
         destroy_token(cur_token);
         lexer_destroy(lexer);
     }
+
+    it("Should convert a line of assembly source into a LineInfo structure")
+    {
+
+        Lexer* lexer = lexer_create();
+        Token* cur_token = create_token();
+
+        int status = lex_read_file(lexer, test_filename);
+        check(status == 0);
+
+        // Skip the first few lines (which are comments and so on)
+        while(lexer->cur_line < 7)
+            lex_advance(lexer);
+
+        lexer->verbose = 1;
+        
+        lex_line(lexer);
+
+
+        lex_line(lexer);
+        lex_line(lexer);
+        lex_line(lexer);
+        lex_line(lexer);
+
+    } 
 }

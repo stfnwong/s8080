@@ -18,9 +18,16 @@
 typedef struct 
 {
     Opcode* opcode;
-    char args[3];
-    int line_num;
-    int addr;
+    // Position
+    int   line_num;
+    int   addr;
+    
+    // arguments 
+    int   has_literal;
+    int   literal;
+    char  reg[3];
+    char* label_str;
+    int   label_str_len;
 } LineInfo;
 
 LineInfo* line_info_create(void);
@@ -40,19 +47,24 @@ DataSegment* data_segment_create(int size);
 void data_segment_destroy(DataSegment* segment);
 
 
-// ======= File handling functions 
-
-
-// ======== Parsing ========= //
-
+// ======== TOKEN ======== //
 typedef enum {
     SYM_NONE, 
     SYM_LITERAL, 
     SYM_LABEL, 
     SYM_INSTR,
+    SYM_REG,
     SYM_EOF
 } TokenType;
 
+const static char* TOKEN_TYPE_TO_STR[] = {
+    "NONE",
+    "LITERAL",
+    "LABEL",
+    "INSTR",
+    "REGISTER",
+    "EOF"
+};
 
 /*
  * Token object
@@ -112,6 +124,10 @@ int  lex_is_comment(const char c);
 void lex_advance(Lexer* lexer);
 void lex_skip_whitespace(Lexer* lexer);
 void lex_skip_comment(Lexer* lexer);
+
+// Update addreses
+void lex_text_addr_incr(Lexer* lexer);
+void lex_data_addr_incr(Lexer* lexer);
 
 //  extract tokens
 void lex_scan_token(Lexer* lexer);

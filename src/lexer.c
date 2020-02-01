@@ -54,8 +54,20 @@ void line_info_init(LineInfo* info)
     opcode_init(info->opcode);
     info->line_num = 0;
     info->addr     = 0;
+    
+    // arguments 
+    info->has_literal = 0;
+    info->literal = 0;
     for(int a = 0; a < 3; ++a)
-        info->args[a] = '\0';
+        info->reg[a] = '\0';
+
+    // Ensure that there is no string memory
+    if(info->label_str != NULL)
+    {
+        free(info->label_str);
+        info->label_str = NULL;
+    }
+    info->label_str_len = 0;
 }
 
 
@@ -200,8 +212,6 @@ void lexer_destroy(Lexer* lexer)
 
 /*
  * lex_read_file()
- * Note that we expect the caller to have allocated enough memory here 
- * to hold the contents of the file.
  */
 int lex_read_file(Lexer* lexer, const char* filename)
 {
@@ -228,7 +238,7 @@ int lex_read_file(Lexer* lexer, const char* filename)
     {
         fprintf(stderr, "[%s] failed to allocate memory for lexer->src\n", __func__);
         fclose(fp);
-        return NULL;
+        return -1;
     }
 
     do
@@ -309,6 +319,22 @@ void lex_skip_comment(Lexer* lexer)
     lex_advance(lexer);
 }
 
+/*
+ * lex_text_addr_incr()
+ */
+void lex_text_addr_incr(Lexer* lexer)
+{
+    lexer->text_addr += 4;
+}
+
+/*
+ * lex_data_addr_incr()
+ */
+void lex_data_addr_incr(Lexer* lexer)
+{
+    lexer->data_addr += 4;
+}
+
 // ==== Token Handling ===== //
 
 /*
@@ -371,7 +397,7 @@ int lex_extract_literal(Lexer* lexer, Token* token)
     }
 
     token->type = SYM_LITERAL;
-    strncpy(token->token_str, lexer->src[lexer->cur_char], tok_ptr);
+    strncpy(token->token_str, &lexer->src[lexer->cur_pos], tok_ptr);
     // Check if the last character is an 'H'
     if(lexer->token_buf[tok_ptr+1] == 'H' || 
        lexer->token_buf[tok_ptr+1] == 'h')
@@ -389,7 +415,8 @@ int lex_extract_literal(Lexer* lexer, Token* token)
  */
 void lex_next_token(Lexer* lexer, Token* token)
 {
-    int error = 0;
+    //int error = 0;
+    Opcode opcode;
     // lex the next token, this places a new string into lexer->token_buf
     lex_scan_token(lexer);
 
@@ -399,19 +426,58 @@ void lex_next_token(Lexer* lexer, Token* token)
     // Now check the token in the buffer
     if(isdigit(lexer->token_buf[0]))
     {
-        int literal = lex_extract_literal(lexer, token);
-        if(token->type == SYM_NONE)
-            error = 1;      // TODO : what am I actually going to do with this?
-
+        token->type = SYM_LITERAL;
         goto TOKEN_END;
     }
 
-TOKEN_END:
+    // We would check here for directives
+
+
+    // Check for registers 
+    if((strncmp(lexer->token_buf, "A", 1) == 0) || 
+       (strncmp(lexer->token_buf, "B", 1) == 0) || 
+       (strncmp(lexer->token_buf, "C", 1) == 0) || 
+       (strncmp(lexer->token_buf, "D", 1) == 0) || 
+       (strncmp(lexer->token_buf, "E", 1) == 0))
+    {
+        token->type = SYM_REG;
+        goto TOKEN_END;
+    }
+
+    // Check if the token is an instruction
+    opcode_init(&opcode);
+    opcode_table_find_mnemonic(
+            lexer->op_table, 
+            &opcode, 
+            lexer->token_buf
+    );
+
     if(lexer->verbose)
     {
-        fprintf(stdout, "[%s]  line %d:%d, got token [%s] with value [%s]\n",
+        fprintf(stdout, "[%s] got opcode %d [%s]\n", __func__, opcode.instr, INSTR_CODE_TO_STR[opcode.instr]);
+    }
+
+    if(opcode.instr != LEX_INVALID)
+    {
+        token->type = SYM_INSTR;
+        goto TOKEN_END;
+    }
+
+    // Since we cant match anything, we treat as a label
+    // NOTE: I have considered that this is not the fastest way to do
+    // this, since labels come first and we first have to fail through
+    // all the other possibilities before declaring a label. 
+
+    // Must be a label
+    token->type = SYM_LABEL;
+
+TOKEN_END:
+    strcpy(token->token_str, lexer->token_buf);
+    if(lexer->verbose)
+    {
+        fprintf(stdout, "[%s]  (line %d:%d) got token [%s] of type %s with value [%s]\n",
                __func__, lexer->cur_line, lexer->cur_col, 
-               lexer->token_buf, token->token_str
+               lexer->token_buf, TOKEN_TYPE_TO_STR[token->type],  token->token_str
         );
     }
 }
@@ -422,7 +488,75 @@ TOKEN_END:
  */
 void lex_line(Lexer* lexer)
 {
+    Opcode cur_opcode;
+    Token cur_token;
 
+    lex_next_token(lexer, &cur_token);
+
+    if(cur_token.type == SYM_INSTR)
+    {
+        opcode_init(&cur_opcode);
+        opcode_table_find_mnemonic(lexer->op_table, &cur_opcode, cur_token.token_str);
+
+        switch(cur_opcode.instr)
+        {
+            case LEX_DCR:
+                fprintf(stdout, "[%s] got DCR\n", __func__);
+                break;
+
+            case LEX_MOV:
+                // TODO : create two tokens on stack and pass to function that checks types, etc
+                // For MOV, we need two registers
+                lex_next_token(lexer, &cur_token);
+
+                if(cur_token.type != SYM_REG)
+                {
+                    fprintf(stdout, "[%s] ERROR: expected argument 1 of MOV to be register, got %s\n",
+                            __func__, TOKEN_TYPE_TO_STR[cur_token.type]);
+                    return;
+                }
+
+                lex_next_token(lexer, &cur_token);
+                if(cur_token.type != SYM_REG)
+                {
+                    fprintf(stdout, "[%s] ERROR: expected argument 2 of MOV to be register, got %s\n",
+                            __func__, TOKEN_TYPE_TO_STR[cur_token.type]);
+                    return;
+                }
+                break;
+
+            case LEX_MVI:
+                // Expecting two args 
+                lex_next_token(lexer, &cur_token);
+
+                // For MVI, we need a register and an immediate 
+
+                lex_next_token(lexer, &cur_token);
+                break;
+
+            default:
+                if(lexer->verbose)
+                {
+                    fprintf(stderr, "[%s] invalid opcode with value %02X\n", __func__, cur_opcode.instr);
+                }
+                break;
+        }
+    }
+
+    if(cur_token.type == SYM_LITERAL)
+    {
+        lexer->text_seg->literal = lex_extract_literal(lexer, &cur_token);
+        lexer->text_seg->has_literal = 1;
+    }
+
+    if(cur_token.type == SYM_LABEL)
+    {
+        // TODO : implement table of labels and addresses
+        fprintf(stdout, "[%s] got label %s\n", __func__, cur_token.token_str);
+    }
+
+
+    lex_text_addr_incr(lexer);
 }
 
 

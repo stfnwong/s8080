@@ -103,3 +103,23 @@ void opcode_table_find_instr(OpcodeTable* optable, Opcode* op, uint8_t instr)
     op->instr = optable->null_op->instr;
     strncpy(op->mnemonic, optable->null_op->mnemonic, OPCODE_MNEMONIC_SIZE);
 }
+
+/*
+ * opcode_table_find_mnemonic()
+ */
+void opcode_table_find_mnemonic(OpcodeTable* optable, Opcode* op, const char* mnemonic)
+{
+    // Just linearly compare strings. Maybe sort them or something later
+    for(int i = 0; i < optable->num_opcodes; ++i)
+    {
+        if(strcmp(mnemonic, optable->op_array[i].mnemonic) == 0)
+        {
+            op->instr = optable->op_array[i].instr;
+            strncpy(op->mnemonic, optable->op_array[i].mnemonic, OPCODE_MNEMONIC_SIZE);
+            return;
+        }
+    }
+
+    op->instr = optable->null_op->instr;
+    strncpy(op->mnemonic, optable->null_op->mnemonic, OPCODE_MNEMONIC_SIZE);
+}
