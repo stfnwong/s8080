@@ -41,7 +41,7 @@ int       line_info_copy(LineInfo* dst, LineInfo* src);
 // ==== Buffer for LineInfo Structures
 typedef struct
 {
-    LineInfo* buffer;
+    LineInfo** buffer;
     int size;
     int max_size;
     int cur_line;
@@ -50,7 +50,7 @@ typedef struct
 SourceInfo* source_info_create(int num_lines);
 void        source_info_destroy(SourceInfo* info);
 int         source_info_add_line(SourceInfo* info, LineInfo* line);
-int         source_info_add_line_idx(SourceInfo* info, LineInfo* line, int idx);
+int         source_info_edit_line(SourceInfo* info, LineInfo* line, int idx);
 LineInfo*   source_info_get_idx(SourceInfo* info, int idx);
 
 

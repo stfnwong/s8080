@@ -78,6 +78,8 @@ spec("SourceInfo")
 
         out_line = source_info_get_idx(test_info, 0);
 
+        line_info_print(out_line);
+
         fprintf(stdout, "[%s] &out_line = %p, &test_info = %p\n", 
                __func__, &out_line, &test_info
         );
@@ -102,24 +104,26 @@ spec("SourceInfo")
         check(test_info->cur_line == 2);
         out_line = source_info_get_idx(test_info, 1);
 
-        check(out_line->addr == test_line->addr);
-        check(out_line->line_num == test_line->line_num);
-        for(int r = 0; r < 3; ++r)
-            check(out_line->reg[r] == test_line->reg[r]);
-
-        // We can manually insert by idx as well;
-        test_line->addr += 4;
-        status = source_info_add_line_idx(test_info, test_line, 6);
-        check(status == 0);
-
-        check(test_info->size == 3);
-        check(test_info->cur_line == 2);
-        out_line = source_info_get_idx(test_info, 6);
 
         check(out_line->addr == test_line->addr);
         check(out_line->line_num == test_line->line_num);
         for(int r = 0; r < 3; ++r)
             check(out_line->reg[r] == test_line->reg[r]);
+
+        //// We can manually insert by idx as well;
+        //test_line->addr += 4;
+        //status = source_info_edit_line(test_info, test_line, 6);
+
+        //check(status == 0);
+
+        //check(test_info->size == 3);
+        //check(test_info->cur_line == 2);
+        //out_line = source_info_get_idx(test_info, 6);
+
+        //check(out_line->addr == test_line->addr);
+        //check(out_line->line_num == test_line->line_num);
+        //for(int r = 0; r < 3; ++r)
+        //    check(out_line->reg[r] == test_line->reg[r]);
 
 
         source_info_destroy(test_info);

@@ -45,6 +45,14 @@ Opcode* opcode_create(void)
 }
 
 /*
+ * opcode_destroy()
+ */
+void opcode_destroy(Opcode* opcode)
+{
+    free(opcode);
+}
+
+/*
  * opcode_init()
  * Set an Opcode back to 'initial' state.
  */

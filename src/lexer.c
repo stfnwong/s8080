@@ -33,6 +33,7 @@ LineInfo* line_info_create(void)
     if(!info->opcode)
         goto INFO_END;
 
+    //memset(info, 0, sizeof(*info));
     info->label_str = NULL;
     line_info_init(info);
 
@@ -78,7 +79,6 @@ void line_info_init(LineInfo* info)
         info->label_str = NULL;
     }
     info->label_str_len = 0;
-
     info->error = 0;
 }
 
@@ -115,10 +115,10 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
     if(src == NULL || dst == NULL)
         return -1;
 
-    dst->line_num = src->line_num;
-    dst->addr = src->addr;
+    dst->line_num      = src->line_num;
+    dst->addr          = src->addr;
     dst->has_immediate = src->has_immediate;
-    dst->immediate = src->immediate;
+    dst->immediate     = src->immediate;
     for(int r = 0; r < 3; ++r)
         dst->reg[r] = src->reg[r];
 
@@ -154,10 +154,26 @@ SourceInfo* source_info_create(int num_lines)
         goto SOURCE_INFO_END;
 
     info->max_size = num_lines;
+    info->size     = 0;
     info->cur_line = 0;
-    info->buffer = malloc(sizeof(LineInfo) * info->max_size);
+    info->buffer   = malloc(sizeof(*info->buffer) * info->max_size);
     if(!info->buffer)
         goto SOURCE_INFO_END;
+
+    for(int b = 0; b < info->max_size; ++b)
+    {
+        // Seem to be leaking these when we clean up SourceInfo
+        info->buffer[b] = malloc(sizeof(*info->buffer[b]));
+        if(!info->buffer[b])
+        {
+            free(info->buffer);
+            free(info);
+            return NULL;
+        }
+        info->buffer[b] = line_info_create();
+    }
+
+    //memset(&info->buffer[0], 0, sizeof(LineInfo) * info->max_size);
 
 SOURCE_INFO_END:
     if(!info || !info->buffer)
@@ -174,7 +190,8 @@ SOURCE_INFO_END:
  */
 void source_info_destroy(SourceInfo* info)
 {
-    // TODO : actually need to free each lineinfo in turn...
+    for(int b = 0; b < info->max_size; ++b)
+        line_info_destroy(info->buffer[b]);
     free(info->buffer);
     free(info);
 }
@@ -186,7 +203,7 @@ int source_info_add_line(SourceInfo* info, LineInfo* line)
 {
     int status; 
       
-    status = line_info_copy(&info->buffer[info->size], line);
+    status = line_info_copy(info->buffer[info->size], line);
     if(status >= 0)
     {
         info->size++;
@@ -197,15 +214,16 @@ int source_info_add_line(SourceInfo* info, LineInfo* line)
 }
 
 /*
- * source_info_add_line_idx()
+ * source_info_edit_line()
  */
-int source_info_add_line_idx(SourceInfo* info, LineInfo* line, int idx)
+int source_info_edit_line(SourceInfo* info, LineInfo* line, int idx)
 {
     int status = 0;
 
-    if(idx < 0 || idx > info->max_size)
+    if(idx < 0 || idx > info->size)
         return -1;
-    status = line_info_copy(&info->buffer[idx], line);
+
+    status = line_info_copy(info->buffer[idx], line);
 
     if(status >= 0)
     {
@@ -223,7 +241,7 @@ LineInfo* source_info_get_idx(SourceInfo* info, int idx)
     if(idx < 0 || idx > info->max_size)
         return NULL;
 
-    return (LineInfo*) &info->buffer[idx];
+    return (LineInfo*) info->buffer[idx];
 }
 
 // ================ DATA SEGMENT ================ //
