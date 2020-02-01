@@ -11,6 +11,15 @@
 #include <string.h>
 #include "lexer.h"
 
+const char* TOKEN_TYPE_TO_STR[] = {
+    "NONE",
+    "LITERAL",
+    "LABEL",
+    "INSTR",
+    "REGISTER",
+    "EOF"
+};
+
 // ================ LINE INFO ================ //
 LineInfo* line_info_create(void)
 {
@@ -43,6 +52,7 @@ INFO_END:
 void line_info_destroy(LineInfo* info)
 {
     free(info->opcode);
+    free(info->label_str);
     free(info);
 }
 
@@ -56,8 +66,8 @@ void line_info_init(LineInfo* info)
     info->addr     = 0;
     
     // arguments 
-    info->has_literal = 0;
-    info->literal = 0;
+    info->has_immediate = 0;
+    info->immediate = 0;
     for(int a = 0; a < 3; ++a)
         info->reg[a] = '\0';
 
@@ -68,8 +78,34 @@ void line_info_init(LineInfo* info)
         info->label_str = NULL;
     }
     info->label_str_len = 0;
+
+    info->error = 0;
 }
 
+/*
+ * line_info_print()
+ */
+// Would actually be better to format into a string, but this is C and 
+// that's a major pain 
+void line_info_print(LineInfo* info)
+{
+    //fprintf(stdout, "LineInfo (line %d)\n", info->line_num);
+    fprintf(stdout, "LineInfo :\n");
+
+    fprintf(stdout, "    line %d : addr 0x%04X\n", info->line_num, info->addr);
+    if(info->has_immediate)
+        fprintf(stdout, "    imm    : %d (0x%X)\n", info->immediate, info->immediate);
+    else
+        fprintf(stdout, "    no immediate\n");
+
+    if(info->label_str_len > 0)
+        fprintf(stdout, "    label  : %s\n", info->label_str);
+
+    fprintf(stdout, "    error  : %s\n", (info->error) ? "YES" : "NO");
+    fprintf(stdout, "    Opcode : ");
+    opcode_print(info->opcode);
+    fprintf(stdout, "\n");
+}
 
 /*
  * data_segment_create()
@@ -132,9 +168,9 @@ Token* create_token(void)
 }
 
 /*
- * init_token()
+ * token_init()
  */
-void init_token(Token* token)
+void token_init(Token* token)
 {
     token->type = SYM_NONE;
     token->token_str[0] = '\0';
@@ -386,26 +422,34 @@ int lex_extract_literal(Lexer* lexer, Token* token)
     int literal;
     char* end;
 
-    tok_ptr = lexer->cur_char;
+    //tok_ptr = lexer->cur_char;
+    tok_ptr = 0;
     while(isdigit(lexer->token_buf[tok_ptr]))
         tok_ptr++;
 
-    if(tok_ptr == lexer->cur_char)      // we didn't move
+    if(tok_ptr == 0)        // we didn't move
     {
         token->type = SYM_NONE;
         return 0;
     }
 
     token->type = SYM_LITERAL;
-    strncpy(token->token_str, &lexer->src[lexer->cur_pos], tok_ptr);
+    strncpy(token->token_str, lexer->token_buf, tok_ptr);
+
     // Check if the last character is an 'H'
-    if(lexer->token_buf[tok_ptr+1] == 'H' || 
-       lexer->token_buf[tok_ptr+1] == 'h')
+    if(lexer->token_buf[tok_ptr] == 'H' || 
+       lexer->token_buf[tok_ptr] == 'h')
     {
         literal = (int) strtol(lexer->token_buf, &end, 16);
     }
     else
         literal = (int) strtol(lexer->token_buf, &end, 10);
+
+    if(lexer->verbose)
+    {
+        fprintf(stdout, "[%s] got literal %d (0x%02X)\n", 
+                __func__, literal, literal);
+    }
 
     return literal;
 }
@@ -420,7 +464,7 @@ void lex_next_token(Lexer* lexer, Token* token)
     // lex the next token, this places a new string into lexer->token_buf
     lex_scan_token(lexer);
 
-    init_token(token);
+    token_init(token);
     // TODO : later on allow for strings, chars
 
     // Now check the token in the buffer
@@ -482,16 +526,107 @@ TOKEN_END:
     }
 }
 
+/*
+ * lex_parse_two_reg()
+ */
+int lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b)
+{
+    if(tok_a->type != SYM_REG)
+    {
+        if(lexer->verbose)
+        {
+            fprintf(stdout, "[%s] line %d:%d expected register, got %s\n",
+                   __func__, lexer->cur_line, 
+                   lexer->cur_col, TOKEN_TYPE_TO_STR[tok_a->type]
+            );
+        }
+        return -1;
+    }
+
+    if(tok_b->type != SYM_REG)
+    {
+        if(lexer->verbose)
+        {
+            fprintf(stdout, "[%s] line %d:%d expected register, got %s\n",
+                   __func__, lexer->cur_line, 
+                   lexer->cur_col, TOKEN_TYPE_TO_STR[tok_b->type]
+            );
+        }
+        return -1;
+    }
+
+    lexer->text_seg->reg[0] = tok_a->token_str[0];
+    lexer->text_seg->reg[1] = tok_b->token_str[0];
+
+    return 0;
+}
+
+/*
+ * lex_parse_reg_imm()
+ */
+int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
+{
+    if(tok_a->type != SYM_REG)
+    {
+        if(lexer->verbose)
+        {
+            fprintf(stdout, "[%s] line %d:%d expected register, got %s\n",
+                   __func__, lexer->cur_line, 
+                   lexer->cur_col, TOKEN_TYPE_TO_STR[tok_a->type]
+            );
+        }
+        return -1;
+    }
+
+    if(tok_b->type != SYM_LITERAL)
+    {
+        fprintf(stdout, "[%s] line %d:%d, ERROR: expected immediate, got %s\n",
+               __func__, lexer->cur_line, lexer->cur_col, 
+               TOKEN_TYPE_TO_STR[tok_b->type]
+        );
+        return -1;
+    }
+
+    lexer->text_seg->reg[0]        = tok_a->token_str[0];
+    fprintf(stdout, "[%s] getting literal.....\n", __func__);
+    lexer->text_seg->immediate     = lex_extract_literal(lexer, tok_b);
+    lexer->text_seg->has_immediate = 1;
+
+    fprintf(stdout, "[%s] literal was %d.....\n", __func__, lexer->text_seg->immediate);
+
+    return 0;
+}
 
 /*
  * lex_line()
  */
 void lex_line(Lexer* lexer)
 {
+    int status = 0;
     Opcode cur_opcode;
     Token cur_token;
+    Token tok_a, tok_b;
 
+    token_init(&tok_a);
+    token_init(&tok_b);
     lex_next_token(lexer, &cur_token);
+
+    if(cur_token.type == SYM_LABEL)
+    {
+        lexer->text_seg->label_str = malloc(sizeof(char) * strlen(cur_token.token_str));
+        if(!lexer->text_seg)
+        {
+            fprintf(stderr, "[%s] failed to allocate memory for lexer->text_seg->label_str (%ld chars)\n", __func__, strlen(cur_token.token_str));
+            status = -1;
+            goto LEX_LINE_END;
+        }
+
+        strcpy(lexer->text_seg->label_str, cur_token.token_str);
+        lexer->text_seg->label_str_len = strlen(cur_token.token_str);
+
+        // Get the next token ready
+        lex_next_token(lexer, &cur_token);
+    }
 
     if(cur_token.type == SYM_INSTR)
     {
@@ -505,33 +640,20 @@ void lex_line(Lexer* lexer)
                 break;
 
             case LEX_MOV:
-                // TODO : create two tokens on stack and pass to function that checks types, etc
+                fprintf(stdout, "[%s] got MOV\n", __func__);
                 // For MOV, we need two registers
-                lex_next_token(lexer, &cur_token);
+                lex_next_token(lexer, &tok_a);
+                lex_next_token(lexer, &tok_b);
 
-                if(cur_token.type != SYM_REG)
-                {
-                    fprintf(stdout, "[%s] ERROR: expected argument 1 of MOV to be register, got %s\n",
-                            __func__, TOKEN_TYPE_TO_STR[cur_token.type]);
-                    return;
-                }
-
-                lex_next_token(lexer, &cur_token);
-                if(cur_token.type != SYM_REG)
-                {
-                    fprintf(stdout, "[%s] ERROR: expected argument 2 of MOV to be register, got %s\n",
-                            __func__, TOKEN_TYPE_TO_STR[cur_token.type]);
-                    return;
-                }
+                status = lex_parse_two_reg(lexer, &tok_a, &tok_b);
                 break;
 
             case LEX_MVI:
-                // Expecting two args 
-                lex_next_token(lexer, &cur_token);
+                fprintf(stdout, "[%s] got MVI\n", __func__);
+                lex_next_token(lexer, &tok_a);
+                lex_next_token(lexer, &tok_b);
 
-                // For MVI, we need a register and an immediate 
-
-                lex_next_token(lexer, &cur_token);
+                status = lex_parse_reg_imm(lexer, &tok_a, &tok_b);
                 break;
 
             default:
@@ -539,23 +661,32 @@ void lex_line(Lexer* lexer)
                 {
                     fprintf(stderr, "[%s] invalid opcode with value %02X\n", __func__, cur_opcode.instr);
                 }
-                break;
+                goto LEX_LINE_END;
         }
+
+        if(status < 0)
+        {
+            fprintf(stderr, "[%s] failed to lex instruction %s\n", __func__, cur_token.token_str);
+            goto LEX_LINE_END;
+        }
+
+        lexer->text_seg->opcode->instr = cur_opcode.instr;
+        strcpy(lexer->text_seg->opcode->mnemonic, cur_opcode.mnemonic);
     }
 
-    if(cur_token.type == SYM_LITERAL)
+    //if(cur_token.type == SYM_LITERAL)
+    //{
+    //    lexer->text_seg->literal = lex_extract_literal(lexer, &cur_token);
+    //    lexer->text_seg->has_immediate = 1;
+    //}
+
+
+LEX_LINE_END:
+    if(status < 0)
     {
-        lexer->text_seg->literal = lex_extract_literal(lexer, &cur_token);
-        lexer->text_seg->has_literal = 1;
+        fprintf(stdout, "[%s] something went wrong...\n", __func__);
+        lexer->text_seg->error = 1;
     }
-
-    if(cur_token.type == SYM_LABEL)
-    {
-        // TODO : implement table of labels and addresses
-        fprintf(stdout, "[%s] got label %s\n", __func__, cur_token.token_str);
-    }
-
-
     lex_text_addr_incr(lexer);
 }
 
@@ -572,7 +703,7 @@ int lex_all(Lexer* lexer)
         fprintf(stdout, "[%s] failed to allocate memory for cur_token\n", __func__);
         return -1;
     }
-    init_token(cur_token);
+    token_init(cur_token);
 
     while(lexer->cur_pos < lexer->src_len)
     {

@@ -151,9 +151,7 @@ spec("Lexer")
 
     it("Should convert a line of assembly source into a LineInfo structure")
     {
-
         Lexer* lexer = lexer_create();
-        Token* cur_token = create_token();
 
         int status = lex_read_file(lexer, test_filename);
         check(status == 0);
@@ -165,12 +163,31 @@ spec("Lexer")
         lexer->verbose = 1;
         
         lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+        // Lexing the first line (MOVI: MVI, A, 077H
+        // We expect to have the label MOVI
+        check(lexer->text_seg->label_str != NULL);
+        check(lexer->text_seg->label_str_len == 4);
+        check(strncmp(lexer->text_seg->label_str, "MOVI", 4) == 0);
+        // followed by the instruction MVI
+        check(lexer->text_seg->opcode->instr == LEX_MVI);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "MVI", 3) == 0);
+        // the dest register is A
+        check(lexer->text_seg->reg[0] == 'A');
+        check(lexer->text_seg->reg[1] == '\0');
+        check(lexer->text_seg->reg[2] == '\0');
+        // The source is an immediate
+        check(lexer->text_seg->has_immediate == 1);
+        check(lexer->text_seg->immediate == 0x77);
+
+        // Lex the next line (INR A)
+        //lex_line(lexer);
 
 
-        lex_line(lexer);
-        lex_line(lexer);
-        lex_line(lexer);
-        lex_line(lexer);
+        //lex_line(lexer);
+        //lex_line(lexer);
+        //lex_line(lexer);
 
     } 
 }

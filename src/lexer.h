@@ -23,16 +23,19 @@ typedef struct
     int   addr;
     
     // arguments 
-    int   has_literal;
-    int   literal;
+    int   has_immediate;
+    int   immediate;
     char  reg[3];
     char* label_str;
     int   label_str_len;
+    // error info
+    int   error;
 } LineInfo;
 
 LineInfo* line_info_create(void);
 void      line_info_destroy(LineInfo* info);
 void      line_info_init(LineInfo* info);
+void      line_info_print(LineInfo* info);
 
 
 // Data segment
@@ -57,14 +60,7 @@ typedef enum {
     SYM_EOF
 } TokenType;
 
-const static char* TOKEN_TYPE_TO_STR[] = {
-    "NONE",
-    "LITERAL",
-    "LABEL",
-    "INSTR",
-    "REGISTER",
-    "EOF"
-};
+extern const char* TOKEN_TYPE_TO_STR[6];
 
 /*
  * Token object
@@ -76,7 +72,7 @@ typedef struct
 } Token;
 
 Token* create_token(void);
-void   init_token(Token* token);
+void   token_init(Token* token);
 void   destroy_token(Token* token);
 
 /*
@@ -102,7 +98,7 @@ typedef struct
     int data_addr;
 
     // current line information
-    LineInfo*    text_seg;
+    LineInfo*    text_seg;      // TODO : where to put the collection of LineInfos?
     //DataSegment* data_seg;
     
     // Opcode table
@@ -119,24 +115,31 @@ void   lexer_destroy(Lexer* lexer);
 int    lex_read_file(Lexer* lexer, const char* filename);
 
 // Move through source
-int  lex_is_whitespace(const char c);
-int  lex_is_comment(const char c);
-void lex_advance(Lexer* lexer);
-void lex_skip_whitespace(Lexer* lexer);
-void lex_skip_comment(Lexer* lexer);
+int    lex_is_whitespace(const char c);
+int    lex_is_comment(const char c);
+void   lex_advance(Lexer* lexer);
+void   lex_skip_whitespace(Lexer* lexer);
+void   lex_skip_comment(Lexer* lexer);
 
 // Update addreses
-void lex_text_addr_incr(Lexer* lexer);
-void lex_data_addr_incr(Lexer* lexer);
+void   lex_text_addr_incr(Lexer* lexer);
+void   lex_data_addr_incr(Lexer* lexer);
 
 //  extract tokens
-void lex_scan_token(Lexer* lexer);
-void lex_next_token(Lexer* lexer, Token* token);    // TODO: cur token?
+void   lex_scan_token(Lexer* lexer);
+void   lex_next_token(Lexer* lexer, Token* token);    // TODO: cur token?
+
+// Parse instructions 
+int    lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b);
+int    lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b);
+
+
+
 
 // Lex a line in the source 
-void lex_line(Lexer* lexer);
+void   lex_line(Lexer* lexer);
 
-int lex_all(Lexer* lexer);
+int    lex_all(Lexer* lexer);
 
 
 #endif /*__EMU_LEXER_H*/

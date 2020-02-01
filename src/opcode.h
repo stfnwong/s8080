@@ -34,24 +34,8 @@ typedef enum {
 } instr_code;
 
 // Move to *.c file in next commit
-//extern const char* INSTR_CODE_TO_STR[7];
-static const char* INSTR_CODE_TO_STR[] = {
-    "INVALID",
-    "DCR",
-    "INR",
-    "MOV",
-    "MVI",
-    "NOP"
-};
-
-static const Opcode LEX_INSTRUCTIONS[] = {
-    {LEX_DCR, "DCR"},
-    {LEX_INR, "INR"},
-    {LEX_MOV, "MOV"},
-    {LEX_MVI, "MVI"},
-    {LEX_NOP, "NOP"}
-};
-
+extern const char* INSTR_CODE_TO_STR[7];
+extern const Opcode LEX_INSRUCTIONS[5];
 
 static const int NUM_LEX_INSTR = 5;      // For now this needs to be manually updated
 

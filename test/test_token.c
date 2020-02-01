@@ -5,11 +5,11 @@
  * Stefan Wong 2020
  */
 
-
 #include <stdio.h>
-#include "lexer.h"
 // testing framework
 #include "bdd-for-c.h"
+
+#include "lexer.h"
 
 // NOTE: can we have two specs in the same file?
 spec("Token")

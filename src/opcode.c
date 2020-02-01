@@ -10,6 +10,23 @@
 #include <string.h>
 #include "opcode.h"
 
+const char* INSTR_CODE_TO_STR[] = {
+    "INVALID",
+    "DCR",
+    "INR",
+    "MOV",
+    "MVI",
+    "NOP"
+};
+
+const Opcode LEX_INSTRUCTIONS[] = {
+    {LEX_DCR, "DCR"},
+    {LEX_INR, "INR"},
+    {LEX_MOV, "MOV"},
+    {LEX_MVI, "MVI"},
+    {LEX_NOP, "NOP"}
+};
+
 /*
  * opcode_init()
  * Set an Opcode back to 'initial' state.
@@ -22,7 +39,7 @@ void opcode_init(Opcode* opcode)
 
 void opcode_print(Opcode* opcode)
 {
-    fprintf(stdout, "[%04X] : %s", opcode->instr, opcode->mnemonic);
+    fprintf(stdout, "%s (%04X)", opcode->mnemonic, opcode->instr);
 }
 
 // ======== OPCODE TABLE ======== //
