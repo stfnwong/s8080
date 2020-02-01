@@ -36,6 +36,22 @@ LineInfo* line_info_create(void);
 void      line_info_destroy(LineInfo* info);
 void      line_info_init(LineInfo* info);
 void      line_info_print(LineInfo* info);
+int       line_info_copy(LineInfo* dst, LineInfo* src);
+
+// ==== Buffer for LineInfo Structures
+typedef struct
+{
+    LineInfo* buffer;
+    int size;
+    int max_size;
+    int cur_line;
+} SourceInfo;
+
+SourceInfo* source_info_create(int num_lines);
+void        source_info_destroy(SourceInfo* info);
+int         source_info_add_line(SourceInfo* info, LineInfo* line);
+int         source_info_add_line_idx(SourceInfo* info, LineInfo* line, int idx);
+LineInfo*   source_info_get_idx(SourceInfo* info, int idx);
 
 
 // Data segment
@@ -48,7 +64,6 @@ typedef struct
 
 DataSegment* data_segment_create(int size);
 void data_segment_destroy(DataSegment* segment);
-
 
 // ======== TOKEN ======== //
 typedef enum {
@@ -109,7 +124,6 @@ typedef struct
 
 } Lexer;
 
-
 Lexer* lexer_create(void);
 void   lexer_destroy(Lexer* lexer);
 int    lex_read_file(Lexer* lexer, const char* filename);
@@ -130,11 +144,9 @@ void   lex_scan_token(Lexer* lexer);
 void   lex_next_token(Lexer* lexer, Token* token);    // TODO: cur token?
 
 // Parse instructions 
+int    lex_parse_one_reg(Lexer* lexer, Token* token);
 int    lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b);
-
-
-
 
 // Lex a line in the source 
 void   lex_line(Lexer* lexer);

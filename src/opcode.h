@@ -19,8 +19,10 @@ typedef struct
     char    mnemonic[OPCODE_MNEMONIC_SIZE];
 } Opcode;
 
-void opcode_init(Opcode* opcode);
-void opcode_print(Opcode* opcode);
+Opcode* opcode_create(void);
+void    opcode_init(Opcode* opcode);
+void    opcode_print(Opcode* opcode);
+void    opcode_copy(Opcode* dst, Opcode* src);
 
 
 // Instruction codes used by Lexer

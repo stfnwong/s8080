@@ -11,10 +11,8 @@
 // testing framework
 #include "bdd-for-c.h"
 
-
 char* src_buf;
 int src_file_size;
-
 
 spec("Lexer")
 {
@@ -182,7 +180,19 @@ spec("Lexer")
         check(lexer->text_seg->immediate == 0x77);
 
         // Lex the next line (INR A)
-        //lex_line(lexer);
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+        check(lexer->text_seg->label_str == NULL);
+        // followed by the instruction INR
+        check(lexer->text_seg->opcode->instr == LEX_INR);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "INR", 3) == 0);
+        check(lexer->text_seg->reg[0] == 'A');
+        check(lexer->text_seg->reg[1] == '\0');
+        check(lexer->text_seg->reg[2] == '\0');
+
+        check(lexer->text_seg->has_immediate == 0);
+        check(lexer->text_seg->immediate == 0);
 
 
         //lex_line(lexer);

@@ -33,8 +33,8 @@ LineInfo* line_info_create(void)
     if(!info->opcode)
         goto INFO_END;
 
+    info->label_str = NULL;
     line_info_init(info);
-    //opcode_init(info->opcode);      // TODO : name change to opcode_init
 
 INFO_END:
     if(!info || !info->opcode)
@@ -108,6 +108,126 @@ void line_info_print(LineInfo* info)
 }
 
 /*
+ * line_info_copy()
+ */
+int line_info_copy(LineInfo* dst, LineInfo* src)
+{
+    if(src == NULL || dst == NULL)
+        return -1;
+
+    dst->line_num = src->line_num;
+    dst->addr = src->addr;
+    dst->has_immediate = src->has_immediate;
+    dst->immediate = src->immediate;
+    for(int r = 0; r < 3; ++r)
+        dst->reg[r] = src->reg[r];
+
+    // copy pointers
+    if(dst->opcode == NULL)
+    {
+        dst->opcode = opcode_create();
+        if(!dst->opcode)
+            return -1;
+    }
+
+    opcode_copy(dst->opcode, src->opcode);
+    dst->label_str_len = src->label_str_len;
+    if(dst->label_str_len > 0)
+        strncpy(dst->label_str, src->label_str, dst->label_str_len);
+
+    dst->error = src->error;
+
+    return 0;
+}
+
+
+// ================ SOURCE INFO ================ //
+/*
+ * source_info_create()
+ */
+SourceInfo* source_info_create(int num_lines)
+{
+    SourceInfo* info;
+
+    info = malloc(sizeof(*info));
+    if(!info)
+        goto SOURCE_INFO_END;
+
+    info->max_size = num_lines;
+    info->cur_line = 0;
+    info->buffer = malloc(sizeof(LineInfo) * info->max_size);
+    if(!info->buffer)
+        goto SOURCE_INFO_END;
+
+SOURCE_INFO_END:
+    if(!info || !info->buffer)
+    {
+        fprintf(stderr, "[%s] failed to allocate memory for SourceInfo\n", __func__);
+        return NULL;
+    }
+
+    return info;
+}
+
+/*
+ * source_info_destroy()
+ */
+void source_info_destroy(SourceInfo* info)
+{
+    // TODO : actually need to free each lineinfo in turn...
+    free(info->buffer);
+    free(info);
+}
+
+/*
+ * source_info_add_line()
+ */
+int source_info_add_line(SourceInfo* info, LineInfo* line)
+{
+    int status; 
+      
+    status = line_info_copy(&info->buffer[info->size], line);
+    if(status >= 0)
+    {
+        info->size++;
+        info->cur_line++;
+    }
+
+    return status;
+}
+
+/*
+ * source_info_add_line_idx()
+ */
+int source_info_add_line_idx(SourceInfo* info, LineInfo* line, int idx)
+{
+    int status = 0;
+
+    if(idx < 0 || idx > info->max_size)
+        return -1;
+    status = line_info_copy(&info->buffer[idx], line);
+
+    if(status >= 0)
+    {
+        info->size++;
+    }
+
+    return status;
+}
+
+/*
+ * source_info_get_idx()
+ */
+LineInfo* source_info_get_idx(SourceInfo* info, int idx)
+{
+    if(idx < 0 || idx > info->max_size)
+        return NULL;
+
+    return (LineInfo*) &info->buffer[idx];
+}
+
+// ================ DATA SEGMENT ================ //
+/*
  * data_segment_create()
  */
 DataSegment* data_segment_create(int size)
@@ -143,7 +263,6 @@ void data_segment_destroy(DataSegment* segment)
     free(segment->data);
     free(segment);
 }
-
 
 
 // ================ TOKEN ================ //
@@ -527,6 +646,27 @@ TOKEN_END:
 }
 
 /*
+ * lex_parse_one_reg()
+ */
+int lex_parse_one_reg(Lexer* lexer, Token* token)
+{
+    if(token->type != SYM_REG)
+    {
+        if(lexer->verbose)
+        {
+            fprintf(stdout, "[%s] line %d:%d expected register, got %s\n",
+                   __func__, lexer->cur_line, 
+                   lexer->cur_col, TOKEN_TYPE_TO_STR[token->type]
+            );
+        }
+        return -1;
+    }
+    lexer->text_seg->reg[0] = token->token_str[0];
+
+    return 0;
+}
+
+/*
  * lex_parse_two_reg()
  */
 int lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b)
@@ -609,6 +749,7 @@ void lex_line(Lexer* lexer)
 
     token_init(&tok_a);
     token_init(&tok_b);
+    line_info_init(lexer->text_seg);
     lex_next_token(lexer, &cur_token);
 
     if(cur_token.type == SYM_LABEL)
@@ -637,6 +778,12 @@ void lex_line(Lexer* lexer)
         {
             case LEX_DCR:
                 fprintf(stdout, "[%s] got DCR\n", __func__);
+                break;
+
+            case LEX_INR:
+                // Increment register
+                lex_next_token(lexer, &cur_token);
+                status = lex_parse_one_reg(lexer, &cur_token);
                 break;
 
             case LEX_MOV:
@@ -688,6 +835,8 @@ LEX_LINE_END:
         lexer->text_seg->error = 1;
     }
     lex_text_addr_incr(lexer);
+
+    // Need to copy text_seg to some buffer, then reset
 }
 
 

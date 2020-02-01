@@ -28,6 +28,23 @@ const Opcode LEX_INSTRUCTIONS[] = {
 };
 
 /*
+ * opcode_create()
+ */
+Opcode* opcode_create(void)
+{
+    Opcode* opcode;
+
+    opcode = malloc(sizeof(*opcode));
+    if(!opcode)
+    {
+        fprintf(stderr, "[%s] Failed to allocate memory for opocde\n", __func__);
+        return NULL;
+    }
+
+    return opcode;
+}
+
+/*
  * opcode_init()
  * Set an Opcode back to 'initial' state.
  */
@@ -37,9 +54,21 @@ void opcode_init(Opcode* opcode)
     memset(opcode->mnemonic, 0, OPCODE_MNEMONIC_SIZE);
 }
 
+/*
+ * opcode_print()
+ */
 void opcode_print(Opcode* opcode)
 {
     fprintf(stdout, "%s (%04X)", opcode->mnemonic, opcode->instr);
+}
+
+/*
+ * opcode_copy()
+ */
+void opcode_copy(Opcode* dst, Opcode* src)
+{
+    dst->instr = src->instr;
+    memcpy(dst->mnemonic, src->mnemonic, OPCODE_MNEMONIC_SIZE);
 }
 
 // ======== OPCODE TABLE ======== //
