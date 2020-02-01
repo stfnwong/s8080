@@ -9,86 +9,12 @@
 #define __EMU_LEXER_H
 
 // This was reduced for debugging, but we can expand it back to 128 later
-#define LEXER_TOKEN_BUF_SIZE 32 
+#define TOKEN_BUF_SIZE 32 
 
 #include <stdint.h>
 #include "opcode.h"
+#include "source.h"
 
-// Text segment
-typedef struct 
-{
-    Opcode* opcode;
-    // Position
-    int   line_num;
-    int   addr;
-    
-    // arguments 
-    int   has_immediate;
-    int   immediate;
-    char  reg[3];
-    char* label_str;
-    int   label_str_len;
-    // error info
-    int   error;
-} LineInfo;
-
-LineInfo* line_info_create(void);
-void      line_info_destroy(LineInfo* info);
-void      line_info_init(LineInfo* info);
-void      line_info_print(LineInfo* info);
-int       line_info_copy(LineInfo* dst, LineInfo* src);
-
-// ==== Buffer for LineInfo Structures
-typedef struct
-{
-    LineInfo** buffer;
-    int size;
-    int max_size;
-    int cur_line;
-} SourceInfo;
-
-SourceInfo* source_info_create(int num_lines);
-void        source_info_destroy(SourceInfo* info);
-int         source_info_add_line(SourceInfo* info, LineInfo* line);
-int         source_info_edit_line(SourceInfo* info, LineInfo* line, int idx);
-LineInfo*   source_info_get_idx(SourceInfo* info, int idx);
-
-
-// Data segment
-typedef struct
-{
-    uint8_t* data;
-    int      data_size;
-    int      addr;
-} DataSegment;
-
-DataSegment* data_segment_create(int size);
-void data_segment_destroy(DataSegment* segment);
-
-// ======== TOKEN ======== //
-typedef enum {
-    SYM_NONE, 
-    SYM_LITERAL, 
-    SYM_LABEL, 
-    SYM_INSTR,
-    SYM_REG,
-    SYM_EOF
-} TokenType;
-
-extern const char* TOKEN_TYPE_TO_STR[6];
-
-/*
- * Token object
- */
-typedef struct 
-{
-    TokenType type;
-    char      token_str[LEXER_TOKEN_BUF_SIZE];
-} Token;
-
-Token* create_token(void);
-void   token_init(Token* token);
-void   destroy_token(Token* token);
 
 /*
  * Lexer object
@@ -105,7 +31,7 @@ typedef struct
     char  cur_char;
 
     // Token buffers
-    char token_buf[LEXER_TOKEN_BUF_SIZE];
+    char token_buf[TOKEN_BUF_SIZE];
     int  token_buf_ptr;
 
     // address bookkeeping

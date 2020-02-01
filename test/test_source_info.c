@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "lexer.h"
+#include "source.h"
 // testing framework
 #include "bdd-for-c.h"
 

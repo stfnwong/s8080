@@ -9,7 +9,7 @@
 // testing framework
 #include "bdd-for-c.h"
 
-#include "lexer.h"
+#include "source.h"
 
 // NOTE: can we have two specs in the same file?
 spec("Token")
