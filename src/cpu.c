@@ -67,10 +67,9 @@ int cpu_exec(CPUState *state)
 
         case 0x02:      // STAX B
             {
-                uint16_t res;
-                res = (state->b << 8) | state->c;
-                res = (uint16_t) state->a;
-                state->a = (res >> 8);      // TODO : not sure about this..
+                uint16_t bc;
+                bc = (state->b << 8) | state->c;
+                state->memory[bc] = state->a;
             }
             break;
 
@@ -80,7 +79,7 @@ int cpu_exec(CPUState *state)
                 bc  = (state->b << 8) | state->c;
                 res = bc + 1;
                 state->b = (res >> 8);
-                state->c = (res & 0x000000FF);
+                state->c = (res & 0xFF);
             }
             break;
         case 0x05:      // DCR B
