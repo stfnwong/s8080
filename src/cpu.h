@@ -8,6 +8,7 @@
 #define __CPU_H
 
 #define CPU_DIAG
+#define CPU_MEM_SIZE 0x10000
 
 #include <stdint.h>
 
@@ -40,12 +41,11 @@ typedef struct CPUState
 } CPUState;
 
 // Get a new emulator state
-CPUState *initState(void);
-void freeState(CPUState *state);
-void loadFileToMem(void);
+CPUState *cpu_create(void);
+void cpu_destroy(CPUState *state);
 
 void UnimplementedInstruction(CPUState *state, unsigned char opcode);
-int Emulate8080(CPUState *state);
+int cpu_exec(CPUState *state);
 
 // ======== INLINE METHODS ======== //
 // Simple parity loop. Probably can replace this with a faster routine later 

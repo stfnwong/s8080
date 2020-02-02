@@ -12,19 +12,25 @@
 
 
 // ==== Setup initial state
-CPUState *initState(void)
+/*
+ * cpu_create()
+ */
+CPUState *cpu_create(void)
 {
     CPUState *state = calloc(1, sizeof(CPUState));
     if(!state)
         return NULL;
-    state->memory = malloc(0x10000);        // 16K
+    state->memory = malloc(CPU_MEM_SIZE);        // 16K
     if(!state->memory)
         return NULL;
 
     return state;
 }
 
-void freeState(CPUState *state)
+/*
+ * cpu_destroy()
+ */
+void cpu_destroy(CPUState *state)
 {
     free(state->memory);
     free(state);
@@ -41,7 +47,7 @@ void UnimplementedInstruction(CPUState *state, unsigned char opcode)
     //exit(1);
 }
 
-int Emulate8080(CPUState *state)
+int cpu_exec(CPUState *state)
 {
     unsigned char *opcode;
 

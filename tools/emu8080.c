@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
     CPUState *emu_state;
     
-    emu_state = initState();
+    emu_state = cpu_create();
     if(emu_state == NULL)
     {
         fprintf(stderr, "Failed to create state, exiting\n");
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     unsigned long int num_cycles = 0;
     while(status == 0)
     { 
-        status = Emulate8080(emu_state);
+        status = cpu_exec(emu_state);
         if(status < 0)          // trap an unimplmented instruction
             break;
         num_cycles++;
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     fprintf(stdout, "Emulator finishd with exit code %d\n", status);
     PrintState(emu_state); 
 
-    freeState(emu_state);
+    cpu_destroy(emu_state);
 
     return 0;
 }
