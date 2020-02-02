@@ -9,6 +9,7 @@
 #define __EMU_SOURCE_H
 
 #define TOKEN_BUF_SIZE 16
+#define LINE_INFO_NUM_REG 2
 #include "opcode.h"
 
 // Text segment
@@ -22,7 +23,7 @@ typedef struct
     // arguments 
     int   has_immediate;
     int   immediate;
-    char  reg[3];
+    char  reg[LINE_INFO_NUM_REG];
     char* label_str;
     int   label_str_len;
     // error info

@@ -51,9 +51,12 @@ INFO_END:
  */
 void line_info_destroy(LineInfo* info)
 {
+    //fprintf(stdout, "[%s] sizeof(*info) = %ld\n", __func__, sizeof(*info));
     free(info->opcode);
     free(info->label_str);
     free(info);
+
+    //fprintf(stdout, "[%s] &info : %p\n", __func__, &info);
 }
 
 /*
@@ -68,7 +71,7 @@ void line_info_init(LineInfo* info)
     // arguments 
     info->has_immediate = 0;
     info->immediate = 0;
-    for(int a = 0; a < 3; ++a)
+    for(int a = 0; a < LINE_INFO_NUM_REG; ++a)
         info->reg[a] = '\0';
 
     // Ensure that there is no string memory
@@ -118,7 +121,7 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
     dst->addr          = src->addr;
     dst->has_immediate = src->has_immediate;
     dst->immediate     = src->immediate;
-    for(int r = 0; r < 3; ++r)
+    for(int r = 0; r < LINE_INFO_NUM_REG; ++r)
         dst->reg[r] = src->reg[r];
 
     // copy pointers
@@ -169,7 +172,7 @@ SourceInfo* source_info_create(int num_lines)
 
     for(int b = 0; b < info->max_size; ++b)
     {
-        // Seem to be leaking these when we clean up SourceInfo
+        // TODO : Seem to be leaking these when we clean up SourceInfo
         info->buffer[b] = malloc(sizeof(*info->buffer[b]));
         if(!info->buffer[b])
         {
@@ -200,7 +203,11 @@ void source_info_destroy(SourceInfo* info)
     else
     {
         for(int b = 0; b < info->max_size; ++b)
+        {
+            fprintf(stdout, "[%s] freeing buffer %d / %d (%ld bytes)\n",
+                    __func__, b+1, info->max_size, sizeof(*info->buffer[b]));
             line_info_destroy(info->buffer[b]);
+        }
         free(info->buffer);
         free(info);
     }

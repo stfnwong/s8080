@@ -37,7 +37,7 @@ spec("Lexer")
         // Check the values in the text segment structure
         check(lexer->text_seg->line_num == 0);
         check(lexer->text_seg->addr == 0);
-        for(int a = 0; a < 3; ++a)
+        for(int a = 0; a < LINE_INFO_NUM_REG; ++a)
             check(lexer->text_seg->reg[a] == '\0');
 
         // Check the opcode table
@@ -182,7 +182,6 @@ spec("Lexer")
         // the dest register is A
         check(lexer->text_seg->reg[0] == 'A');
         check(lexer->text_seg->reg[1] == '\0');
-        check(lexer->text_seg->reg[2] == '\0');
         // The source is an immediate
         check(lexer->text_seg->has_immediate == 1);
         check(lexer->text_seg->immediate == 0x77);
@@ -197,11 +196,9 @@ spec("Lexer")
         check(strncmp(lexer->text_seg->opcode->mnemonic, "INR", 3) == 0);
         check(lexer->text_seg->reg[0] == 'A');
         check(lexer->text_seg->reg[1] == '\0');
-        check(lexer->text_seg->reg[2] == '\0');
 
         check(lexer->text_seg->has_immediate == 0);
         check(lexer->text_seg->immediate == 0);
-
 
         //lex_line(lexer);
         //lex_line(lexer);
