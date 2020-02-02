@@ -1,18 +1,20 @@
-/* EMULATOR SHELL
- * As per http://www.emulator101.com/emulator-shell.html
+/* 
+ * CPU 
+ * Trying to clean up the CPU implementation
  *
+ * Stefan Wong 2020
  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "emu_shell.h"
+#include "cpu.h"
 #include "disassem.h"
 
 
 // ==== Setup initial state
-State8080 *initState(void)
+CPUState *initState(void)
 {
-    State8080 *state = calloc(1, sizeof(State8080));
+    CPUState *state = calloc(1, sizeof(CPUState));
     if(!state)
         return NULL;
     state->memory = malloc(0x10000);        // 16K
@@ -22,14 +24,14 @@ State8080 *initState(void)
     return state;
 }
 
-void freeState(State8080 *state)
+void freeState(CPUState *state)
 {
     free(state->memory);
     free(state);
 }
 
 // Trap unimplemented instructions 
-void UnimplementedInstruction(State8080 *state, unsigned char opcode)
+void UnimplementedInstruction(CPUState *state, unsigned char opcode)
 {
     // PC will have advanced by one, so undo that 
     state->pc--;
@@ -39,7 +41,7 @@ void UnimplementedInstruction(State8080 *state, unsigned char opcode)
     //exit(1);
 }
 
-int Emulate8080(State8080 *state)
+int Emulate8080(CPUState *state)
 {
     unsigned char *opcode;
 

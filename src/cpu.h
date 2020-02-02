@@ -1,10 +1,11 @@
-/* EMULATOR SHELL
- * As per http://www.emulator101.com/emulator-shell.html
+/* 
  *
+ * CPU 
+ * 8080 CPU stuff.
  */
 
-#ifndef __EMU_SHELL_H
-#define __EMU_SHELL_H
+#ifndef __CPU_H
+#define __CPU_H
 
 #define CPU_DIAG
 
@@ -22,7 +23,7 @@ typedef struct
 } ConditionCodes;
 
 // State structure 
-typedef struct State8080
+typedef struct CPUState
 {
     uint8_t        a;
     uint8_t        b;
@@ -36,15 +37,15 @@ typedef struct State8080
     uint8_t        *memory;
     ConditionCodes cc;
     uint8_t        int_enable;
-} State8080;
+} CPUState;
 
 // Get a new emulator state
-State8080 *initState(void);
-void freeState(State8080 *state);
+CPUState *initState(void);
+void freeState(CPUState *state);
 void loadFileToMem(void);
 
-void UnimplementedInstruction(State8080 *state, unsigned char opcode);
-int Emulate8080(State8080 *state);
+void UnimplementedInstruction(CPUState *state, unsigned char opcode);
+int Emulate8080(CPUState *state);
 
 // ======== INLINE METHODS ======== //
 // Simple parity loop. Probably can replace this with a faster routine later 
@@ -79,7 +80,7 @@ static inline int Parity2(int x, int size)
 }
 
 // Common instructions in arithmetic group
-static inline void arith_set_flags(State8080 *state, uint16_t ans)
+static inline void arith_set_flags(CPUState *state, uint16_t ans)
 {
     state->cc.z  = ((ans & 0xFF) == 0);  // zero flag. 
     state->cc.s  = ((ans & 0x80) != 0);  // sign flag. Set if bit 7 is set 
@@ -87,7 +88,7 @@ static inline void arith_set_flags(State8080 *state, uint16_t ans)
     state->cc.p = Parity2(ans & 0xFF, 16);    // parity flag
 } 
 
-static inline void logic_set_flags(State8080 *state)
+static inline void logic_set_flags(CPUState *state)
 {
     state->cc.cy = 0;
     state->cc.ac = 0;
@@ -97,4 +98,4 @@ static inline void logic_set_flags(State8080 *state)
 
 
 
-#endif /*__EMU_SHELL_H*/
+#endif /*__CPU_H*/

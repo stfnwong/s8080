@@ -5,10 +5,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "emu_utils.h"
+#include "cpu.h"
 
 
-void PrintState(State8080 *state)
+void PrintState(CPUState *state)
 {
     fprintf(stdout, "PC : %04X\t[", state->pc);
     // print status flags in a row 
@@ -29,7 +29,7 @@ void PrintState(State8080 *state)
          state->sp);
 }
 
-void ReadFileToMemory(State8080 *state, const char *filename, int offset)
+void ReadFileToMemory(CPUState *state, const char *filename, int offset)
 {
     FILE *fp;
     int num_bytes;

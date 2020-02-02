@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "emu_shell.h"
+#include "cpu.h"
 #include "emu_utils.h"
 
 #define TEST_CYCLE_LIMIT 200000
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     int fsize = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
 
-    State8080 *emu_state;
+    CPUState *emu_state;
     
     emu_state = initState();
     if(emu_state == NULL)
