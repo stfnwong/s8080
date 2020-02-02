@@ -1,4 +1,5 @@
-/* EMU MAIN
+/* EMU8080
+ *
  * Entry point for emulator shell
  *
  */
@@ -26,8 +27,9 @@ int main(int argc, char *argv[])
     int fsize = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
 
-    // TODO : need to init state..
-    State8080 *emu_state = initState();
+    State8080 *emu_state;
+    
+    emu_state = initState();
     if(emu_state == NULL)
     {
         fprintf(stderr, "Failed to create state, exiting\n");
