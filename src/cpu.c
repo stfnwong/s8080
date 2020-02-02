@@ -49,22 +49,40 @@ void UnimplementedInstruction(CPUState *state, unsigned char opcode)
 
 int cpu_exec(CPUState *state)
 {
-    unsigned char *opcode;
+    uint8_t *opcode;
 
     opcode = &state->memory[state->pc];
     switch(*opcode)
     {
         case 0x00:      // NOP
             break;
-        case 0x01:
-            UnimplementedInstruction(state, opcode[0]);
-            return -1;
-        case 0x02:
-            UnimplementedInstruction(state, opcode[0]);
-            return -1;
-        case 0x03:
-            UnimplementedInstruction(state, opcode[0]);
-            return -1;
+
+        case 0x01:      // LXI B, D16
+            {
+                // TODO : Is this correct?
+                state->b = opcode[3];
+                state->c = opcode[2];
+            }
+            break;
+
+        case 0x02:      // STAX B
+            {
+                uint16_t res;
+                res = (state->b << 8) | state->c;
+                res = (uint16_t) state->a;
+                state->a = (res >> 8);      // TODO : not sure about this..
+            }
+            break;
+
+        case 0x03:      // INX B
+            {
+                uint32_t bc, res;
+                bc  = (state->b << 8) | state->c;
+                res = bc + 1;
+                state->b = (res >> 8);
+                state->c = (res & 0x000000FF);
+            }
+            break;
         case 0x05:      // DCR B
             {
                 uint8_t res = state->b - 1;
@@ -182,6 +200,14 @@ int cpu_exec(CPUState *state)
                 state->d = (res & 0xFF00) >> 8;
                 state->e = res & 0xFF;
                 state->cc.cy = ((res & 0xFFFF0000) != 0);
+            }
+            break;
+
+        case 0x1D:      // DCR E 1
+            {
+                uint8_t res = state->e - 1;
+                arith_set_flags(state, res);
+                state->e = res;
             }
             break;
 
@@ -372,6 +398,13 @@ int cpu_exec(CPUState *state)
                 uint16_t res = state->a - 1;
                 arith_set_flags(state, res);
                 state->a = res;
+            }
+            break;
+
+        case 0x3E:      // MVI A D8
+            {
+                state->a = opcode[1];
+                state->pc++;
             }
             break;
 
@@ -1085,9 +1118,11 @@ int cpu_exec(CPUState *state)
                     state->pc += 2;
             }
             break;
+
         case 0xC3:      // JMP ADR
             state->pc = (opcode[2] << 8) | opcode[1];
             break;
+
         case 0xC4:      // CNZ ADR
             {
                 if(state->cc.z == 0)
@@ -1120,9 +1155,11 @@ int cpu_exec(CPUState *state)
                 state->pc++;
             }
             break;
+
         case 0xC7:      // RST 0
             state->pc = 0;          // TODO : possibly not correct...
             break;
+
         case 0xC8:      // RZ  (if Z, RET)
             {
                 if(state->cc.z == 1)
@@ -1132,12 +1169,14 @@ int cpu_exec(CPUState *state)
                 }
             }
             break;
+
         case 0xC9:      // RET
             {
                 state->pc = state->memory[state->sp] | (state->memory[state->sp+1] << 8);
                 state->sp += 2;
             }
             break;
+            
         case 0xCA:      // JZ adr
             {
                 if(state->cc.z == 1)
@@ -1150,6 +1189,7 @@ int cpu_exec(CPUState *state)
                 }
             }
             break;
+
         case 0xCC:      // CZ ADR
             {
                 if(state->cc.z)
@@ -1198,6 +1238,7 @@ int cpu_exec(CPUState *state)
 #endif /*CPU_DIAG*/
             }
             break;
+
         case 0xCE:      // ACI, d8
             {
                 uint16_t res;
@@ -1205,6 +1246,14 @@ int cpu_exec(CPUState *state)
                 arith_set_flags(state, res);
                 state->a = res + state->cc.cy;
                 state->pc++;
+            }
+            break;
+
+        case 0xCF:      // RST 1
+            {
+                // CALL d8
+                state->sp = state->pc;
+                state->pc = 0x0008;
             }
             break;
 
@@ -1242,6 +1291,10 @@ int cpu_exec(CPUState *state)
         case 0xDB:      // IN 
             state->pc += 2;         // TODO : implement actual logic 
             break;
+
+        case 0xDE:      // SBI D8
+            break;
+
         case 0xE3:      // XTHL  L <-> SP, H <-> SP+1
             {
                 uint8_t l   = state->l;
@@ -1261,6 +1314,15 @@ int cpu_exec(CPUState *state)
                 state->memory[state->sp-1] = state->h;
                 state->memory[state->sp-2] = state->l;
                 state->sp -= 2;
+            }
+            break;
+
+        case 0xE6:      // ANI D8
+            {
+                uint8_t ans = state->a & opcode[1];
+                logic_set_flags(state);
+                state->a = ans;
+                state->pc++;
             }
             break;
 
