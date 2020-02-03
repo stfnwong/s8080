@@ -1,0 +1,13 @@
+# Travis config for s8080
+
+language: c
+sudo: false
+compiler: gcc
+
+script: 
+    - make clean && make all
+    - ./bin/test/test_lexer
+    - ./bin/test/test_lexer_info
+    - ./bin/test/test_opcode
+    - ./bin/test/test_source_info
+    - ./bin/test/test_token
