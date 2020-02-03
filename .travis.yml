@@ -1,4 +1,6 @@
 # Travis config for s8080
+# 
+# Stefan Wong 2020
 
 language: c
 sudo: false

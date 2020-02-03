@@ -7,4 +7,4 @@ An Intel 8080 Emulation in C.
 Also some assembly and disassembly tools (in progress).
 
 ### Requirements 
-This is basically self contained. Tests are done with [bdd-for-c](https://github.com/grassator/bdd-for-c). The header file is included in the test directory. `bdd-for-c` requires libncurses 5.x and libbsd.
+This is basically self contained. Tests are done with [bdd-for-c](https://github.com/grassator/bdd-for-c). The header file is included in the test directory. `bdd-for-c` requires `libncurses 5.x` and `libbsd`.
