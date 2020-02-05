@@ -38,6 +38,7 @@ typedef struct CPUState
     uint8_t        *memory;
     ConditionCodes cc;
     uint8_t        int_enable;
+    //int            mem_size;
 } CPUState;
 
 // Get a new emulator state

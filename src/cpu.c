@@ -17,10 +17,11 @@
  */
 CPUState *cpu_create(void)
 {
-    CPUState *state = calloc(1, sizeof(CPUState));
+    CPUState *state = calloc(1, sizeof(*state));
     if(!state)
         return NULL;
-    state->memory = malloc(CPU_MEM_SIZE);        // 16K
+    //state->mem_size = CPU_MEM_SIZE;
+    state->memory   = malloc(CPU_MEM_SIZE);        // 16K
     if(!state->memory)
         return NULL;
 
@@ -121,9 +122,7 @@ int cpu_exec(CPUState *state)
         case 0x0A:      // LDAX B
             {
                 uint16_t bc;
-                uint8_t  data;
-
-                bc   = (state->b << 8) | state->c;
+                bc       = (state->b << 8) | state->c;
                 state->a = state->memory[bc];
             }
             break;
@@ -1205,7 +1204,7 @@ int cpu_exec(CPUState *state)
 
         case 0xCD:      // CALL ADR
             {
-#ifdef CPU_DIAG
+#ifdef CPU_DIAG     // use the CPM style printing routine
                 fprintf(stdout, "[%s] debug message follows : \n", __func__);
                 // Emulate the printing in CPM/OS
                 if(((opcode[2] << 8) | (opcode[1])) == 5)
