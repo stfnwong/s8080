@@ -330,18 +330,6 @@ void lex_next_token(Lexer* lexer, Token* token)
 
     // We would check here for directives
 
-
-    // Check for registers 
-    if((strncmp(lexer->token_buf, "A", 1) == 0) || 
-       (strncmp(lexer->token_buf, "B", 1) == 0) || 
-       (strncmp(lexer->token_buf, "C", 1) == 0) || 
-       (strncmp(lexer->token_buf, "D", 1) == 0) || 
-       (strncmp(lexer->token_buf, "E", 1) == 0))
-    {
-        token->type = SYM_REG;
-        goto TOKEN_END;
-    }
-
     // Check if the token is an instruction
     opcode_init(&opcode);
     opcode_table_find_mnemonic(
@@ -358,6 +346,17 @@ void lex_next_token(Lexer* lexer, Token* token)
     if(opcode.instr != LEX_INVALID)
     {
         token->type = SYM_INSTR;
+        goto TOKEN_END;
+    }
+
+    // Check for registers 
+    if((strncmp(lexer->token_buf, "A", 1) == 0) || 
+       (strncmp(lexer->token_buf, "B", 1) == 0) || 
+       (strncmp(lexer->token_buf, "C", 1) == 0) || 
+       (strncmp(lexer->token_buf, "D", 1) == 0) || 
+       (strncmp(lexer->token_buf, "E", 1) == 0))
+    {
+        token->type = SYM_REG;
         goto TOKEN_END;
     }
 
@@ -512,9 +511,12 @@ void lex_line(Lexer* lexer)
         {
             case LEX_DCR:
                 fprintf(stdout, "[%s] got DCR\n", __func__);
+                lex_next_token(lexer, &cur_token);
+                status = lex_parse_one_reg(lexer, &cur_token);
                 break;
 
             case LEX_INR:
+                fprintf(stdout, "[%s] got INR\n", __func__);
                 // Increment register
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_one_reg(lexer, &cur_token);
@@ -569,12 +571,11 @@ LEX_LINE_END:
         lexer->text_seg->error = 1;
     }
     lex_text_addr_incr(lexer);
+    lexer->text_seg->addr = lexer->text_addr;
 
     // Need to copy text_seg to some buffer, then reset
     source_info_add_line(lexer->source_repr, lexer->text_seg);
 }
-
-
 
 
 

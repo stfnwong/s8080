@@ -186,7 +186,7 @@ spec("Lexer")
         check(lexer->text_seg->has_immediate == 1);
         check(lexer->text_seg->immediate == 0x77);
 
-        // Lex the next line (INR A)
+        // INR A
         lex_line(lexer);
         line_info_print(lexer->text_seg);
         fprintf(stdout, "\n");
@@ -200,10 +200,62 @@ spec("Lexer")
         check(lexer->text_seg->has_immediate == 0);
         check(lexer->text_seg->immediate == 0);
 
-        //lex_line(lexer);
-        //lex_line(lexer);
-        //lex_line(lexer);
+        // MOV B,A
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->opcode->instr == LEX_MOV);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "MOV", 3) == 0);
+        check(lexer->text_seg->reg[0] == 'B');
+        check(lexer->text_seg->reg[1] == 'A');
 
+        check(lexer->text_seg->has_immediate == 0);
+        check(lexer->text_seg->immediate == 0);
+
+        // INR B
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->opcode->instr == LEX_INR);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "INR", 3) == 0);
+        check(lexer->text_seg->reg[0] == 'B');
+        check(lexer->text_seg->reg[1] == '\0');
+
+        check(lexer->text_seg->has_immediate == 0);
+        check(lexer->text_seg->immediate == 0);
+
+        // MOV C,B
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->opcode->instr == LEX_MOV);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "MOV", 3) == 0);
+        check(lexer->text_seg->reg[0] == 'C');
+        check(lexer->text_seg->reg[1] == 'B');
+
+        check(lexer->text_seg->has_immediate == 0);
+        check(lexer->text_seg->immediate == 0);
+
+        // DCR C
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->opcode->instr == LEX_DCR);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "DCR", 3) == 0);
+        check(lexer->text_seg->reg[0] == 'C');
+        check(lexer->text_seg->reg[1] == '\0');
+
+        check(lexer->text_seg->has_immediate == 0);
+        check(lexer->text_seg->immediate == 0);
+
+        // clean up
         lexer_destroy(lexer);
     } 
 }
