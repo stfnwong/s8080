@@ -39,22 +39,9 @@ int main(int argc, char *argv[])
     fread(emu_state->memory, fsize, 1, fp);
     fclose(fp);
 
-    int status = 0;
-    unsigned long int num_cycles = 0;
-    while(status == 0)
-    { 
-        status = cpu_exec(emu_state);
-        if(status < 0)          // trap an unimplmented instruction
-            break;
-        num_cycles++;
-        if(num_cycles > TEST_CYCLE_LIMIT)
-        {
-            fprintf(stdout, "Hit max cycles (%d)\n", TEST_CYCLE_LIMIT);
-            break;
-        }
-        fprintf(stdout, "[I %04X]  ", emu_state->memory[emu_state->pc]);
-        PrintState(emu_state);
-    }
+    // Run emulator 
+    int status = cpu_run(emu_state, TEST_CYCLE_LIMIT, 1);
+    // Print final state
     fprintf(stdout, "Emulator finishd with exit code %d\n", status);
     PrintState(emu_state); 
 
