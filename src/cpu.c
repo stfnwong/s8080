@@ -45,9 +45,30 @@ void UnimplementedInstruction(CPUState *state, unsigned char opcode)
     fprintf(stderr, "Unimplemented instruction 0x%02X\n", opcode);
     fprintf(stderr, "PC   INSTR\n");
     disassemble_8080_op(state->memory, state->pc);
-    //exit(1);
 }
 
+/*
+ * cpu_run()
+ */
+int cpu_run(CPUState* state, long cycles)
+{
+    int status;
+    long c = 0;
+    while(c < cycles)
+    {
+        status = cpu_exec(state);
+        if(status < 0)
+            goto RUN_END;
+    }
+
+RUN_END:
+    return status;
+}
+
+/*
+ * cpu_exec()
+ * TODO : instruction timing
+ */
 int cpu_exec(CPUState *state)
 {
     uint8_t *opcode;
@@ -815,7 +836,8 @@ int cpu_exec(CPUState *state)
                 hl = (state->h << 8) | state->l;
                 ans = (uint32_t) state->a + hl;
                 state->cc.z  = (ans == 0);
-                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
+                //state->cc.s  = ((ans & 0x80000000) == 1);
                 state->cc.p  = Parity(state->a);
                 state->cc.cy = ((ans & 0xFFFF0000) > 0);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
@@ -871,13 +893,14 @@ int cpu_exec(CPUState *state)
                 state->a = ans;
             }
             break;
+
         case 0x9E:      // SBB M
             {
                 uint32_t ans;
                 uint16_t hl;
                 hl = (state->h << 8) | state->l;
                 ans = (uint32_t) state->a - (uint32_t) hl;
-                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
                 state->cc.p  = Parity(state->a);
                 state->cc.cy = ((ans & 0xFFFF0000) > 0);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 

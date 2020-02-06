@@ -46,6 +46,7 @@ CPUState *cpu_create(void);
 void cpu_destroy(CPUState *state);
 
 void UnimplementedInstruction(CPUState *state, unsigned char opcode);
+int cpu_run(CPUState* state, long cycles);
 int cpu_exec(CPUState *state);
 
 // ======== INLINE METHODS ======== //
