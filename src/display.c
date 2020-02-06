@@ -35,9 +35,9 @@ Display* display_create(void)
 
     // We also take care of all the SDL stuff here
     status = SDL_Init(SDL_INIT_VIDEO);
-    if(!status)
+    if(status)
     {
-        fprintf(stderr, "[%s] %s\n", SDL_GetError());
+        fprintf(stderr, "[%s] %s\n", __func__, SDL_GetError());
         goto DISP_END;
     }
     status = 1;
@@ -57,7 +57,7 @@ Display* display_create(void)
         goto DISP_END;
     }
 
-    // Create surfac
+    // Create surface
     disp->winsurf = SDL_GetWindowSurface(disp->win);
     if(!disp->winsurf)
     {
@@ -89,17 +89,14 @@ DISP_END:
 }
 
 /*
- * draw_display_ram()
+ * display_draw()
  */
-void draw_display_ram(Display* disp, uint8_t* mem)
+void display_draw(Display* disp, uint8_t* mem)
 {
-    uint32_t* pix;
-
-    pix = disp->surf->pixels;
-
     // TODO : Size of video RAM is hardcoded here. Need to check if 
     // that the case for all 8080 software or just invaders
     int vram = 0x2400;
+    uint32_t* pixels = disp->surf->pixels;
 
     for(int col = 0; col < DISP_WIDTH; ++col)
     {
@@ -109,22 +106,30 @@ void draw_display_ram(Display* disp, uint8_t* mem)
             {
                 int idx = (row - k) * DISP_WIDTH + col;
                 if(mem[vram] & 1 << k)
-                    pix[idx] = 0xFFFFFF;
+                    pixels[idx] = 0xFFFFFF;
                 else
-                    pix[idx]= 0x000000;
+                    pixels[idx]= 0x000000;
             }
             vram++;
         }
     }
 
-    if(disp->resize)
-    {
-        disp->winsurf = SDL_GetWindowSurface(disp->win);
-    }
+    //if(disp->resize)
+    //{
+    //    disp->winsurf = SDL_GetWindowSurface(disp->win);
+    //}
     SDL_BlitScaled(disp->surf, NULL, disp->winsurf, NULL);
 
     if(SDL_UpdateWindowSurface(disp->win))
     {
         fprintf(stderr, "[%s] %s\n", __func__, SDL_GetError());
     }
+}
+
+/*
+ * display_destroy()
+ */
+void display_destroy(Display* disp)
+{
+    free(disp);
 }

@@ -7,7 +7,7 @@
 #ifndef __CPU_H
 #define __CPU_H
 
-#define CPU_DIAG
+//#define CPU_DIAG
 #define CPU_MEM_SIZE 0x10000
 
 #include <stdint.h>
@@ -38,6 +38,8 @@ typedef struct CPUState
     uint8_t        *memory;
     ConditionCodes cc;
     uint8_t        int_enable;
+    uint16_t       shift_reg;
+    uint16_t       shift_amount;
     //int            mem_size;
 } CPUState;
 
@@ -45,9 +47,11 @@ typedef struct CPUState
 CPUState *cpu_create(void);
 void cpu_destroy(CPUState *state);
 
+// Operation
+void cpu_shift_register(CPUState* state);
+int  cpu_run(CPUState* state, long cycles, int verbose);
+int  cpu_exec(CPUState *state);
 void UnimplementedInstruction(CPUState *state, unsigned char opcode);
-int cpu_run(CPUState* state, long cycles, int verbose);
-int cpu_exec(CPUState *state);
 
 // ======== INLINE METHODS ======== //
 // Simple parity loop. Probably can replace this with a faster routine later 

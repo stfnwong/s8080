@@ -8,9 +8,6 @@
 #ifndef __EMU_LEXER_H
 #define __EMU_LEXER_H
 
-// This was reduced for debugging, but we can expand it back to 128 later
-#define TOKEN_BUF_SIZE 32 
-
 #include <stdint.h>
 #include "opcode.h"
 #include "source.h"

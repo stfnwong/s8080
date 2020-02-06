@@ -22,7 +22,9 @@ CPUState *cpu_create(void)
     if(!state)
         return NULL;
     //state->mem_size = CPU_MEM_SIZE;
-    state->memory   = malloc(CPU_MEM_SIZE);        // 16K
+    state->memory       = malloc(CPU_MEM_SIZE);        // 16K
+    state->shift_reg    = 0;
+    state->shift_amount = 0;
     if(!state->memory)
         return NULL;
 
@@ -49,6 +51,28 @@ void UnimplementedInstruction(CPUState *state, unsigned char opcode)
 }
 
 /*
+ * cpu_shift_register()
+ */
+void cpu_shift_register(CPUState* state)
+{
+    uint8_t* opcode;
+
+    opcode = &state->memory[state->pc];
+    if(*opcode == 0xD3)     // OUT instruction
+    {
+        if(state->memory[state->pc] == 0x2)
+            state->shift_amount = state->a;
+        else if(state->memory[state->pc] == 0x4)
+            state->shift_reg = (state->a << 8) | (state->shift_reg >> 8);
+    }
+    else if(opcode == 0xDB)     // IN instruction
+    {
+        if(state->memory[state->pc] == 0x3)
+            state->a = state->shift_reg >> (8 - state->shift_amount);
+    }
+}
+
+/*
  * cpu_run()
  */
 int cpu_run(CPUState* state, long cycles, int print_output)
@@ -58,6 +82,7 @@ int cpu_run(CPUState* state, long cycles, int print_output)
 
     while(exec_cycles < cycles)
     {
+        cpu_shift_register(state);
         status = cpu_exec(state);
         if(print_output)
         {

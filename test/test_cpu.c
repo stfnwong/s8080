@@ -5,8 +5,6 @@
  * Stefan Wong 2020
  */
 
-#include <stdio.h>
-#include <string.h>
 #include "cpu.h"
 // testing framework
 #include "bdd-for-c.h"

@@ -27,7 +27,7 @@ typedef struct
     SDL_Surface* surf;
     SDL_Surface* winsurf;
     int resize;
-    void (*resize_func)(void*, SDL_Event*);
+    //void (*resize_func)(void*, SDL_Event*);
 } Display;
 
 int disp_resize_func(void* user_data, SDL_Event* ev);
@@ -37,9 +37,7 @@ int disp_resize_func(void* user_data, SDL_Event* ev);
 
 Display* display_create(void);
 void     display_destroy(Display* disp);
-
-
-void draw_display_ram(Display* disp, uint8_t* mem);
+void     display_draw(Display* disp, uint8_t* mem);
 
 
 #endif /*__DISPLAY_H*/
