@@ -17,6 +17,8 @@ int src_file_size;
 spec("Lexer")
 {
     static const char test_filename[] = "asm/test_lexer.asm";
+    static const char mov_test_filename[] = "asm/test_mov.asm";
+    static const char arith_test_filename[] = "asm/test_arith.asm";
 
     it("Should initialize correctly")
     {
@@ -258,4 +260,84 @@ spec("Lexer")
         // clean up
         lexer_destroy(lexer);
     } 
+
+    it("Should lex all the move instructions correctly")
+    {
+        Lexer* lexer = lexer_create();
+
+        int status = lex_read_file(lexer, mov_test_filename);
+        check(status == 0);
+
+        // Skip the first few lines (which are comments and so on)
+        while(lexer->cur_line < 5)
+            lex_advance(lexer);
+
+        lexer->verbose = 1;
+
+        // MOVE_INSTR: MOV A, B
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+
+        check(lexer->text_seg->label_str != NULL);
+        check(lexer->text_seg->label_str_len == 10);
+        check(strncmp(lexer->text_seg->label_str, "MOVE_INSTR", 10) == 0);
+        
+        // clean up
+        lexer_destroy(lexer);
+    }
+
+    it("Should lex all the arithmetic instructions correctly")
+    {
+        Lexer* lexer = lexer_create();
+
+        int status = lex_read_file(lexer, arith_test_filename);
+        check(status == 0);
+        lexer->verbose = 1;
+
+        // Skip the first few lines (which are comments and so on)
+        while(lexer->cur_line < 5)
+            lex_advance(lexer);
+        
+        // ARITH_INSTR: ADD A
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+
+        check(lexer->text_seg->label_str != NULL);
+        check(lexer->text_seg->label_str_len == 11);
+        check(strncmp(lexer->text_seg->label_str, "ARITH_INSTR", 10) == 0);
+        // ADD A section
+        check(lexer->text_seg->opcode->instr == LEX_ADD);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "ADD", 3) == 0);
+        check(lexer->text_seg->reg[0] == 'C');
+        check(lexer->text_seg->reg[1] == '\0');
+
+        // SUB B
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->opcode->instr == LEX_SUB);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "SUB", 3) == 0);
+        check(lexer->text_seg->reg[0] == 'A');
+        check(lexer->text_seg->reg[1] == '\0');
+
+        // ADI 7
+        lex_line(lexer);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->opcode->instr == LEX_ADI);
+        check(strncmp(lexer->text_seg->opcode->mnemonic, "ADI", 3) == 0);
+        check(lexer->text_seg->has_immediate == 1);
+        check(lexer->text_seg->immediate == 0x7);
+        check(lexer->text_seg->reg[0] == '\0');
+        check(lexer->text_seg->reg[1] == '\0');
+
+        // clean up
+        lexer_destroy(lexer);
+    }
 }

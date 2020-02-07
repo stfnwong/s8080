@@ -29,18 +29,37 @@ void    opcode_copy(Opcode* dst, Opcode* src);
 // Instruction codes used by Lexer
 typedef enum {
     LEX_INVALID,
+    LEX_ADC,
+    LEX_ADD,
+    LEX_ADI,
+    LEX_AND,
+    LEX_CMP,
+    LEX_DAD,
     LEX_DCR,
     LEX_INR,
+    LEX_INX,
+    LEX_JNZ,
+    LEX_JP,
+    LEX_JZ,
+    LEX_LDA,
+    LEX_LDAX,
     LEX_MOV,
     LEX_MVI,
-    LEX_NOP
+    LEX_NOP,
+    LEX_ORA,
+    LEX_ORI,
+    LEX_POP,
+    LEX_PUSH,
+    LEX_SBB,
+    LEX_STAX,
+    LEX_SUB
 } instr_code;
 
 // Move to *.c file in next commit
 extern const char* INSTR_CODE_TO_STR[7];
 extern const Opcode LEX_INSRUCTIONS[5];
 
-static const int NUM_LEX_INSTR = 5;      // For now this needs to be manually updated
+static const int NUM_LEX_INSTR = 25;      // For now this needs to be manually updated
 
 
 // Opcode lookup

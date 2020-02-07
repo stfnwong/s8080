@@ -94,20 +94,22 @@ void line_info_print(LineInfo* info)
     //fprintf(stdout, "LineInfo (line %d)\n", info->line_num);
     fprintf(stdout, "LineInfo :\n");
 
+    if(info->label_str_len > 0 && (info->label_str != NULL))
+        fprintf(stdout, "    label  : %s\n", info->label_str);
+
     fprintf(stdout, "    line %d : addr 0x%04X\n", info->line_num, info->addr);
     if(info->has_immediate)
         fprintf(stdout, "    imm    : %d (0x%X)\n", info->immediate, info->immediate);
     else
         fprintf(stdout, "    no immediate\n");
 
-    if(info->label_str_len > 0 && (info->label_str != NULL))
-        fprintf(stdout, "    label  : %s\n", info->label_str);
-
     fprintf(stdout, "    error  : %s\n", (info->error) ? "YES" : "NO");
     fprintf(stdout, "    Opcode : ");
     opcode_print(info->opcode);
     fprintf(stdout, "\n");
 }
+
+// TODO : LineInfo that prints how the assembly should have looked
 
 /*
  * line_info_copy()

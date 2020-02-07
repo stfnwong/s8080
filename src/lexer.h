@@ -74,6 +74,7 @@ void   lex_next_token(Lexer* lexer, Token* token);    // TODO: cur token?
 int    lex_parse_one_reg(Lexer* lexer, Token* token);
 int    lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b);
+int    lex_parse_imm(Lexer* lexer, Token* tok);
 
 // Lex a line in the source 
 void   lex_line(Lexer* lexer);

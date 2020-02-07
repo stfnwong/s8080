@@ -12,19 +12,56 @@
 
 const char* INSTR_CODE_TO_STR[] = {
     "INVALID",
+    "ADC",
+    "ADD",
+    "ADI",
+    "AND",
+    "CMP",
+    "DAD",
     "DCR",
     "INR",
+    "INX",
+    "JNZ",
+    "JP",
+    "JZ",
+    "LDA",
+    "LDAX",
     "MOV",
     "MVI",
-    "NOP"
+    "NOP",
+    "ORA",
+    "ORI",
+    "POP",
+    "PUSH",
+    "SBB",
+    "SUB",
 };
 
 const Opcode LEX_INSTRUCTIONS[] = {
+    {LEX_ADC, "ADC"},
+    {LEX_ADD, "ADD"},
+    {LEX_ADI, "ADI"},
+    {LEX_AND, "AND"},
+    {LEX_CMP, "CMP"},
+    {LEX_DAD, "DAD"},
     {LEX_DCR, "DCR"},
     {LEX_INR, "INR"},
+    {LEX_INX, "INX"},
+    {LEX_JNZ, "JNZ"},
+    {LEX_JP, "JP"},
+    {LEX_JZ, "JZ"},
+    {LEX_LDA, "LDA"},
+    {LEX_LDAX, "LDAX"},
     {LEX_MOV, "MOV"},
     {LEX_MVI, "MVI"},
-    {LEX_NOP, "NOP"}
+    {LEX_NOP, "NOP"},
+    {LEX_ORA, "ORA"},
+    {LEX_ORI, "ORI"},
+    {LEX_POP, "POP"},
+    {LEX_PUSH, "PUSH"},
+    {LEX_SBB, "SBB"},
+    {LEX_STAX, "STAX"},
+    {LEX_SUB, "SUB"},
 };
 
 /*
