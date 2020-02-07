@@ -206,8 +206,8 @@ void source_info_destroy(SourceInfo* info)
     {
         for(int b = 0; b < info->max_size; ++b)
         {
-            fprintf(stdout, "[%s] freeing buffer %d / %d (%ld bytes)\n",
-                    __func__, b+1, info->max_size, sizeof(*info->buffer[b]));
+            //fprintf(stdout, "[%s] freeing buffer %d / %d (%ld bytes)\n",
+            //        __func__, b+1, info->max_size, sizeof(*info->buffer[b]));
             line_info_destroy(info->buffer[b]);
         }
         free(info->buffer);

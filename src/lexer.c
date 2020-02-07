@@ -364,7 +364,6 @@ void lex_next_token(Lexer* lexer, Token* token)
         goto TOKEN_END;
     }
 
-
     // Since we cant match anything, we treat as a label
     // NOTE: I have considered that this is not the fastest way to do
     // this, since labels come first and we first have to fail through
@@ -382,12 +381,7 @@ TOKEN_END:
             copy_size = lexer->token_buf_ptr-1;
         else
             copy_size = lexer->token_buf_ptr;
-        fprintf(stdout, "[%s] copying %d characters to token->token_str\n", __func__, copy_size);
-        strncpy(
-                token->token_str, 
-                lexer->token_buf, 
-                copy_size
-        );
+        strncpy(token->token_str, lexer->token_buf, copy_size);
         token->token_str[copy_size] = '\0';
     }
     else
@@ -395,14 +389,6 @@ TOKEN_END:
         strcpy(token->token_str, lexer->token_buf);
         token->token_str[lexer->token_buf_ptr] = '\0';
     }
-
-    // TODO : debug, remove
-    fprintf(stdout, "[%s] strlen(lexer->token_buf) = %ld\n",
-           __func__, strlen(lexer->token_buf)
-    );
-    fprintf(stdout, "[%s] strlen(token->token_str) = %ld\n",
-           __func__, strlen(token->token_str)
-    );
 
     if(lexer->verbose)
     {
@@ -564,6 +550,15 @@ void lex_line(Lexer* lexer)
         {
             case LEX_ADC:
             case LEX_ADD:
+            case LEX_ANA:
+            case LEX_CMP:
+            case LEX_DAD:
+            case LEX_INX:
+            case LEX_LDAX:
+            case LEX_POP:
+            case LEX_PUSH:
+            case LEX_SBB:
+            case LEX_XRA:
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_one_reg(lexer, &cur_token);
                 break;
@@ -597,6 +592,11 @@ void lex_line(Lexer* lexer)
                 status = lex_parse_reg_imm(lexer, &tok_a, &tok_b);
                 break;
 
+            case LEX_ORA:
+                lex_next_token(lexer, &cur_token);
+                status = lex_parse_one_reg(lexer, &cur_token);
+                break;
+
             case LEX_SUB:
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_one_reg(lexer, &cur_token);
@@ -619,13 +619,6 @@ void lex_line(Lexer* lexer)
         lexer->text_seg->opcode->instr = cur_opcode.instr;
         strcpy(lexer->text_seg->opcode->mnemonic, cur_opcode.mnemonic);
     }
-
-    //if(cur_token.type == SYM_LITERAL)
-    //{
-    //    lexer->text_seg->literal = lex_extract_literal(lexer, &cur_token);
-    //    lexer->text_seg->has_immediate = 1;
-    //}
-
 
 LEX_LINE_END:
     if(status < 0)

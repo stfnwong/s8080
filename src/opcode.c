@@ -15,6 +15,7 @@ const char* INSTR_CODE_TO_STR[] = {
     "ADC",
     "ADD",
     "ADI",
+    "ANA",
     "AND",
     "CMP",
     "DAD",
@@ -35,12 +36,14 @@ const char* INSTR_CODE_TO_STR[] = {
     "PUSH",
     "SBB",
     "SUB",
+    "XRA"
 };
 
 const Opcode LEX_INSTRUCTIONS[] = {
     {LEX_ADC, "ADC"},
     {LEX_ADD, "ADD"},
     {LEX_ADI, "ADI"},
+    {LEX_ANA, "ANA"},
     {LEX_AND, "AND"},
     {LEX_CMP, "CMP"},
     {LEX_DAD, "DAD"},
@@ -62,6 +65,7 @@ const Opcode LEX_INSTRUCTIONS[] = {
     {LEX_SBB, "SBB"},
     {LEX_STAX, "STAX"},
     {LEX_SUB, "SUB"},
+    {LEX_XRA, "XRA"},
 };
 
 /*

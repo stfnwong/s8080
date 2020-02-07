@@ -32,6 +32,7 @@ typedef enum {
     LEX_ADC,
     LEX_ADD,
     LEX_ADI,
+    LEX_ANA,
     LEX_AND,
     LEX_CMP,
     LEX_DAD,
@@ -52,14 +53,16 @@ typedef enum {
     LEX_PUSH,
     LEX_SBB,
     LEX_STAX,
-    LEX_SUB
+    LEX_SUB,
+    LEX_XRA,
+    NUM_LEX_INSTR
 } instr_code;
 
 // Move to *.c file in next commit
 extern const char* INSTR_CODE_TO_STR[7];
 extern const Opcode LEX_INSRUCTIONS[5];
 
-static const int NUM_LEX_INSTR = 25;      // For now this needs to be manually updated
+//static const int NUM_LEX_INSTR = 27;      // For now this needs to be manually updated
 
 
 // Opcode lookup

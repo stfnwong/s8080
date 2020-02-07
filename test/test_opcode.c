@@ -25,6 +25,7 @@ spec("Opcode")
 
         fprintf(stdout, "[%s] opcode table:\n\n", __func__);
         opcode_print_table(optable);
+        fprintf(stdout, "[%s] NUM_LEX_INSTR = %d\n", __func__, NUM_LEX_INSTR);
 
         opcode_table_destroy(optable);
     }
