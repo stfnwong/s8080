@@ -221,6 +221,10 @@ void source_info_destroy(SourceInfo* info)
 int source_info_add_line(SourceInfo* info, LineInfo* line)
 {
     int status; 
+
+    // Bounds check the insert
+    if(info->size == info->max_size)
+        return -1;
       
     status = line_info_copy(info->buffer[info->size], line);
     if(status >= 0)
@@ -262,6 +266,52 @@ LineInfo* source_info_get_idx(SourceInfo* info, int idx)
 
     return (LineInfo*) info->buffer[idx];
 }
+
+
+/*
+ * source_info_clone()
+ */
+SourceInfo* source_info_clone(SourceInfo* src)
+{
+    SourceInfo* dst;
+
+    dst = source_info_create(src->max_size);
+    if(!dst)
+        goto CLONE_END;
+
+    dst->size     = src->size;
+    dst->cur_line = src->cur_line;
+    dst->max_size = src->max_size;
+
+    for(int e = 0; e < src->size; ++e)
+        dst->buffer[e] = src->buffer[e];
+
+CLONE_END:
+    if(!dst)
+    {
+        fprintf(stdout, "[%s] failed to allocate memory for clone\n", __func__);
+        return NULL;
+    }
+
+    return dst;
+}
+
+/*
+ * source_info_full()
+ */
+int source_info_full(SourceInfo* info)
+{
+    return (info->size == info->max_size) ? 1 : 0;
+}
+
+/*
+ * source_info_empty()
+ */
+int source_info_empty(SourceInfo* info)
+{
+    return (info->size == 0) ? 1 : 0;
+}
+
 
 // ================ DATA SEGMENT ================ //
 /*

@@ -187,6 +187,7 @@ spec("Lexer")
         // The source is an immediate
         check(lexer->text_seg->has_immediate == 1);
         check(lexer->text_seg->immediate == 0x77);
+        check(lexer->source_repr->size == 1);
 
         // INR A
         lex_line(lexer);
@@ -201,6 +202,7 @@ spec("Lexer")
 
         check(lexer->text_seg->has_immediate == 0);
         check(lexer->text_seg->immediate == 0);
+        check(lexer->source_repr->size == 2);
 
         // MOV B,A
         lex_line(lexer);
@@ -214,6 +216,7 @@ spec("Lexer")
 
         check(lexer->text_seg->has_immediate == 0);
         check(lexer->text_seg->immediate == 0);
+        check(lexer->source_repr->size == 3);
 
         // INR B
         lex_line(lexer);
@@ -228,6 +231,7 @@ spec("Lexer")
 
         check(lexer->text_seg->has_immediate == 0);
         check(lexer->text_seg->immediate == 0);
+        check(lexer->source_repr->size == 4);
 
         // MOV C,B
         lex_line(lexer);
@@ -242,6 +246,7 @@ spec("Lexer")
 
         check(lexer->text_seg->has_immediate == 0);
         check(lexer->text_seg->immediate == 0);
+        check(lexer->source_repr->size == 5);
 
         // DCR C
         lex_line(lexer);
@@ -256,6 +261,7 @@ spec("Lexer")
 
         check(lexer->text_seg->has_immediate == 0);
         check(lexer->text_seg->immediate == 0);
+        check(lexer->source_repr->size == 6);
 
         // clean up
         lexer_destroy(lexer);

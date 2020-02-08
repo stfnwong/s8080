@@ -50,7 +50,9 @@ void        source_info_destroy(SourceInfo* info);
 int         source_info_add_line(SourceInfo* info, LineInfo* line);
 int         source_info_edit_line(SourceInfo* info, LineInfo* line, int idx);
 LineInfo*   source_info_get_idx(SourceInfo* info, int idx);
-
+SourceInfo* source_info_clone(SourceInfo* src);
+int         source_info_full(SourceInfo* info);
+int         source_info_empty(SourceInfo* info);
 
 // Data segment
 typedef struct
