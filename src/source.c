@@ -51,12 +51,9 @@ INFO_END:
  */
 void line_info_destroy(LineInfo* info)
 {
-    //fprintf(stdout, "[%s] sizeof(*info) = %ld\n", __func__, sizeof(*info));
     free(info->opcode);
     free(info->label_str);
     free(info);
-
-    //fprintf(stdout, "[%s] &info : %p\n", __func__, &info);
 }
 
 /*
@@ -109,7 +106,61 @@ void line_info_print(LineInfo* info)
     fprintf(stdout, "\n");
 }
 
-// TODO : LineInfo that prints how the assembly should have looked
+/*
+ * line_info_print_instr()
+ */
+void line_info_print_instr(LineInfo* info)
+{
+    if(info->opcode == NULL)
+        return;
+
+    fprintf(stdout, "%s ", info->opcode->mnemonic);
+    switch(info->opcode->instr)
+    {
+        // One register argument
+        case LEX_ACI:
+        case LEX_ADD:
+        case LEX_ADC:
+        case LEX_ANA:
+        case LEX_CMP:
+        case LEX_DAA:
+        case LEX_ORA:
+        case LEX_POP:
+        case LEX_PUSH:
+        case LEX_SBB:
+        case LEX_STAX:
+        case LEX_SUB:
+        case LEX_XRA:
+            fprintf(stdout, "%c ", info->reg[0]);
+            break;
+
+        // Two register arguments 
+        case LEX_MOV:
+            fprintf(stdout, "%c, %c", info->reg[0], info->reg[1]);
+            break;
+
+        // One register and one 8bit immediate
+        case LEX_MVI:
+            fprintf(stdout, "%c %02X ", info->reg[0], info->immediate);
+            break;
+            
+        // One register and one 16bit immediate
+        case LEX_LXI:
+            fprintf(stdout, "%c %04X ", info->reg[0], info->immediate);
+            break;
+
+        // 16-bit Immediate arguments
+        case LEX_LHLD:
+        case LEX_STA:
+            fprintf(stdout, "%04X", info->immediate);
+            break;
+
+        // If this instruction just has an opcode then do nothing
+        default:
+            break;
+    }
+}
+
 
 /*
  * line_info_copy()
@@ -205,11 +256,7 @@ void source_info_destroy(SourceInfo* info)
     else
     {
         for(int b = 0; b < info->max_size; ++b)
-        {
-            //fprintf(stdout, "[%s] freeing buffer %d / %d (%ld bytes)\n",
-            //        __func__, b+1, info->max_size, sizeof(*info->buffer[b]));
             line_info_destroy(info->buffer[b]);
-        }
         free(info->buffer);
         free(info);
     }

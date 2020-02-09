@@ -53,8 +53,21 @@ uint8_t asm_reg_to_code(char reg)
     }
 }
 
-// TODO: we can compress this down....
 
+
+void asm_8bit_arith(LineInfo* line)
+{
+
+}
+
+
+void asm_16bit_arith(LineInfo* line)
+{
+
+}
+
+
+// TODO: we can compress this down....
 int asm_add(Instr* instr, LineInfo* line)
 {
     instr->instr = 0x2 << 6;        

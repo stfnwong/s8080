@@ -10,11 +10,44 @@
 
 // This was reduced for debugging, but we can expand it back to 128 later
 #define TOKEN_BUF_SIZE 32 
+#define MAX_SYM_LEN 32
 
 #include <stdint.h>
 #include "opcode.h"
 #include "source.h"
 
+/*
+ * Symbol object
+ */
+typedef struct
+{
+    int   addr;
+    char  sym[MAX_SYM_LEN];
+    //int   sym_len;      // 
+} Symbol;
+
+Symbol* symbol_create(void);
+void symbol_init(Symbol* s);
+void symbol_copy(Symbol* dst, Symbol* src);
+void symbol_print(Symbol* s);
+
+/*
+ * SymbolTable
+ */
+typedef struct
+{
+    Symbol** entries;
+    int size;
+    int max_size;
+} SymbolTable;
+
+// Don't bother with copying for now
+SymbolTable* symbol_table_create(int size);
+void         symbol_table_destroy(SymbolTable* table);
+int          symbol_table_add_sym(SymbolTable* table, Symbol* s);
+int          symbol_table_full(SymbolTable* s);
+int          symbol_table_empty(SymbolTable* s);
+Symbol*      symbol_table_get(SymbolTable* table, int idx);
 
 /*
  * Lexer object
@@ -45,10 +78,11 @@ typedef struct
     
     // Opcode table
     OpcodeTable* op_table;
+    // Symbol table
+    SymbolTable* sym_table;
 
     // misc settings
     int verbose;
-
 } Lexer;
 
 Lexer* lexer_create(void);

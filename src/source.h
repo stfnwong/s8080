@@ -34,6 +34,7 @@ LineInfo* line_info_create(void);
 void      line_info_destroy(LineInfo* info);
 void      line_info_init(LineInfo* info);
 void      line_info_print(LineInfo* info);
+void      line_info_print_intr(LineInfo* info);
 int       line_info_copy(LineInfo* dst, LineInfo* src);
 
 // ==== Buffer for LineInfo Structures

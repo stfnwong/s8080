@@ -11,6 +11,136 @@
 #include <string.h>
 #include "lexer.h"
 
+/*
+ * symbol_create()
+ */
+Symbol* symbol_create(void)
+{
+    Symbol* s;
+
+    s = malloc(sizeof(*s));
+    return (!s) ? NULL : s;
+}
+
+/*
+ * symbol_init()
+ */
+void symbol_init(Symbol* s)
+{
+    s->addr = 0;
+    //s->sym_len = 0;
+    memcpy(s->sym, 0, MAX_SYM_LEN);
+}
+
+/*
+ * symbol_copy()
+ */
+void symbol_copy(Symbol* dst, Symbol* src)
+{
+    dst->addr = src->addr;
+    strncpy(dst->sym, src->sym, MAX_SYM_LEN);
+}
+
+/*
+ * symbol_print()
+ */
+void symbol_print(Symbol* s)
+{
+    fprintf(stdout, " 0x%04X : %s\n", s->addr, s->sym);
+}
+
+// ================ SYMBOL TABLE ================ //
+
+/*
+ * symbol_table_create()
+ */
+SymbolTable* symbol_table_create(int size)
+{
+    SymbolTable* table;
+
+    table = malloc(sizeof(*table));
+    if(!table)
+        return NULL;
+
+    table->size = 0;
+    table->max_size = size;
+    table->entries = malloc(sizeof(*table->entries) * table->max_size);
+    if(!table->entries)
+        return NULL;
+
+    for(int i = 0; i < table->max_size; ++i)
+    {
+        table->entries[i] = malloc(sizeof(*table->entries[i]));
+        if(!table->entries[i])
+        {
+            free(table->entries);
+            free(table);
+            return NULL;
+        }
+        table->entries[i] = symbol_create();
+    }
+
+    return table;
+}
+
+/*
+ * symbol_table_destroy()
+ */
+void symbol_table_destroy(SymbolTable* table)
+{
+    if(table == NULL)
+        free(table);
+    else
+    {
+        for(int i = 0; i < table->max_size; ++i)
+            free(table->entries[i]);
+
+        free(table->entries);
+        free(table);
+    }
+}
+
+/*
+ * symbol_table_add_sym()
+ */
+int symbol_table_add_sym(SymbolTable* table, Symbol* s)
+{
+    if(table->size == table->max_size)
+        return -1;
+
+    symbol_copy(table->entries[table->size], s);
+    table->size++;
+    //table->entries[table->size] =
+
+    return 0;
+}
+
+
+/*
+ * symbol_table_full()
+ */
+int symbol_table_full(SymbolTable* s)
+{
+    return (s->size == s->max_size) ? 1 : 0;
+}
+/*
+ * symbol_table_empty()
+ */
+int symbol_table_empty(SymbolTable* s)
+{
+    return (s->size == 0) ? 1 : 0;
+}
+
+/*
+ * symbol_table_get()
+ */
+Symbol* symbol_table_get(SymbolTable* table, int idx)
+{
+    if(idx < 0 || idx > table->max_size || idx > table->size)
+        return NULL;
+
+    return table->entries[idx];
+}
 
 
 // ================ LEXER ================ //
@@ -548,6 +678,7 @@ void lex_line(Lexer* lexer)
 
         switch(cur_opcode.instr)
         {
+            // Single register
             case LEX_ADC:
             case LEX_ADD:
             case LEX_ANA:
@@ -558,6 +689,7 @@ void lex_line(Lexer* lexer)
             case LEX_POP:
             case LEX_PUSH:
             case LEX_SBB:
+            case LEX_SUB:
             case LEX_XRA:
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_one_reg(lexer, &cur_token);
@@ -597,10 +729,6 @@ void lex_line(Lexer* lexer)
                 status = lex_parse_one_reg(lexer, &cur_token);
                 break;
 
-            case LEX_SUB:
-                lex_next_token(lexer, &cur_token);
-                status = lex_parse_one_reg(lexer, &cur_token);
-                break;
 
             default:
                 if(lexer->verbose)
@@ -634,8 +762,9 @@ LEX_LINE_END:
 }
 
 
-
-// TODO : this will be the entry point for the lexer
+/*
+ * lex_all()
+ */
 int lex_all(Lexer* lexer)
 {
     Token* cur_token = create_token();

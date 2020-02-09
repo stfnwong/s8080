@@ -16,8 +16,8 @@ int src_file_size;
 
 spec("Lexer")
 {
-    static const char test_filename[] = "asm/test_lexer.asm";
-    static const char mov_test_filename[] = "asm/test_mov.asm";
+    static const char test_filename[]       = "asm/test_lexer.asm";
+    static const char mov_test_filename[]   = "asm/test_mov.asm";
     static const char arith_test_filename[] = "asm/test_arith.asm";
 
     it("Should initialize correctly")
@@ -567,4 +567,5 @@ spec("Lexer")
         // clean up
         lexer_destroy(lexer);
     }
+
 }
