@@ -13,7 +13,7 @@ TOOL_DIR=tools
 CC=gcc
 CFLAGS=-Wall -g2 -O0 -std=c11 -I$(SRC_DIR) 
 LDFLAGS=
-LIBS=
+LIBS=-lSDL2
 
 # Sources, objects, etc
 INCLUDES := -I/$(SRC_DIR)

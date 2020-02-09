@@ -212,6 +212,8 @@ spec("SourceInfo")
         line_info_destroy(test_line);
     }
 
+    // TODO : more bounds check tests
+
     //it("Allows access by index")
     //{
     //    int num_elems;

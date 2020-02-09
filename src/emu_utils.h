@@ -6,9 +6,9 @@
 #ifndef __EMU_UTILS
 #define __EMU_UTILS
 
-#include "emu_shell.h"
+#include "cpu.h"
 
-void PrintState(State8080 *state);
-void ReadFileToMemory(State8080 *state, const char *filename, int offset);
+void PrintState(CPUState *state);
+void ReadFileToMemory(CPUState *state, const char *filename, int offset);
 
 #endif /*__EMU_UTILS*/
