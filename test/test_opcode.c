@@ -26,20 +26,23 @@ spec("Opcode")
         check(optable->num_opcodes == NUM_LEX_INSTR);
         fprintf(stdout, "[%s] placed %d instructions into opcode table\n", __func__, NUM_LEX_INSTR);
 
-        //fprintf(stdout, "[%s] opcode table:\n\n", __func__);
-        //opcode_table_print(optable);
-        //fprintf(stdout, "[%s] NUM_LEX_INSTR = %d\n", __func__, NUM_LEX_INSTR);
+        fprintf(stdout, "[%s] opcode table:\n\n", __func__);
+        opcode_table_print(optable);
+        fprintf(stdout, "[%s] NUM_LEX_INSTR = %d\n", __func__, NUM_LEX_INSTR);
 
+        // TODO : move to lookup by instr section
         // Check that all the instructions are actually in the table
+        fprintf(stdout, "[%s] checking instructions in table\n", __func__);
         for(int i = 0; i < NUM_LEX_INSTR; ++i)
         {
-            fprintf(stdout, "[%s] checking instruction %d / %d (expecting %X)\n", __func__, i+1, NUM_LEX_INSTR, LEX_INSTRUCTIONS[i].instr);
             opcode_table_find_instr(
                     optable,
                     op,
                     LEX_INSTRUCTIONS[i].instr
                     );
+            fprintf(stdout, "[%d / %d] ", i+1, NUM_LEX_INSTR);
             opcode_print(op);
+            fprintf(stdout, "\n");
             check(op != NULL);
             check(op->instr == LEX_INSTRUCTIONS[i].instr);
             check(strcmp(op->mnemonic, LEX_INSTRUCTIONS[i].mnemonic) == 0);

@@ -70,9 +70,8 @@ typedef enum {
 } instr_code;
 
 // Move to *.c file in next commit
-static const int NUM_LEX_INSTR = 38;  // TODO :  better way of doing this
-extern const char* INSTR_CODE_TO_STR[7];
-extern const Opcode LEX_INSTRUCTIONS[38];
+static const int NUM_LEX_INSTR = 36;  // TODO :  better way of doing this
+extern const Opcode LEX_INSTRUCTIONS[36];
 
 
 // Opcode lookup
@@ -83,7 +82,6 @@ typedef struct
     Opcode** op_array;
     int      num_opcodes;
 } OpcodeTable;
-
 
 OpcodeTable* opcode_table_create(void);
 void         opcode_table_destroy(OpcodeTable* optable);

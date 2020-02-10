@@ -501,7 +501,6 @@ void lex_next_token(Lexer* lexer, Token* token)
     {
         if(lexer->verbose)
         {
-            //fprintf(stdout, "[%s] got opcode %d [%s]\n", __func__, opcode.instr, INSTR_CODE_TO_STR[opcode.instr]);
             fprintf(stdout, "[%s] got opcode %d [%s]\n", 
                     __func__, 
                     opcode.instr, 

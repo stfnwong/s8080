@@ -10,44 +10,6 @@
 #include <string.h>
 #include "opcode.h"
 
-//const char* INSTR_CODE_TO_STR[] = {
-//    "INVALID",
-//    "ACI",
-//    "ADC",
-//    "ADD",
-//    "ADI",
-//    "ANA",
-//    "AND",
-//    "CMA",
-//    "CMP",
-//    "CZ",
-//    "DAA",
-//    "DAD",
-//    "DCR",
-//    "DCX",
-//    "IN",
-//    "INR",
-//    "INX",
-//    "JNZ",
-//    "JP",
-//    "JZ",
-//    "LDA",
-//    "LDAX",
-//    "LHLD",
-//    "LXI",
-//    "MOV",
-//    "MVI",
-//    "NOP",
-//    "ORA",
-//    "ORI",
-//    "POP",
-//    "PUSH",
-//    "RAL",
-//    "SBB",
-//    "STA",
-//    "SUB",
-//    "XRA"
-//};
 
 // All supported opcodes as Opcode structures
 const Opcode LEX_INSTRUCTIONS[] = {
@@ -151,7 +113,7 @@ OpcodeTable* opcode_table_create(void)
     table = malloc(sizeof(*table));
     if(!table)
     {
-        fprintf(stderr, "[%s] failed to allocate memory for OpcodeTable\n", __func__);
+        //fprintf(stderr, "[%s] failed to allocate memory for OpcodeTable\n", __func__);
         status = -1;
         goto OPCODE_TABLE_END;
     }
@@ -172,15 +134,13 @@ OpcodeTable* opcode_table_create(void)
     table->op_array = malloc(sizeof(*table->op_array) * table->num_opcodes);
     if(!table->op_array)
     {
-        fprintf(stderr, "[%s] failed to allocate memory for op_array\n", __func__);
         status = -1;
         goto OPCODE_TABLE_END;
     }
+
     // Try allocate table memory
     for(int i = 0; i < table->num_opcodes; ++i)
     {
-        fprintf(stdout, "[%s] allocating opcode [%d / %d]\n",
-                __func__, i+1, table->num_opcodes);
         table->op_array[i] = malloc(sizeof(*table->op_array[i]));
         if(!table->op_array[i])
         {
@@ -190,7 +150,6 @@ OpcodeTable* opcode_table_create(void)
         table->op_array[i] = opcode_create();
         if(!table->op_array[i])
         {
-            fprintf(stderr, "[%s] failed to allocate memory for opcode %d\n", __func__, i);
             status = -1;
             goto OPCODE_TABLE_END;
         }
@@ -200,13 +159,6 @@ OpcodeTable* opcode_table_create(void)
     for(int i = 0; i < table->num_opcodes; ++i)
     {
         opcode_copy(table->op_array[i], &LEX_INSTRUCTIONS[i]);
-        //table->op_array[i]->instr    = LEX_INSTRUCTIONS[i].instr;
-        //strncpy(table->op_array[i]->mnemonic, 
-        //        LEX_INSTRUCTIONS[i].mnemonic, 
-        //        strlen(LEX_INSTRUCTIONS[i].mnemonic)
-        //);
-        fprintf(stdout, "[%s] copied instruction %d / %d with mnemonic %s of len %ld\n", __func__, i+1, table->num_opcodes, LEX_INSTRUCTIONS[i].mnemonic, strlen(LEX_INSTRUCTIONS[i].mnemonic));
-        //table->op_array[i]->mnemonic = LEX_INSTRUCTIONS[i].mnemonic;
     }
 
 OPCODE_TABLE_END:
@@ -232,11 +184,7 @@ void opcode_table_destroy(OpcodeTable* optable)
     else
     {
         for(int i = 0; i < optable->num_opcodes; ++i)
-        {
-            fprintf(stdout, "[%s] freeing opcode [%d / %d]\n",
-                    __func__, i+1, optable->num_opcodes);
             free(optable->op_array[i]);
-        }
         //free(optable->null_op);
         free(optable->op_array);
         free(optable);
@@ -261,13 +209,10 @@ void opcode_table_print(OpcodeTable* optable)
  */
 void opcode_table_find_instr(OpcodeTable* optable, Opcode* op, uint8_t instr)
 {
-    fprintf(stdout, "[%s] searching table...\n", __func__);
     for(int i = 0; i < optable->num_opcodes; ++i)
     {
-        fprintf(stdout, "[%s] checking op %d/%d\n", __func__, i+1, optable->num_opcodes);
         if(instr == optable->op_array[i]->instr)
         {
-            fprintf(stdout, "[%s] instr %0X == optable->array[%d] : %0X [%s]\n", __func__, instr, i, optable->op_array[i]->instr, optable->op_array[i]->mnemonic);
             op->instr = optable->op_array[i]->instr;
             strncpy(op->mnemonic, optable->op_array[i]->mnemonic, OPCODE_MNEMONIC_SIZE);
             return;
