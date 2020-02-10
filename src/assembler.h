@@ -20,8 +20,6 @@ typedef struct
 void instr_init(Instr* instr);
 void instr_print(Instr* instr);
 
-//inline int asm_add(Instr* instr, LineInfo* line);
-//int asm_inr(Instr* instr, LineInfo* line);
 
 /*
  * ASSEMBLER

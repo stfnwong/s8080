@@ -183,6 +183,8 @@ Lexer* lexer_create(void)
     // create it once we've read the source in and can guess at the 
     // number of lines we will need
     lexer->source_repr = NULL;
+    // Also don't allocate any memory for the SymbolTable yet
+    lexer->sym_table = NULL;
 
     lexer->op_table = opcode_table_create();
     if(!lexer->op_table)
@@ -265,12 +267,23 @@ int lex_read_file(Lexer* lexer, const char* filename)
             num_lines++;
     }
 
+    // Create a new source representation for that number of lines
     if(lexer->source_repr != NULL)
         source_info_destroy(lexer->source_repr);
     lexer->source_repr = source_info_create(num_lines);
     if(!lexer->source_repr)
     {
         fprintf(stderr, "[%s] failed to create new SourceInfo for lexer with %d entries\n", __func__, num_lines);
+        return -1;
+    }
+
+    // Create a symbol table with the same number of entries
+    if(lexer->sym_table != NULL)
+        symbol_table_destroy(lexer->sym_table);
+    lexer->sym_table = symbol_table_create(num_lines);
+    if(!lexer->sym_table)
+    {
+        fprintf(stderr, "[%s] failed to create new SymbolTable for lexer with %d entries\n", __func__, num_lines);
         return -1;
     }
     
@@ -488,7 +501,11 @@ void lex_next_token(Lexer* lexer, Token* token)
     {
         if(lexer->verbose)
         {
-            fprintf(stdout, "[%s] got opcode %d [%s]\n", __func__, opcode.instr, INSTR_CODE_TO_STR[opcode.instr]);
+            //fprintf(stdout, "[%s] got opcode %d [%s]\n", __func__, opcode.instr, INSTR_CODE_TO_STR[opcode.instr]);
+            fprintf(stdout, "[%s] got opcode %d [%s]\n", 
+                    __func__, 
+                    opcode.instr, 
+                    LEX_INSTRUCTIONS[opcode.instr].mnemonic);
         }
         token->type = SYM_INSTR;
         goto TOKEN_END;

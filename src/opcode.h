@@ -66,29 +66,28 @@ typedef enum {
     LEX_STAX,
     LEX_SUB,
     LEX_XRA,
-    NUM_LEX_INSTR
+    //NUM_LEX_INSTR
 } instr_code;
 
 // Move to *.c file in next commit
+static const int NUM_LEX_INSTR = 38;  // TODO :  better way of doing this
 extern const char* INSTR_CODE_TO_STR[7];
-extern const Opcode LEX_INSRUCTIONS[5];
-
-//static const int NUM_LEX_INSTR = 27;      // For now this needs to be manually updated
+extern const Opcode LEX_INSTRUCTIONS[38];
 
 
 // Opcode lookup
 typedef struct
 {
     // Null opcode (to return when there are no matches)
-    Opcode* null_op;
-    Opcode* op_array;
-    int     num_opcodes;
+    Opcode*  null_op;
+    Opcode** op_array;
+    int      num_opcodes;
 } OpcodeTable;
 
 
 OpcodeTable* opcode_table_create(void);
 void         opcode_table_destroy(OpcodeTable* optable);
-void         opcode_print_table(OpcodeTable* optable);
+void         opcode_table_print(OpcodeTable* optable);
 
 // Get opcodes
 void opcode_table_find_instr(OpcodeTable* optable, Opcode* op, uint8_t instr);

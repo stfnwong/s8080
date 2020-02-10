@@ -44,9 +44,10 @@ spec("Lexer")
 
         // Check the opcode table
         check(lexer->op_table != NULL);
-
         // Check the SourceInfo object
         check(lexer->source_repr == NULL);
+        // Check the SymbolTable
+        check(lexer->sym_table == NULL);
 
         // Lexer object is fine, load an assembler file from disk
         int status = lex_read_file(lexer, test_filename);
@@ -54,6 +55,7 @@ spec("Lexer")
 
         // We should also have a new source_repr object in the Lexer
         check(lexer->source_repr != NULL);
+        check(lexer->sym_table != NULL);
         check(lexer->source_repr->size == 0);
         check(lexer->source_repr->cur_line == 0);
         check(lexer->source_repr->max_size == 12);      // since there are 12 lines in the source file
@@ -563,9 +565,34 @@ spec("Lexer")
         check(lexer->text_seg->reg[0] == 'B');
         check(lexer->text_seg->reg[1] == '\0');
 
-
         // clean up
         lexer_destroy(lexer);
     }
 
+    it("Lexes the arithmetic file into a SourceInfo when lex_all() is called")
+    {
+        Lexer* lexer = lexer_create();
+
+        int status = lex_read_file(lexer, arith_test_filename);
+        check(status == 0);
+        lexer->verbose = 1;
+
+        // Lex the file 
+        lex_all(lexer);
+        // Now check the internal SourceInfo
+        fprintf(stdout, "[%s] source info for file [%s] contains %d elements\n", __func__, arith_test_filename, lexer->source_repr->size);
+
+        // Print each element
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            LineInfo* cur_line = source_info_get_idx(
+                    lexer->source_repr,
+                    l
+            );
+            check(cur_line != NULL);
+        }
+
+        // clean up
+        lexer_destroy(lexer);
+    }
 }

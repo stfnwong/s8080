@@ -14,20 +14,39 @@
 
 spec("Opcode")
 {
-
     it("Should init lexer instruction codes in OpcodeTable")
     {
         OpcodeTable* optable;
+        Opcode* op;
 
-        optable = opcode_table_create();       // At time of writing there are 4 instructions
+        op = opcode_create();
+        check(op != NULL);
+        optable = opcode_table_create();       
         check(optable != NULL);
         check(optable->num_opcodes == NUM_LEX_INSTR);
+        fprintf(stdout, "[%s] placed %d instructions into opcode table\n", __func__, NUM_LEX_INSTR);
 
-        fprintf(stdout, "[%s] opcode table:\n\n", __func__);
-        opcode_print_table(optable);
-        fprintf(stdout, "[%s] NUM_LEX_INSTR = %d\n", __func__, NUM_LEX_INSTR);
+        //fprintf(stdout, "[%s] opcode table:\n\n", __func__);
+        //opcode_table_print(optable);
+        //fprintf(stdout, "[%s] NUM_LEX_INSTR = %d\n", __func__, NUM_LEX_INSTR);
+
+        // Check that all the instructions are actually in the table
+        for(int i = 0; i < NUM_LEX_INSTR; ++i)
+        {
+            fprintf(stdout, "[%s] checking instruction %d / %d (expecting %X)\n", __func__, i+1, NUM_LEX_INSTR, LEX_INSTRUCTIONS[i].instr);
+            opcode_table_find_instr(
+                    optable,
+                    op,
+                    LEX_INSTRUCTIONS[i].instr
+                    );
+            opcode_print(op);
+            check(op != NULL);
+            check(op->instr == LEX_INSTRUCTIONS[i].instr);
+            check(strcmp(op->mnemonic, LEX_INSTRUCTIONS[i].mnemonic) == 0);
+        }
 
         opcode_table_destroy(optable);
+        opcode_destroy(op);
     }
 
     it("Should allow opcode lookup by instr")
@@ -36,7 +55,7 @@ spec("Opcode")
         OpcodeTable* optable;
 
         // Do the basic checks
-        optable = opcode_table_create();       // At time of writing there are 4 instructions
+        optable = opcode_table_create();       
         check(optable != NULL);
         check(optable->num_opcodes == NUM_LEX_INSTR);
 
@@ -59,7 +78,7 @@ spec("Opcode")
         OpcodeTable* optable;
 
         // Do the basic checks
-        optable = opcode_table_create();       // At time of writing there are 4 instructions
+        optable = opcode_table_create();       
         check(optable != NULL);
         check(optable->num_opcodes == NUM_LEX_INSTR);
 

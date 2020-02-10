@@ -55,6 +55,7 @@ SourceInfo* source_info_clone(SourceInfo* src);
 int         source_info_full(SourceInfo* info);
 int         source_info_empty(SourceInfo* info);
 
+
 // Data segment
 typedef struct
 {

@@ -14,7 +14,6 @@
 
 spec("SymbolTable")
 {
-
     it("Should allow insertion")
     {
         SymbolTable* test_table;
@@ -24,6 +23,8 @@ spec("SymbolTable")
         check(test_table != NULL);
         check(test_table->max_size == table_size);
         check(test_table->size == 0);
+        check(symbol_table_empty(test_table) == 1);
+        check(symbol_table_full(test_table) == 0);
 
         // Put some symbols in the table
         Symbol test_sym;
@@ -46,9 +47,15 @@ spec("SymbolTable")
         check(out_sym == NULL);
         // get a real symbol
         out_sym = symbol_table_get(test_table, 0);
+        check(out_sym != NULL);
+        check(out_sym->addr == 0xBEEF);
+        check(strncmp(out_sym->sym, "TEST\0", 5) == 0);
 
+        out_sym = symbol_table_get(test_table, 1);
+        check(out_sym != NULL);
+        check(out_sym->addr == 0xBEEF + 1);
+        check(strncmp(out_sym->sym, "TEST\0", 5) == 0);
 
-        // TODO : something wrong with free() here
         symbol_table_destroy(test_table);
     }
 }
