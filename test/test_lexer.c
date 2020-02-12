@@ -372,6 +372,40 @@ spec("Lexer")
         lexer_destroy(lexer);
     }
 
+    it("Lexes the move file into a SourceInfo when lex_all() is called")
+    {
+        Lexer* lexer = lexer_create();
+
+        int status = lex_read_file(lexer, mov_test_filename);
+        check(status == 0);
+
+        // Lex the file 
+        lex_all(lexer);
+        // Now check the internal SourceInfo
+        fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
+                __func__, 
+                mov_test_filename, 
+                lexer->source_repr->size
+        );
+
+        // Print each element
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            LineInfo* cur_line = source_info_get_idx(
+                    lexer->source_repr,
+                    l
+            );
+            check(cur_line != NULL);
+
+            // Just for debugging
+            line_info_print_instr(cur_line);
+            fprintf(stdout, "\n");
+        }
+
+        // clean up
+        lexer_destroy(lexer);
+    }
+
     it("Should lex all the arithmetic instructions correctly")
     {
         Lexer* lexer = lexer_create();
@@ -575,12 +609,16 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, arith_test_filename);
         check(status == 0);
-        lexer->verbose = 1;
+        //lexer->verbose = 1;
 
         // Lex the file 
         lex_all(lexer);
         // Now check the internal SourceInfo
-        fprintf(stdout, "[%s] source info for file [%s] contains %d elements\n", __func__, arith_test_filename, lexer->source_repr->size);
+        fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
+                __func__, 
+                arith_test_filename, 
+                lexer->source_repr->size
+        );
 
         // Print each element
         for(int l = 0; l < lexer->source_repr->size; ++l)
@@ -590,6 +628,10 @@ spec("Lexer")
                     l
             );
             check(cur_line != NULL);
+
+            // Just for debugging
+            line_info_print_instr(cur_line);
+            fprintf(stdout, "\n");
         }
 
         // clean up

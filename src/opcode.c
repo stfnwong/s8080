@@ -43,11 +43,18 @@ const Opcode LEX_INSTRUCTIONS[] = {
     {LEX_ORI,  "ORI"},
     {LEX_POP,  "POP"},
     {LEX_PUSH, "PUSH"},
+    {LEX_RAA,  "RAA"},
     {LEX_RAL,  "RAL"},
+    {LEX_RAR,  "RAR"},
+    {LEX_RLC,  "RLC"},
+    {LEX_RRC,  "RRC"},
     {LEX_SBB,  "SBB"},
+    {LEX_SPHL, "SPHL"},
     {LEX_STA,  "STA"},
     {LEX_STAX, "STAX"},
     {LEX_SUB,  "SUB"},
+    {LEX_XCHG, "XCHG"},
+    {LEX_XTHL, "XTHL"},
     {LEX_XRA,  "XRA"},
 };
 

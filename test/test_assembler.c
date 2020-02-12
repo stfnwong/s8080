@@ -31,7 +31,6 @@ spec("Assembler")
         assembler_destroy(assem);
     }
 
-
     it("Should allocate instruction memory when a SourceInfo object is attached")
     {
         Assembler* assem;
@@ -42,7 +41,6 @@ spec("Assembler")
         check(assem != NULL);
         check(assem->src_repr == NULL);
         check(assem->instr_buf == NULL);
-        check(assem->instr_buf_size == 0);
         check(assem->cur_line == 0);
         check(assem->verbose == 0);
 
@@ -70,7 +68,7 @@ spec("Assembler")
         assembler_set_repr(assem, test_repr);
         check(assem->src_repr != NULL);
         check(assem->instr_buf != NULL);
-        check(assem->instr_buf_size == test_repr->max_size);
+        check(assem->instr_buf->max_size == test_repr->max_size);
 
         assembler_destroy(assem);
     }

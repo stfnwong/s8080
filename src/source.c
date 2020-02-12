@@ -111,8 +111,11 @@ void line_info_print(LineInfo* info)
  */
 void line_info_print_instr(LineInfo* info)
 {
-    if(info->opcode == NULL)
+    if(info == NULL || info->opcode == NULL)
         return;
+
+    if(info->label_str_len > 0)
+        fprintf(stdout, "%s: ", info->label_str);
 
     fprintf(stdout, "%s ", info->opcode->mnemonic);
     switch(info->opcode->instr)
@@ -124,7 +127,11 @@ void line_info_print_instr(LineInfo* info)
         case LEX_ANA:
         case LEX_CMP:
         case LEX_DAA:
+        case LEX_INR:
+        case LEX_INX:
+        case LEX_LDAX:
         case LEX_ORA:
+        case LEX_DAD:
         case LEX_POP:
         case LEX_PUSH:
         case LEX_SBB:
@@ -141,12 +148,17 @@ void line_info_print_instr(LineInfo* info)
 
         // One register and one 8bit immediate
         case LEX_MVI:
-            fprintf(stdout, "%c %02X ", info->reg[0], info->immediate);
+            fprintf(stdout, "%c 0x%02X ", info->reg[0], info->immediate);
             break;
             
         // One register and one 16bit immediate
         case LEX_LXI:
-            fprintf(stdout, "%c %04X ", info->reg[0], info->immediate);
+            fprintf(stdout, "%c 0x%04X ", info->reg[0], info->immediate);
+            break;
+
+        // 8-bit immediate arguments 
+        case LEX_ADI:
+            fprintf(stdout, "0x%02X ", info->immediate);
             break;
 
         // 16-bit Immediate arguments

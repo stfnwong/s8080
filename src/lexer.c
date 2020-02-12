@@ -745,7 +745,6 @@ void lex_line(Lexer* lexer)
                 status = lex_parse_one_reg(lexer, &cur_token);
                 break;
 
-
             default:
                 if(lexer->verbose)
                 {
