@@ -56,13 +56,9 @@ spec("IntrBuffer")
         check(check_instr == NULL);
         check_instr = instr_buffer_get(test_buffer, buf_size + 2);
         check(check_instr == NULL);
-        // Since we added one less than max, max will also be nukll
+        // Since we added one less than max, max will also be null
         check_instr = instr_buffer_get(test_buffer, buf_size);
         check(check_instr == NULL);
-        //check_instr = instr_buffer_get(test_buffer, buf_size - 1);
-        //instr_print(check_instr);
-        //fprintf(stdout, "\n");
-        //check(check_instr == NULL);
         check_instr = instr_buffer_get(test_buffer, buf_size - 2);
         check(check_instr != NULL);
         check(check_instr->addr == 0xBEEF + buf_size - 2);
