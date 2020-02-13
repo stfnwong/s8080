@@ -12,17 +12,6 @@
 
 #include <stdint.h>
 
-typedef enum
-{
-    CPU_REG_A,
-    CPU_REG_B,
-    CPU_REG_C,
-    CPU_REG_D,
-    CPU_REG_E,
-    CPU_REG_H,
-    CPU_REG_L,
-} CPUReg;
-
 // Condition code
 typedef struct 
 {
@@ -34,12 +23,9 @@ typedef struct
     uint8_t pad :3;
 } ConditionCodes;
 
-
 // State structure 
 typedef struct CPUState
 {
-    // TODO : make registers an array?
-    uint8_t        registers[7];
     uint8_t        a;
     uint8_t        b;
     uint8_t        c;
@@ -54,23 +40,12 @@ typedef struct CPUState
     uint8_t        int_enable;
     uint16_t       shift_reg;
     uint16_t       shift_amount;
+    //int            mem_size;
 } CPUState;
 
-// Create and destroy state objects 
+// Get a new emulator state
 CPUState *cpu_create(void);
 void cpu_destroy(CPUState *state);
-
-// ======== Instruction processing patterns ======== //
-void     cpu_move_reg(CPUState* state, CPUReg src, CPUReg dst);
-void     cpu_write_reg(CPUState* state, CPUReg reg, uint8_t val);
-uint8_t  cpu_read_reg(CPUState* state, CPUReg reg);
-void     cpu_jump(CPUState* state, uint16_t addr);      // inline?
-void     cpu_stack_push(CPUState* state, uint16_t val);
-uint16_t cpu_stack_pop(CPUState* state);
-
-void cpu_interrupt(CPUState* state, uint8_t n);
-
-
 
 // Operation
 void cpu_shift_register(CPUState* state);

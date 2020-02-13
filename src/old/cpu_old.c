@@ -23,21 +23,10 @@ CPUState *cpu_create(void)
         return NULL;
     //state->mem_size = CPU_MEM_SIZE;
     state->memory       = malloc(CPU_MEM_SIZE);        // 16K
-    if(!state->memory)
-        return NULL;
-
-    state->sp           = 0;
-    state->pc           = 0;
     state->shift_reg    = 0;
     state->shift_amount = 0;
-    state->cc.z   = 0;
-    state->cc.s   = 0;
-    state->cc.p   = 0;
-    state->cc.cy  = 0;
-    state->cc.ac  = 0;
-    state->cc.pad = 0;
-    for(int r = 0; r < 8; ++r)
-        state->registers[r] = 0;
+    if(!state->memory)
+        return NULL;
 
     return state;
 }
@@ -50,79 +39,6 @@ void cpu_destroy(CPUState *state)
     free(state->memory);
     free(state);
 }
-
-/*
- * cpu_move_reg()
- */
-void cpu_move_reg(CPUState* state, CPUReg src, CPUReg dst)
-{
-    state->registers[dst] = state->registers[src];
-}
-
-/*
- * cpu_write_reg()
- */
-void cpu_write_reg(CPUState* state, CPUReg reg, uint8_t val)
-{
-    state->registers[reg] = val;
-}
-
-/*
- * cpu_read_reg()
- */
-uint8_t cpu_read_reg(CPUState* state, CPUReg reg)
-{
-    return state->registers[reg];
-}
-
-/*
- * cpu_jump()
- */
-void cpu_jump(CPUState* state, uint16_t addr)
-{
-    state->pc = addr;
-}
-
-/*
- * cpu_stack_push()
- */
-void cpu_stack_push(CPUState* state, uint16_t val)
-{
-    state->memory[state->sp] = val >> 8;
-    state->sp--;
-    state->memory[state->sp] = (val & 0x00FF);
-    state->sp--;
-}
-
-/*
- * cpu_stack_pop()
- */
-uint16_t cpu_stack_pop(CPUState* state)
-{
-    uint16_t s;
-
-    s = state->memory[state->sp];
-    state->sp++;
-    s = s | (uint16_t) state->memory[state->sp] << 8;
-    state->sp++;
-
-    return s;
-}
-
-/*
- * cpu_interrupt()
- */
-void cpu_interrupt(CPUState* state, uint8_t n)
-{
-    if(!state->int_enable)
-        return;
-
-    cpu_stack_push(state, state->pc);
-    state->pc = (uint16_t) n << 3;
-
-    state->int_enable = 0;
-}
-
 
 // Trap unimplemented instructions 
 void UnimplementedInstruction(CPUState *state, unsigned char opcode)
@@ -145,14 +61,14 @@ void cpu_shift_register(CPUState* state)
     if(*opcode == 0xD3)     // OUT instruction
     {
         if(state->memory[state->pc] == 0x2)
-            state->shift_amount = state->registers[CPU_REG_A];
+            state->shift_amount = state->a;
         else if(state->memory[state->pc] == 0x4)
-            state->shift_reg = (state->registers[CPU_REG_A] << 8) | (state->shift_reg >> 8);
+            state->shift_reg = (state->a << 8) | (state->shift_reg >> 8);
     }
     else if(opcode == 0xDB)     // IN instruction
     {
         if(state->memory[state->pc] == 0x3)
-            state->registers[CPU_REG_A] = state->shift_reg >> (8 - state->shift_amount);
+            state->a = state->shift_reg >> (8 - state->shift_amount);
     }
 }
 
