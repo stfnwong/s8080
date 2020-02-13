@@ -30,14 +30,13 @@ CPUState *cpu_create(void)
     state->pc           = 0;
     state->shift_reg    = 0;
     state->shift_amount = 0;
+    // Ensure that values for condition codes are set
     state->cc.z   = 0;
     state->cc.s   = 0;
     state->cc.p   = 0;
     state->cc.cy  = 0;
     state->cc.ac  = 0;
     state->cc.pad = 0;
-    for(int r = 0; r < 8; ++r)
-        state->registers[r] = 0;
 
     return state;
 }
@@ -49,30 +48,6 @@ void cpu_destroy(CPUState *state)
 {
     free(state->memory);
     free(state);
-}
-
-/*
- * cpu_move_reg()
- */
-void cpu_move_reg(CPUState* state, CPUReg src, CPUReg dst)
-{
-    state->registers[dst] = state->registers[src];
-}
-
-/*
- * cpu_write_reg()
- */
-void cpu_write_reg(CPUState* state, CPUReg reg, uint8_t val)
-{
-    state->registers[reg] = val;
-}
-
-/*
- * cpu_read_reg()
- */
-uint8_t cpu_read_reg(CPUState* state, CPUReg reg)
-{
-    return state->registers[reg];
 }
 
 /*
@@ -88,10 +63,9 @@ void cpu_jump(CPUState* state, uint16_t addr)
  */
 void cpu_stack_push(CPUState* state, uint16_t val)
 {
-    state->memory[state->sp] = val >> 8;
-    state->sp--;
-    state->memory[state->sp] = (val & 0x00FF);
-    state->sp--;
+    state->memory[state->sp-1] = (val >> 8) & 0xFF;
+    state->memory[state->sp-2] = (val & 0x00FF);
+    state->sp -= 2;
 }
 
 /*
@@ -102,11 +76,27 @@ uint16_t cpu_stack_pop(CPUState* state)
     uint16_t s;
 
     s = state->memory[state->sp];
-    state->sp++;
-    s = s | (uint16_t) state->memory[state->sp] << 8;
-    state->sp++;
+    s = s | (uint16_t) state->memory[state->sp+1] << 8;
+    state->sp += 2;
 
     return s;
+}
+
+/*
+ * cpu_read_hl()
+ */
+uint16_t cpu_read_hl(CPUState* state)
+{
+    return (state->h << 8) | state->l;
+}
+
+/*
+ * cpu_write_hl()
+ */
+void cpu_write_hl(CPUState* state, uint16_t val)
+{
+    state->h = val >> 8;
+    state->l = (val & 0x00FF);
 }
 
 /*
@@ -145,14 +135,14 @@ void cpu_shift_register(CPUState* state)
     if(*opcode == 0xD3)     // OUT instruction
     {
         if(state->memory[state->pc] == 0x2)
-            state->shift_amount = state->registers[CPU_REG_A];
+            state->shift_amount = state->a;
         else if(state->memory[state->pc] == 0x4)
-            state->shift_reg = (state->registers[CPU_REG_A] << 8) | (state->shift_reg >> 8);
+            state->shift_reg = (state->a << 8) | (state->shift_reg >> 8);
     }
     else if(opcode == 0xDB)     // IN instruction
     {
         if(state->memory[state->pc] == 0x3)
-            state->registers[CPU_REG_A] = state->shift_reg >> (8 - state->shift_amount);
+            state->a = state->shift_reg >> (8 - state->shift_amount);
     }
 }
 
@@ -259,13 +249,13 @@ int cpu_exec(CPUState *state)
         case 0x09:      // DAD B
             {
                 // HL = HL + BC 
-                uint32_t hl, bc, res;
-                hl = (state->h << 8) | state->l;
+                uint16_t hl, bc; 
+                uint32_t res;
+                hl = cpu_read_hl(state);
                 bc = (state->b << 8) | state->c;
                 res = hl + bc;
-                state->h = (res & 0xFF00) >> 8;
-                state->l = res & 0xFF;
                 state->cc.cy = ((res & 0xFFFF0000) > 0);
+                cpu_write_hl(state, (uint16_t) res & 0x0000FFFF);
             }
             exec_time = 10;
             break;
@@ -339,13 +329,13 @@ int cpu_exec(CPUState *state)
 
         case 0x19:      // DAD D
             {
-                uint32_t hl, de, res;
-                hl = (state->h << 8) | state->l;
+                uint32_t res; 
+                uint16_t de, hl;
+                hl = cpu_read_hl(state);
                 de = (state->d << 8) | state->e;
-                res = hl + de;
-                state->h = (res & 0xFF00) >> 8;
-                state->l = res & 0xFF;
+                res = (uint32_t) hl + de;
                 state->cc.cy = ((res & 0xFFFF0000) != 0);
+                cpu_write_hl(state, (uint16_t) res & 0x0000FFFF);
             }
             exec_time = 10;
             break;
@@ -385,8 +375,7 @@ int cpu_exec(CPUState *state)
 
         case 0x21:      // LXI H, word
             {
-                state->l = opcode[1];
-                state->h = opcode[2];
+                cpu_write_hl(state, (opcode[1] << 8) | opcode[2]);
                 state->pc += 2;
             }
             exec_time = 10;
@@ -436,20 +425,17 @@ int cpu_exec(CPUState *state)
 
         case 0x29:      // DAD H
             {
-                uint32_t hl, res;
-                hl = (state->h << 8) | state->l;
-                res = hl + hl;
-                state->h = (res & 0xFF00) >> 8;
-                state->l = res & 0xFF;
-                state->cc.cy = ((res & 0xFFFF0000) != 0);
+                uint32_t hl = cpu_read_hl(state);
+                hl += hl;
+                cpu_write_hl(state, hl);
+                state->cc.cy = ((hl & 0xFFFF0000) != 0);
             }
             exec_time = 10;
             break;
 
         case 0x2A:      // LHLD ADR
             {
-                state->l = state->memory[opcode[1]];
-                state->h = state->memory[opcode[1] + 1];
+                cpu_write_hl(state, (opcode[1] << 8) | (opcode[1] + 1));
                 state->pc++;
             }
             exec_time = 16;
@@ -531,25 +517,20 @@ int cpu_exec(CPUState *state)
         case 0x34:      // INR M
             {
                 // TODO  : the implementation of this may not be correct
-                uint16_t hl; 
-                hl = (state->h << 8) | state->l;
+                uint16_t hl = cpu_read_hl(state);
                 hl += 1;
                 cpu_arith_set_flags(state, hl);
-                state->h = (hl >> 8) & 0xFF;
-                state->l = 0xFF;
+                cpu_write_hl(state, hl);
             }
             exec_time = 10;
             break;
 
         case 0x35:      // DCR M
             {
-                uint16_t hl;
-
-                hl = (state->h << 8) | state->l;
+                uint16_t hl = cpu_read_hl(state);
                 hl -= 1;
                 cpu_arith_set_flags(state, hl);
-                state->h = (hl >> 8) & 0xFF;
-                state->l = 0xFF;
+                cpu_write_hl(state, hl);
             }
             exec_time = 10;
             break;
@@ -557,8 +538,7 @@ int cpu_exec(CPUState *state)
         case 0x36:      // MVI, M byte
             {
                 // AC set if lower half-byte was zero before decrement 
-                uint16_t offset;
-                offset = (state->h << 8) | state->l;
+                uint16_t offset = cpu_read_hl(state);
                 state->memory[offset] = opcode[1];
                 state->pc++;
             }
@@ -1034,10 +1014,7 @@ int cpu_exec(CPUState *state)
                 uint32_t ans;
                 hl = (state->h << 8) | state->l;
                 ans = state->a + hl;
-                state->cc.z  = (ans == 0);
-                state->cc.s  = ((ans & 0x80000000) == 1);
-                state->cc.p  = Parity(state->a);
-                state->cc.cy = ((ans & 0xFFFF0000) > 0);
+                cpu_arith_set_borrow32(state, ans);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
             }
             exec_time = 7;
@@ -1104,11 +1081,7 @@ int cpu_exec(CPUState *state)
                 uint16_t hl;
                 hl = (state->h << 8) | state->l;
                 ans = (uint32_t) state->a + hl;
-                state->cc.z  = (ans == 0);
-                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
-                //state->cc.s  = ((ans & 0x80000000) == 1);
-                state->cc.p  = Parity(state->a);
-                state->cc.cy = ((ans & 0xFFFF0000) > 0);
+                cpu_arith_set_borrow32(state, ans);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
             }
             exec_time = 7;
@@ -1177,9 +1150,7 @@ int cpu_exec(CPUState *state)
                 uint16_t hl;
                 hl = (state->h << 8) | state->l;
                 ans = (uint32_t) state->a - (uint32_t) hl;
-                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
-                state->cc.p  = Parity(state->a);
-                state->cc.cy = ((ans & 0xFFFF0000) > 0);
+                cpu_arith_set_borrow32(state, ans);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
             }
             exec_time = 4;
@@ -1417,16 +1388,17 @@ int cpu_exec(CPUState *state)
             }
             exec_time = 4;
             break;
+
         case 0xBE:      // CMP M
             {
-                uint16_t ans, hl;
-                hl = (state->h << 8) | state->l;
-                ans = ~hl;
+                uint16_t hl;
+                hl = ~cpu_read_hl(state);
                 cpu_logic_set_flags(state);
-                state->a = (ans >> 8) & 0xFF;
+                state->a = (hl >> 8) & 0xFF;
             }
             exec_time = 7;
             break;
+
         case 0xBF:      // CMP A
             {
                 state->a = ~state->a;
@@ -1438,9 +1410,9 @@ int cpu_exec(CPUState *state)
 
         case 0xC1:      // POP B
             {
-                state->c = state->memory[state->sp];
-                state->b = state->memory[state->sp+1];
-                state->sp += 2;
+                uint16_t ret = cpu_stack_pop(state);
+                state->c = (ret >> 8) & 0xFF;
+                state->b = ret & 0xFF;
             }
             exec_time = 10;
             break;
@@ -1448,15 +1420,15 @@ int cpu_exec(CPUState *state)
         case 0xC2:      // JNZ ADR
             {
                 if(state->cc.z == 0)
-                    state->pc = (opcode[2] << 8) | opcode[1];
+                    cpu_jump(state, (opcode[2] << 8) | opcode[1]);
                 else
-                    state->pc += 2;
+                    cpu_jump(state, state->pc + 2);
             }
             exec_time = 10;
             break;
 
         case 0xC3:      // JMP ADR
-            state->pc = (opcode[2] << 8) | opcode[1];
+            cpu_jump(state, (opcode[2] << 8) | opcode[1]);
             exec_time = 10;
             break;
 
@@ -1467,21 +1439,18 @@ int cpu_exec(CPUState *state)
                     // TODO : I've implemented the call instruciton here, 
                     // but I'm not sure if that is completely correct.
                     uint16_t ret = state->pc + 2;
-                    state->memory[state->sp-1] = (ret >> 8) & 0xFF;
-                    state->memory[state->sp-2] = ret & 0xFF;
-                    state->sp -= 2;
-                    state->pc = (opcode[2] << 8) | opcode[1];
+                    cpu_stack_push(state, ret);
+                    cpu_jump(state, (opcode[2] << 8) | opcode[1]);
                 }
                 else
                     state->pc += 2;
             }
             exec_time = (state->cc.z == 0) ? 17 : 11;
             break;
+
         case 0xC5:     // PUSH B
             {
-                state->memory[state->sp-1] = state->b;
-                state->memory[state->sp]   = state->c;
-                state->sp -= 2;
+                cpu_stack_push(state, (state->b << 8) | state->c);
             }
             exec_time = 11;
             break;
@@ -1524,10 +1493,8 @@ int cpu_exec(CPUState *state)
                 if(state->cc.z == 1)
                 {
                     uint16_t ret = state->pc + 2;
-                    state->memory[state->sp-1] = (ret >> 8) & 0xFF;
-                    state->memory[state->sp-2] = ret & 0xFF;
-                    state->sp -= 2;
-                    state->pc = (opcode[2] << 8) | opcode[1];
+                    cpu_stack_push(state, ret);
+                    cpu_jump(state, (opcode[2] << 8) | opcode[1]);
                 }
             }
             exec_time = 10;
@@ -1575,10 +1542,8 @@ int cpu_exec(CPUState *state)
 #else
                 // save reutrn address
                 uint16_t ret = state->pc + 2;
-                state->memory[state->sp-1] = (ret >> 8) & 0xFF;
-                state->memory[state->sp-2] = ret & 0xFF;
-                state->sp -= 2;
-                state->pc = (opcode[2] << 8) | opcode[1];
+                cpu_stack_push(state, ret);
+                cpu_jump(state, (opcode[2] << 8) | opcode[1]);
 #endif /*CPU_DIAG*/
             }
             exec_time = 17;
@@ -1775,5 +1740,5 @@ int cpu_exec(CPUState *state)
     }
     state->pc += 1;     
 
-    return exec_time;       // TODO : what is the correct thing to return here?
+    return exec_time;       
 }

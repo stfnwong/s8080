@@ -36,8 +36,6 @@ spec("CPU")
         check(test_state->l == 0);
         check(test_state->sp == 0);
         check(test_state->pc == 0);
-        for(int r = 0; r < 8; ++r)
-            check(test_state->registers[r] == 0);
         // condition codes
         check(test_state->cc.z == 0);
 

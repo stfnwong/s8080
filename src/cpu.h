@@ -38,8 +38,6 @@ typedef struct
 // State structure 
 typedef struct CPUState
 {
-    // TODO : make registers an array?
-    uint8_t        registers[7];
     uint8_t        a;
     uint8_t        b;
     uint8_t        c;
@@ -62,15 +60,13 @@ void cpu_destroy(CPUState *state);
 
 // ======== Instruction processing patterns ======== //
 void     cpu_move_reg(CPUState* state, CPUReg src, CPUReg dst);
-void     cpu_write_reg(CPUState* state, CPUReg reg, uint8_t val);
-uint8_t  cpu_read_reg(CPUState* state, CPUReg reg);
 void     cpu_jump(CPUState* state, uint16_t addr);      // inline?
 void     cpu_stack_push(CPUState* state, uint16_t val);
 uint16_t cpu_stack_pop(CPUState* state);
+uint16_t cpu_read_hl(CPUState* state);
+void     cpu_write_hl(CPUState* state, uint16_t val);
 
-void cpu_interrupt(CPUState* state, uint8_t n);
-
-
+void     cpu_interrupt(CPUState* state, uint8_t n);
 
 // Operation
 void cpu_shift_register(CPUState* state);
@@ -111,7 +107,7 @@ static inline int Parity2(int x, int size)
 }
 
 // Common instructions in arithmetic group
-static inline void cpu_arith_set_flags(CPUState *state, uint16_t ans)
+static inline void cpu_arith_set_flags(CPUState* state, uint16_t ans)
 {
     state->cc.z  = ((ans & 0xFF) == 0);  // zero flag. 
     state->cc.s  = ((ans & 0x80) != 0);  // sign flag. Set if bit 7 is set 
@@ -119,14 +115,28 @@ static inline void cpu_arith_set_flags(CPUState *state, uint16_t ans)
     state->cc.p = Parity2(ans & 0xFF, 16);    // parity flag
 } 
 
-static inline void cpu_logic_set_flags(CPUState *state)
+static inline void cpu_arith_set_borrow16(CPUState* state, uint16_t ans)
+{
+    state->cc.s  = (ans & 0x8000) ? 1 : 0;
+    state->cc.p  = Parity(state->a);
+    state->cc.cy = ((ans & 0xFF00) > 0);
+    state->cc.z  = (ans == 0);
+}
+
+static inline void cpu_arith_set_borrow32(CPUState* state, uint32_t ans)
+{
+    state->cc.s  = (ans & 0x80000000) ? 1 : 0;
+    state->cc.p  = Parity(state->a);
+    state->cc.cy = ((ans & 0xFFFF0000) > 0);
+    state->cc.z  = (ans == 0);
+}
+
+static inline void cpu_logic_set_flags(CPUState* state)
 {
     state->cc.cy = 0;
     state->cc.ac = 0;
     state->cc.s = (0x80 == (state->a & 0x80));
     state->cc.p = Parity(state->a);
 }
-
-
 
 #endif /*__CPU_H*/
