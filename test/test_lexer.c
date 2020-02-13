@@ -637,4 +637,42 @@ spec("Lexer")
         // clean up
         lexer_destroy(lexer);
     }
+
+    it("Resolves symbols in move assembly source")
+    {
+        Lexer* lexer = lexer_create();
+        Symbol* out_sym;
+
+        int status = lex_read_file(lexer, mov_test_filename);
+        check(status == 0);
+        check(lexer->sym_table->size == 0);
+        lexer->verbose = 1;
+        // Lex the file 
+        lex_all(lexer);
+        // Now check the internal SourceInfo
+        fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
+                __func__, 
+                mov_test_filename, 
+                lexer->source_repr->size
+        );
+
+        // There should be a single symbol in the symbol table
+        fprintf(stdout, "[%s] number of symbols in table : %d\n",
+                __func__, lexer->sym_table->size
+        );
+        for(int s = 0; s < lexer->sym_table->size; ++s)
+        {
+            out_sym = symbol_table_get_idx(
+                    lexer->sym_table,
+                    s
+            );
+            check(out_sym != NULL);
+            fprintf(stdout, "[%s] 0x%04X : %s\n", __func__, out_sym->addr, out_sym->sym);
+        }
+
+        check(lexer->sym_table->size == 1);
+
+        // clean up
+        lexer_destroy(lexer);
+    }
 }

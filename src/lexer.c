@@ -132,14 +132,32 @@ int symbol_table_empty(SymbolTable* s)
 }
 
 /*
- * symbol_table_get()
+ * symbol_table_get_idx()
  */
-Symbol* symbol_table_get(SymbolTable* table, int idx)
+Symbol* symbol_table_get_idx(SymbolTable* table, int idx)
 {
     if(idx < 0 || idx > table->max_size || idx > table->size)
         return NULL;
 
     return table->entries[idx];
+}
+
+/*
+ * symbol_table_get_tr()
+ */
+Symbol* symbol_table_get_str(SymbolTable* table, char* str, int len)
+{
+    // For now just linear search
+    // TODO : replace with heap?
+    for(int s = 0; s < table->size; ++s)
+    {
+        if(strncmp(table->entries[s]->sym, str, len) == 0)
+        {
+            return table->entries[s];
+        }
+    }
+
+    return NULL;
 }
 
 
@@ -430,6 +448,8 @@ int lex_extract_literal(Lexer* lexer, Token* token)
         return 0;
     }
 
+    // TODO : do we need to check for comments here?
+
     token->type = SYM_LITERAL;
     strncpy(token->token_str, lexer->token_buf, tok_ptr);
 
@@ -657,6 +677,31 @@ int lex_parse_imm(Lexer* lexer, Token* tok)
 }
 
 /*
+ * lex_resolve_labels()
+ */
+int lex_resolve_labels(Lexer* lexer)
+{
+    // If there are no symbols, then nothing to do
+    if(lexer->sym_table->size == 0)
+        return 0;
+
+    // walk over the source repr, each time there is a label
+    // look it up in the symbol table and insert the address of
+    // that symbol in the immediate field
+    for(int l = 0; l < lexer->source_repr->size; ++l)
+    {
+        LineInfo* cur_line = source_info_get_idx(
+                lexer->source_repr,
+                l
+        );
+        if(cur_line->label_str_len > 0)
+        {
+            // lookup the label in the symbol table
+        }
+    }
+}
+
+/*
  * lex_line()
  */
 void lex_line(Lexer* lexer)
@@ -665,6 +710,7 @@ void lex_line(Lexer* lexer)
     Opcode cur_opcode;
     Token cur_token;
     Token tok_a, tok_b;
+    Symbol cur_sym;
 
     token_init(&tok_a);
     token_init(&tok_b);
@@ -683,6 +729,24 @@ void lex_line(Lexer* lexer)
         // Copy label string
         strcpy(lexer->text_seg->label_str, cur_token.token_str);
         lexer->text_seg->label_str_len = strlen(cur_token.token_str);
+        // make a symbol object for this label
+        cur_sym.addr = lexer->text_addr;
+        strncpy(&cur_sym.sym, &cur_token.token_str, strlen(cur_token.token_str));
+
+        // Add to symbol table
+        status = symbol_table_add_sym(
+                lexer->sym_table,
+                &cur_sym
+        );
+
+        if(status < 0)
+        {
+            fprintf(stderr, "[%s] failed to insert symbol %s\n",
+                    __func__, cur_token.token_str
+            );
+            return;
+        }
+
         // Get the next token ready
         lex_next_token(lexer, &cur_token);
     }
@@ -700,31 +764,27 @@ void lex_line(Lexer* lexer)
             case LEX_ANA:
             case LEX_CMP:
             case LEX_DAD:
+            case LEX_DCR:
+            case LEX_INR:
             case LEX_INX:
             case LEX_LDAX:
             case LEX_POP:
             case LEX_PUSH:
             case LEX_SBB:
+            case LEX_STAX:
             case LEX_SUB:
             case LEX_XRA:
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_one_reg(lexer, &cur_token);
                 break;
 
+            case LEX_ACI:
             case LEX_ADI:
+            case LEX_ANI:
+            case LEX_SUI:
+            case LEX_SBI:
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_imm(lexer, &cur_token);
-                break;
-
-            case LEX_DCR:
-                lex_next_token(lexer, &cur_token);
-                status = lex_parse_one_reg(lexer, &cur_token);
-                break;
-
-            case LEX_INR:
-                // Increment register
-                lex_next_token(lexer, &cur_token);
-                status = lex_parse_one_reg(lexer, &cur_token);
                 break;
 
             case LEX_MOV:
@@ -772,7 +832,6 @@ LEX_LINE_END:
     lex_text_addr_incr(lexer);
     lexer->text_seg->addr = lexer->text_addr;
 
-    // Need to copy text_seg to some buffer, then reset
     source_info_add_line(lexer->source_repr, lexer->text_seg);
 }
 
@@ -782,16 +841,22 @@ LEX_LINE_END:
  */
 int lex_all(Lexer* lexer)
 {
-    Token* cur_token = create_token();
-    if(!cur_token)
-    {
-        fprintf(stdout, "[%s] failed to allocate memory for cur_token\n", __func__);
-        return -1;
-    }
-    token_init(cur_token);
+    // TODO : some init phase?
+    lexer->cur_char = lexer->src[0];
 
     while(lexer->cur_pos < lexer->src_len)
     {
+        // eat comments
+        if(lex_is_comment(lexer->cur_char))
+        {
+            // TODO : DEBUG - remove
+            fprintf(stdout, "[%s] skipping comment on line %d:%d\n",
+                   __func__,  lexer->cur_line, lexer->cur_col
+            );
+            lex_skip_comment(lexer);
+            continue;
+        }
+
         // eat whitespace
         if(lex_is_whitespace(lexer->cur_char))
         {
@@ -799,12 +864,6 @@ int lex_all(Lexer* lexer)
             continue;
         }
 
-        // eat comments
-        if(lex_is_comment(lexer->cur_char))
-        {
-            lex_skip_comment(lexer);
-            continue;
-        }
 
         // This is a valid line, so start trying to get tokens together
         lex_line(lexer);

@@ -43,7 +43,7 @@ typedef struct
     LineInfo** buffer;
     int size;
     int max_size;
-    int cur_line;
+    int cur_line;       // TODO : why do we need to keep this var?
 } SourceInfo;
 
 SourceInfo* source_info_create(int num_lines);

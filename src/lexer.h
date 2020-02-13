@@ -47,7 +47,8 @@ void         symbol_table_destroy(SymbolTable* table);
 int          symbol_table_add_sym(SymbolTable* table, Symbol* s);
 int          symbol_table_full(SymbolTable* s);
 int          symbol_table_empty(SymbolTable* s);
-Symbol*      symbol_table_get(SymbolTable* table, int idx);
+Symbol*      symbol_table_get_idx(SymbolTable* table, int idx);
+Symbol*      symbol_table_get_str(SymbolTable* table, char* str, int len);
 
 /*
  * Lexer object
@@ -109,6 +110,9 @@ int    lex_parse_one_reg(Lexer* lexer, Token* token);
 int    lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_imm(Lexer* lexer, Token* tok);
+
+// Label resolution
+int    lex_resolve_labels(Lexer* lexer);
 
 // Lex a line in the source 
 void   lex_line(Lexer* lexer);
