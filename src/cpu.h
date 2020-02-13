@@ -111,7 +111,7 @@ static inline int Parity2(int x, int size)
 }
 
 // Common instructions in arithmetic group
-static inline void arith_set_flags(CPUState *state, uint16_t ans)
+static inline void cpu_arith_set_flags(CPUState *state, uint16_t ans)
 {
     state->cc.z  = ((ans & 0xFF) == 0);  // zero flag. 
     state->cc.s  = ((ans & 0x80) != 0);  // sign flag. Set if bit 7 is set 
@@ -119,7 +119,7 @@ static inline void arith_set_flags(CPUState *state, uint16_t ans)
     state->cc.p = Parity2(ans & 0xFF, 16);    // parity flag
 } 
 
-static inline void logic_set_flags(CPUState *state)
+static inline void cpu_logic_set_flags(CPUState *state)
 {
     state->cc.cy = 0;
     state->cc.ac = 0;
