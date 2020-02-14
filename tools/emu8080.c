@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include "cpu.h"
-#include "emu_utils.h"
 #include "display.h"
 
 
@@ -77,7 +76,7 @@ int main(int argc, char *argv[])
     }
     // Print final state
     fprintf(stdout, "Emulator finishd with exit code %d\n", status);
-    PrintState(emu_state); 
+    cpu_print_state(emu_state); 
 
     cpu_destroy(emu_state);
     display_destroy(disp);

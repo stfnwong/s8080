@@ -52,7 +52,14 @@ typedef struct CPUState
     uint8_t        int_enable;
     uint16_t       shift_reg;
     uint16_t       shift_amount;
+    // function pointers for I/O
+    uint8_t (*inport)(void* cpu, uint8_t port);
+    void    (*outport)(void* cpu, uint8_t port, uint8_t data);
 } CPUState;
+
+// default I/O ports
+static uint8_t cpu_default_inport(void* cpu, uint8_t port);
+static void    cpu_default_outport(void* cpu, uint8_t port, uint8_t data);
 
 // Create and destroy state objects 
 CPUState *cpu_create(void);
@@ -65,14 +72,22 @@ void     cpu_stack_push(CPUState* state, uint16_t val);
 uint16_t cpu_stack_pop(CPUState* state);
 uint16_t cpu_read_hl(CPUState* state);
 void     cpu_write_hl(CPUState* state, uint16_t val);
+uint8_t  cpu_read_mem(CPUState* state, uint16_t addr);
+void     cpu_write_mem(CPUState* state, uint16_t addr, uint8_t data);
 
 void     cpu_interrupt(CPUState* state, uint8_t n);
+void     cpu_print_state(CPUState *state);
+int      cpu_load_memory(CPUState *state, const char *filename, int offset);
+void     cpu_print_memory(CPUState* state, int n, int offset);
+void     cpu_clear_memory(CPUState* state);
+// Dumps console output when an unimplemented instruction is encountered
+void     cpu_unimplemented_instr(CPUState *state, unsigned char opcode);
 
 // Operation
-void cpu_shift_register(CPUState* state);
-int  cpu_run(CPUState* state, long cycles, int verbose);
-int  cpu_exec(CPUState *state);
-void UnimplementedInstruction(CPUState *state, unsigned char opcode);
+void     cpu_shift_register(CPUState* state);
+int      cpu_run(CPUState* state, long cycles, int verbose);
+int      cpu_exec(CPUState *state);
+
 
 // ======== INLINE METHODS ======== //
 // Simple parity loop. Probably can replace this with a faster routine later 
