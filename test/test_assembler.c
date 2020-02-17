@@ -42,7 +42,7 @@ spec("Assembler")
         lexer = lexer_create();
         check(lexer != NULL);
         check(lexer->text_seg != NULL);
-        fprintf(stdout, "[%s] lexer->text_seg : \n");
+        fprintf(stdout, "[%s] lexer->text_seg : \n", __func__);
         line_info_print(lexer->text_seg);
         fprintf(stdout, "\n");
         check(lexer->text_seg->label_str == NULL);
@@ -97,16 +97,16 @@ spec("Assembler")
 
     it("Should assemble the arithmetic instruction test file")
     {
-        //Lexer* lexer;
-        //Assembler* assembler;
+        Lexer* lexer;
+        Assembler* assembler;
         int status;
 
         //// Get an assembler object
-        //assembler = assembler_create();
-        //check(assembler != NULL);
+        assembler = assembler_create();
+        check(assembler != NULL);
 
         // Get a Lexer object
-        Lexer* lexer = lexer_create();
+        lexer = lexer_create();
         check(lexer != NULL);
         check(lexer->text_seg != NULL);
         fprintf(stdout, "[%s] lexer text segment:\n", __func__);
@@ -131,7 +131,7 @@ spec("Assembler")
         //check(lexer->sym_table->size == 0);
         lexer->verbose = 1;
 
-        //assembler_destroy(assembler);
+        assembler_destroy(assembler);
         lexer_destroy(lexer);       // what is the problem here...?
     }
 

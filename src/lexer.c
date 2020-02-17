@@ -28,8 +28,7 @@ Symbol* symbol_create(void)
 void symbol_init(Symbol* s)
 {
     s->addr = 0;
-    //s->sym_len = 0;
-    memcpy(s->sym, 0, MAX_SYM_LEN);
+    memset(s->sym, 0, MAX_SYM_LEN);
 }
 
 /*
@@ -227,7 +226,6 @@ void lexer_destroy(Lexer* lexer)
         source_info_destroy(lexer->source_repr);
     if(lexer->sym_table != NULL)
         symbol_table_destroy(lexer->sym_table);
-    fprintf(stdout, "[%s] about to free lexer->text_seg\n", __func__);
     line_info_destroy(lexer->text_seg);
     opcode_table_destroy(lexer->op_table);
     free(lexer->src);

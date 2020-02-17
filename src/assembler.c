@@ -393,6 +393,7 @@ int assembler_set_repr(Assembler* assem, SourceInfo* repr)
  */
 int assembler_assem_line(Assembler* assem, LineInfo* line)
 {
+    int status = 0;
     Instr cur_instr;
 
     instr_init(&cur_instr);
@@ -433,10 +434,13 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 fprintf(stdout, "[%s] unknown opcode %02X [%s]\n", 
                         __func__, line->opcode->instr, line->opcode->mnemonic
                 );
+                status = -1;
                 break;
             }
         }
     }
+
+    return status;
 }
 
 

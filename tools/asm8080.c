@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    fprintf(stdout, "[%s] lexer text segment: \n");
+    fprintf(stdout, "[%s] lexer text segment: \n", __func__);
     line_info_print(lexer->text_seg);
     fprintf(stdout, "\n");
 

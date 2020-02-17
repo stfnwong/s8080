@@ -51,12 +51,9 @@ INFO_END:
  */
 void line_info_destroy(LineInfo* info)
 {
-    //fprintf(stdout, "[%s] freeing opcode...\n", __func__);
     free(info->opcode);
-    //fprintf(stdout, "[%s] freeing label_str...\n", __func__);
     free(info->label_str);
-    //fprintf(stdout, "[%s] freeing self...\n", __func__);
-    free(info);         // <- TODO : invalid pointer issue here from assembler test
+    free(info);
 }
 
 /*
