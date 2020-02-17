@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "assembler.h"
+#include "lexer.h"
 #include "source.h"
 // testing framework
 #include "bdd-for-c.h"
@@ -25,14 +26,33 @@ spec("Assembler")
         assem = assembler_create();
         check(assem != NULL);
         check(assem->src_repr == NULL);
+        check(assem->instr_buf == NULL);
         check(assem->cur_line == 0);
         check(assem->verbose == 0);
+        // Note that the src_repr and instr_buf won't be initailized 
+        // until a file is loaded
 
         assembler_destroy(assem);
     }
 
     it("Should allocate instruction memory when a SourceInfo object is attached")
     {
+        // What happens if I randomly make a lexer here?
+        Lexer* lexer;
+        lexer = lexer_create();
+        check(lexer != NULL);
+        check(lexer->text_seg != NULL);
+        fprintf(stdout, "[%s] lexer->text_seg : \n");
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->label_str_len == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->immediate == 0);
+        check(lexer->text_seg->has_immediate == 0);
+
+        // Get an assembler object
         Assembler* assem;
         SourceInfo* test_repr;
         int num_lines = 32;
@@ -71,12 +91,49 @@ spec("Assembler")
         check(assem->instr_buf->max_size == test_repr->max_size);
 
         assembler_destroy(assem);
+
+        lexer_destroy(lexer);       // what is the problem here...?
     }
 
-    // TODO : need to bring in Lexer here
-    //it("Should assemble the arithmetic instruction test file")
-    //{
-    //}
+    it("Should assemble the arithmetic instruction test file")
+    {
+        //Lexer* lexer;
+        //Assembler* assembler;
+        int status;
+
+        //// Get an assembler object
+        //assembler = assembler_create();
+        //check(assembler != NULL);
+
+        // Get a Lexer object
+        Lexer* lexer = lexer_create();
+        check(lexer != NULL);
+        check(lexer->text_seg != NULL);
+        fprintf(stdout, "[%s] lexer text segment:\n", __func__);
+        line_info_print(lexer->text_seg);
+        fprintf(stdout, "\n");
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->label_str_len == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->immediate == 0);
+        check(lexer->text_seg->has_immediate == 0);
+
+        // Load the file 
+        status = lex_read_file(lexer, arith_test_filename);
+        check(status == 0);
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->label_str_len == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->immediate == 0);
+        check(lexer->text_seg->has_immediate == 0);
+        //check(lexer->sym_table->size == 0);
+        lexer->verbose = 1;
+
+        //assembler_destroy(assembler);
+        lexer_destroy(lexer);       // what is the problem here...?
+    }
 
     //it("Assembles ADD instruction")
     //{

@@ -71,6 +71,7 @@ clean:
 	rm -f $(BIN_DIR)/asm8080
 	rm -f $(BIN_DIR)/dis8080
 	rm -f $(BIN_DIR)/emu8080
+	rm -f $(BIN_DIR)/test/test_*
 
 # Debug 
 print-%:

@@ -223,8 +223,12 @@ LEXER_END:
  */
 void lexer_destroy(Lexer* lexer)
 {
+    if(lexer->source_repr != NULL)
+        source_info_destroy(lexer->source_repr);
+    if(lexer->sym_table != NULL)
+        symbol_table_destroy(lexer->sym_table);
+    fprintf(stdout, "[%s] about to free lexer->text_seg\n", __func__);
     line_info_destroy(lexer->text_seg);
-    source_info_destroy(lexer->source_repr);
     opcode_table_destroy(lexer->op_table);
     free(lexer->src);
     free(lexer);

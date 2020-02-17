@@ -24,6 +24,10 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    fprintf(stdout, "[%s] lexer text segment: \n");
+    line_info_print(lexer->text_seg);
+    fprintf(stdout, "\n");
+
     // Start lexing the file
 
     // Take the lexed output and assemble it

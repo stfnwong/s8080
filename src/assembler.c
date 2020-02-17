@@ -309,6 +309,13 @@ void asm_imm(Instr* dst, LineInfo* line)
 {
 }
 
+void asm_mov(Instr* dst, LineInfo* line)
+{
+    dst->instr = 0x1 << 6;
+    dst->instr = dst->instr | (asm_reg_to_code(line->reg[0]) << 3);
+    dst->instr = dst->instr |  asm_reg_to_code(line->reg[1]);
+    dst->addr = line->addr;
+}
 
 
 /*
@@ -417,6 +424,9 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 //asm_inr(&cur_instr, line);
                 break;
 
+            case LEX_MOV:
+                asm_mov(&cur_instr, line);
+                break;
 
             default:
             {

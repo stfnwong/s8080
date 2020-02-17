@@ -39,6 +39,11 @@ spec("Lexer")
         // Check the values in the text segment structure
         check(lexer->text_seg->line_num == 0);
         check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->label_str_len == 0);
+        check(lexer->text_seg->error == 0);
+        check(lexer->text_seg->immediate == 0);
+        check(lexer->text_seg->has_immediate == 0);
         for(int a = 0; a < LINE_INFO_NUM_REG; ++a)
             check(lexer->text_seg->reg[a] == '\0');
 
@@ -78,6 +83,8 @@ spec("Lexer")
 
         status = lex_read_file(lexer, test_filename);
         check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
 
         check(lexer->cur_line == 1);
         // Skip over the comments
@@ -101,6 +108,8 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, test_filename);
         check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
 
         // Skip the first few lines (which are comments and so on)
         while(lexer->cur_line < 7)
@@ -165,6 +174,8 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, test_filename);
         check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
 
         // Skip the first few lines (which are comments and so on)
         while(lexer->cur_line < 7)
@@ -275,6 +286,8 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, mov_test_filename);
         check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
 
         // Skip the first few lines (which are comments and so on)
         while(lexer->cur_line < 5)
@@ -378,6 +391,8 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, mov_test_filename);
         check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
 
         // Lex the file 
         lex_all(lexer);
@@ -412,6 +427,8 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, arith_test_filename);
         check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
         lexer->verbose = 1;
 
         // Skip the first few lines (which are comments and so on)
@@ -609,6 +626,8 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, arith_test_filename);
         check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
         //lexer->verbose = 1;
 
         // Lex the file 
@@ -633,7 +652,6 @@ spec("Lexer")
             line_info_print_instr(cur_line);
             fprintf(stdout, "\n");
         }
-
         // clean up
         lexer_destroy(lexer);
     }
@@ -645,6 +663,9 @@ spec("Lexer")
 
         int status = lex_read_file(lexer, mov_test_filename);
         check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->label_str == NULL);
         check(lexer->sym_table->size == 0);
         lexer->verbose = 1;
         // Lex the file 
@@ -669,7 +690,6 @@ spec("Lexer")
             check(out_sym != NULL);
             fprintf(stdout, "[%s] 0x%04X : %s\n", __func__, out_sym->addr, out_sym->sym);
         }
-
         check(lexer->sym_table->size == 1);
 
         // clean up

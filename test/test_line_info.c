@@ -39,6 +39,4 @@ spec("LineInfo")
 
         line_info_destroy(test_info);
     }
-
-    // TODO : test to set the opcode?
 }
