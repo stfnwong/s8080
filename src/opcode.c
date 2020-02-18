@@ -22,6 +22,7 @@ const Opcode LEX_INSTRUCTIONS[] = {
     {LEX_AND,  "AND"},
     {LEX_CMA,  "CMA"},
     {LEX_CMP,  "CMP"},
+    {LEX_CPI,  "CPI"},
     {LEX_CZ,   "CZ"},
     {LEX_DAA,  "DAA"},
     {LEX_DAD,  "DAD"},
@@ -59,6 +60,7 @@ const Opcode LEX_INSTRUCTIONS[] = {
     {LEX_XCHG, "XCHG"},
     {LEX_XTHL, "XTHL"},
     {LEX_XRA,  "XRA"},
+    {LEX_XRI,  "XRI"},
 };
 
 /*

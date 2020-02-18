@@ -706,7 +706,7 @@ int lex_resolve_labels(Lexer* lexer)
 /*
  * lex_line()
  */
-void lex_line(Lexer* lexer)
+int lex_line(Lexer* lexer)
 {
     int status = 0;
     Opcode cur_opcode;
@@ -736,17 +736,13 @@ void lex_line(Lexer* lexer)
         strncpy(&cur_sym.sym, &cur_token.token_str, strlen(cur_token.token_str));
 
         // Add to symbol table
-        status = symbol_table_add_sym(
-                lexer->sym_table,
-                &cur_sym
-        );
-
+        status = symbol_table_add_sym(lexer->sym_table, &cur_sym);
         if(status < 0)
         {
-            fprintf(stderr, "[%s] failed to insert symbol %s\n",
-                    __func__, cur_token.token_str
+            fprintf(stderr, "[%s] (line %d:%d) failed to insert symbol %s\n",
+                    __func__, lexer->cur_line, lexer->cur_col, cur_token.token_str
             );
-            return;
+            goto LEX_LINE_END;
         }
 
         // Get the next token ready
@@ -802,6 +798,10 @@ void lex_line(Lexer* lexer)
                 status = lex_parse_reg_imm(lexer, &tok_a, &tok_b);
                 break;
 
+            case LEX_LXI:
+                fprintf(stdout, "[%s] yet to implement LXI...\n", __func__);
+                break;
+
             case LEX_ORA:
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_one_reg(lexer, &cur_token);
@@ -834,7 +834,14 @@ LEX_LINE_END:
     lex_text_addr_incr(lexer);
     lexer->text_seg->addr = lexer->text_addr;
 
-    source_info_add_line(lexer->source_repr, lexer->text_seg);
+    status = source_info_add_line(lexer->source_repr, lexer->text_seg);
+    if(status < 0)
+    {
+        fprintf(stderr, "[%s] (line %d:%d) failed to update source info\n",
+                __func__, lexer->cur_line, lexer->cur_col);
+    }
+
+    return status;
 }
 
 
@@ -844,6 +851,7 @@ LEX_LINE_END:
 int lex_all(Lexer* lexer)
 {
     // TODO : some init phase?
+    int status;
     lexer->cur_char = lexer->src[0];
 
     while(lexer->cur_pos < lexer->src_len)
@@ -851,10 +859,6 @@ int lex_all(Lexer* lexer)
         // eat comments
         if(lex_is_comment(lexer->cur_char))
         {
-            // TODO : DEBUG - remove
-            fprintf(stdout, "[%s] skipping comment on line %d:%d\n",
-                   __func__,  lexer->cur_line, lexer->cur_col
-            );
             lex_skip_comment(lexer);
             continue;
         }
@@ -865,10 +869,10 @@ int lex_all(Lexer* lexer)
             lex_advance(lexer);
             continue;
         }
-
-
         // This is a valid line, so start trying to get tokens together
-        lex_line(lexer);
+        status = lex_line(lexer);
+        if(status < 0)
+            return status;
     }
 
     // TODO : labels, label resolution

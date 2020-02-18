@@ -42,7 +42,8 @@ void instr_destroy(Instr* ins)
 void instr_init(Instr* instr)
 {
     instr->instr = 0;
-    instr->addr = 0;
+    instr->addr  = 0;
+    instr->size  = 1;
 }
 
 /*
@@ -104,24 +105,33 @@ InstrBuffer* instr_buffer_create(int size)
     return buffer;
 }
 
-
+/*
+ * instr_buffer_destroy()
+ */
 void  instr_buffer_destroy(InstrBuffer* buf)
 {
-    for(int i = 0; i < buf->size; ++i)
-        instr_destroy(buf->instr_buf[i]);
-    free(buf->instr_buf);
-    free(buf);
+    if(buf == NULL)
+        free(buf);
+    else
+    {
+        for(int i = 0; i < buf->size; ++i)
+            instr_destroy(buf->instr_buf[i]);
+        free(buf->instr_buf);
+        free(buf);
+    }
 }
 
 /*
  * instr_buffer_insert()
  */
-void instr_buffer_insert(InstrBuffer* buf, Instr* ins)
+int instr_buffer_insert(InstrBuffer* buf, Instr* ins)
 {
-    if(buf->size == buf->max_size-1)
-        return;
+    if(buf->size == buf->max_size)
+        return -1;
     instr_copy(buf->instr_buf[buf->size], ins);
     buf->size++;
+
+    return 0;
 }
 
 /*
@@ -178,6 +188,24 @@ uint8_t asm_reg_to_code(char reg)
             return 0x6;
         default:
             return 0x0;
+    }
+}
+
+uint8_t asm_pair_reg_to_code(char reg)
+{
+    switch(reg)
+    {
+        case 'B':
+        case 'C':
+            return 0x0;
+        case 'D':
+        case 'E':
+            return 0x1;
+        case 'H':
+        case 'L':
+            return 0x2;
+        case 'S':
+            return 0x3;
     }
 }
 
@@ -305,9 +333,59 @@ void asm_16bit_arith(Instr* dst, LineInfo* line)
 {
 }
 
-void asm_imm(Instr* dst, LineInfo* line)
+void asm_reg_pair(Instr* dst, LineInfo* line, uint8_t op)
 {
+    dst->instr = op;
+    dst->instr = asm_pair_reg_to_code(line->reg[0]) << 4;
+    dst->addr  = dst->addr;
 }
+
+void asm_imm_2byte(Instr* dst, LineInfo* line, uint8_t op)
+{
+    dst->instr = (0x3 << 14) | (op << 11) | (0x6 << 8);
+    dst->instr = dst->instr | line->immediate;
+    dst->size = 2;
+    dst->addr = line->addr;
+}
+
+void asm_imm_3byte(Instr* dst, LineInfo* line)
+{
+    dst->instr = 0x1 << 9;
+    dst->size = 3;
+    dst->addr = line->addr;
+}
+
+void asm_lxi(Instr* dst, LineInfo* line)
+{
+
+}
+
+void asm_mvi(Instr* dst, LineInfo* line)
+{
+    dst->instr = (0x6 << 8);
+    // TODO : not quite the same code LUT as other instructions
+    dst->instr = dst->instr | (asm_reg_to_code(line->reg[0]) << 11);
+    dst->instr = dst->instr | line->immediate;
+    dst->size  = 2;
+    dst->addr  = line->addr;
+}
+
+void asm_ldax(Instr* dst, LineInfo* line)
+{
+    dst->instr = 0x9;
+    if(line->reg[0] == 'D')
+        dst->instr = dst->instr | (0x1 << 4);
+    dst->addr = line->addr;
+}
+
+void asm_stax(Instr* dst, LineInfo* line)
+{
+    dst->instr = 0x1 << 1;
+    if(line->reg[0] == 'D')
+        dst->instr = dst->instr | (0x1 << 4);
+    dst->addr = line->addr;
+}
+
 
 void asm_mov(Instr* dst, LineInfo* line)
 {
@@ -348,24 +426,12 @@ ASSEM_END:
 
 
 /*
- * assembler_create_buffer()
- */
-Instr** assembler_create_buffer(int size)
-{
-}
-
-/*
- * assembler_destroy_buffer()
- */
-void assembler_destroy_buffer(Assembler* assem)
-{
-}
-
-/*
  * assembler_destroy()
  */
 void assembler_destroy(Assembler* assem)
 {
+    instr_buffer_destroy(assem->instr_buf);
+    source_info_destroy(assem->src_repr);
     free(assem);
 }
 
@@ -376,7 +442,7 @@ int assembler_set_repr(Assembler* assem, SourceInfo* repr)
 {
     assem->src_repr = repr;
     if(assem->instr_buf != NULL)
-        assembler_destroy_buffer(assem);
+        instr_buffer_destroy(assem->instr_buf);
 
     assem->instr_buf = instr_buffer_create(repr->size);
     if(assem->instr_buf == NULL)
@@ -418,15 +484,84 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             case LEX_RRC:
             case LEX_SBB:
             case LEX_SUB:
+            case LEX_XRA:
                 asm_8bit_arith(&cur_instr, line);
+                break;
+
+            case LEX_ADI:
+                asm_imm_2byte(&cur_instr, line, 0x00);
+                break;
+
+            case LEX_ACI:
+                asm_imm_2byte(&cur_instr, line, 0x01);
+                break;
+
+            case LEX_SUI:
+                asm_imm_2byte(&cur_instr, line, 0x02);
+                break;
+
+            case LEX_SBI:
+                asm_imm_2byte(&cur_instr, line, 0x03);
+                break;
+
+            case LEX_ANI:
+                asm_imm_2byte(&cur_instr, line, 0x04);
+                break;
+
+            case LEX_XRI:
+                asm_imm_2byte(&cur_instr, line, 0x05);
+                break;
+
+            case LEX_ORI:
+                asm_imm_2byte(&cur_instr, line, 0x06);
+                break;
+
+            case LEX_CPI:
+                asm_imm_2byte(&cur_instr, line, 0x07);
+                break;
+
+            case LEX_MVI:
+                asm_mvi(&cur_instr, line);
+                break;
+
+            case LEX_LXI:
+                asm_lxi(&cur_instr, line);
+                break;
+
+            // pair instructions
+            case LEX_DAD:
+                asm_reg_pair(&cur_instr, line, 0x9);
+                break;
+
+            case LEX_DCX:
+                asm_reg_pair(&cur_instr, line, 0xB);
+                break;
+
+            case LEX_INX:
+                asm_reg_pair(&cur_instr, line, 0x3);
                 break;
 
             case LEX_INR:
                 //asm_inr(&cur_instr, line);
                 break;
 
+            case LEX_LDAX:
+                asm_ldax(&cur_instr, line);
+                break;
+
+            case LEX_STAX:
+                asm_stax(&cur_instr, line);
+                break;
+
+            // Move instructions 
             case LEX_MOV:
                 asm_mov(&cur_instr, line);
+                break;
+
+            case LEX_POP:
+                break;
+
+            case LEX_PUSH:
                 break;
 
             default:
@@ -438,6 +573,17 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 break;
             }
         }
+    }
+    status = instr_buffer_insert(assem->instr_buf, &cur_instr);
+    if(status == -1)
+    {
+        fprintf(stdout, "[%s] buffer full when inserting instruction %02X [%s]\n", 
+                __func__, line->opcode->instr, line->opcode->mnemonic);
+    }
+    else if(status < 0)
+    {
+        fprintf(stdout, "[%s] failed to insert instruction %02X [%s]\n", 
+                __func__, line->opcode->instr, line->opcode->mnemonic);
     }
 
     return status;
@@ -461,7 +607,9 @@ int assembler_assem(Assembler* assem)
     for(int l = 0; l < assem->src_repr->size; ++l)
     {
         LineInfo* cur_line = assem->src_repr->buffer[l];
-        assembler_assem_line(assem, cur_line);
+        status = assembler_assem_line(assem, cur_line);
+        if(status < 0)
+            break;
     }
 
     return status;

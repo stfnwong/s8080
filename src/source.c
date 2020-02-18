@@ -262,7 +262,8 @@ SOURCE_INFO_END:
  */
 void source_info_destroy(SourceInfo* info)
 {
-    if(info == NULL)
+    // NOTE : not sure that all the memory is getting cleared here...
+    if(info == NULL || *info->buffer == NULL)
         free(info);
     else
     {

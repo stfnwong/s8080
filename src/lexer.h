@@ -113,7 +113,7 @@ int    lex_parse_imm(Lexer* lexer, Token* tok);
 int    lex_resolve_labels(Lexer* lexer);
 
 // Lex a line in the source 
-void   lex_line(Lexer* lexer);
+int    lex_line(Lexer* lexer);
 
 int    lex_all(Lexer* lexer);
 

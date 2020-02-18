@@ -17,7 +17,8 @@
 typedef struct
 {
     uint16_t addr;
-    uint8_t  instr;
+    uint16_t instr;
+    uint8_t  size;
 }Instr;
 
 Instr* instr_create(void);
@@ -38,7 +39,7 @@ typedef struct
 
 InstrBuffer* instr_buffer_create(int size);
 void         instr_buffer_destroy(InstrBuffer* buf);
-void         instr_buffer_insert(InstrBuffer* buf, Instr* ins);
+int          instr_buffer_insert(InstrBuffer* buf, Instr* ins);
 Instr*       instr_buffer_get(InstrBuffer* buf, int idx);
 int          instr_buffer_full(InstrBuffer* buf);
 int          instr_buffer_empty(InstrBuffer* buf);
@@ -67,6 +68,5 @@ int assembler_set_repr(Assembler* assem, SourceInfo* repr);
 // Assemble from current repr
 int assembler_assem_line(Assembler* assem, LineInfo* line);
 int assembler_assem(Assembler* assem);
-
 
 #endif /*__ASSEMBLER_H*/
