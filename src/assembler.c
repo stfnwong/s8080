@@ -126,7 +126,7 @@ void  instr_buffer_destroy(InstrBuffer* buf)
  */
 int instr_buffer_insert(InstrBuffer* buf, Instr* ins)
 {
-    if(buf->size == buf->max_size)
+    if(buf->size == buf->max_size-1)
         return -1;
     instr_copy(buf->instr_buf[buf->size], ins);
     buf->size++;
@@ -166,6 +166,9 @@ int instr_buffer_empty(InstrBuffer* buf)
 // ROUTINES FOR EACH INSTRUCTION
 // TODO : Data segment
 
+/*
+ * asm_reg_to_code()
+ */
 uint8_t asm_reg_to_code(char reg)
 {
     switch(reg)
@@ -191,6 +194,9 @@ uint8_t asm_reg_to_code(char reg)
     }
 }
 
+/*
+ * asm_pair_reg_to_code()
+ */
 uint8_t asm_pair_reg_to_code(char reg)
 {
     switch(reg)
@@ -208,7 +214,6 @@ uint8_t asm_pair_reg_to_code(char reg)
             return 0x3;
     }
 }
-
 
 /*
  * asm_arith_instr_to_code()
@@ -283,31 +288,24 @@ uint8_t asm_mov_instr_to_code(uint8_t instr)
         case LEX_PUSH:
             code_out = code_out | (0x3 << 6) | 0x5;
             break;
-
         case LEX_POP:
             code_out = code_out | (0x3 << 6) | 0x1;
             break;
-
         case LEX_DAD:
             code_out = code_out | 0x9;
             break;
-
         case LEX_INX:
             code_out = code_out | 0x3;
             break;
-
         case LEX_DCX:
             code_out = code_out | 0xB;
             break;
-
         case LEX_XCHG:
             code_out = 0xEB;
             break;
-
         case LEX_XTHL:
             code_out = 0xE3;
             break;
-
         case LEX_SPHL:
             code_out = 0xF9;
             break;
@@ -348,6 +346,9 @@ void asm_imm_2byte(Instr* dst, LineInfo* line, uint8_t op)
     dst->addr = line->addr;
 }
 
+/*
+ * asm_imm_3byte()
+ */
 void asm_imm_3byte(Instr* dst, LineInfo* line)
 {
     dst->instr = 0x1 << 9;
@@ -360,6 +361,9 @@ void asm_lxi(Instr* dst, LineInfo* line)
 
 }
 
+/*
+ * asm_mvi()
+ */
 void asm_mvi(Instr* dst, LineInfo* line)
 {
     dst->instr = (0x6 << 8);
@@ -370,6 +374,9 @@ void asm_mvi(Instr* dst, LineInfo* line)
     dst->addr  = line->addr;
 }
 
+/*
+ * asm_ldax()
+ */
 void asm_ldax(Instr* dst, LineInfo* line)
 {
     dst->instr = 0x9;
@@ -378,6 +385,9 @@ void asm_ldax(Instr* dst, LineInfo* line)
     dst->addr = line->addr;
 }
 
+/*
+ * asm_stax()
+ */
 void asm_stax(Instr* dst, LineInfo* line)
 {
     dst->instr = 0x1 << 1;
@@ -386,10 +396,12 @@ void asm_stax(Instr* dst, LineInfo* line)
     dst->addr = line->addr;
 }
 
-
+/*
+ * asm_mov
+ */
 void asm_mov(Instr* dst, LineInfo* line)
 {
-    dst->instr = 0x1 << 6;
+    dst->instr = asm_mov_instr_to_code(line->opcode->instr);
     dst->instr = dst->instr | (asm_reg_to_code(line->reg[0]) << 3);
     dst->instr = dst->instr |  asm_reg_to_code(line->reg[1]);
     dst->addr = line->addr;
@@ -444,7 +456,7 @@ int assembler_set_repr(Assembler* assem, SourceInfo* repr)
     if(assem->instr_buf != NULL)
         instr_buffer_destroy(assem->instr_buf);
 
-    assem->instr_buf = instr_buffer_create(repr->size);
+    assem->instr_buf = instr_buffer_create(repr->size+1);
     if(assem->instr_buf == NULL)
     {
         fprintf(stdout, "[%s] failed to create instruction buffer for assembler object\n", __func__);

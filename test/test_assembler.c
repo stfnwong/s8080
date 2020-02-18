@@ -42,15 +42,6 @@ spec("Assembler")
         lexer = lexer_create();
         check(lexer != NULL);
         check(lexer->text_seg != NULL);
-        fprintf(stdout, "[%s] lexer->text_seg : \n", __func__);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->label_str_len == 0);
-        check(lexer->text_seg->line_num == 0);
-        check(lexer->text_seg->addr == 0);
-        check(lexer->text_seg->immediate == 0);
-        check(lexer->text_seg->has_immediate == 0);
 
         // Get an assembler object
         Assembler* assem;
@@ -88,81 +79,14 @@ spec("Assembler")
         assembler_set_repr(assem, test_repr);
         check(assem->src_repr != NULL);
         check(assem->instr_buf != NULL);
-        check(assem->instr_buf->max_size == test_repr->max_size);
+        check(assem->instr_buf->max_size == test_repr->size+1);
 
         assembler_destroy(assem);
 
         lexer_destroy(lexer);       // what is the problem here...?
     }
 
-    //it("Should assemble the mov instruction test file")
-    //{
-    //    Lexer* lexer;
-    //    Assembler* assembler;
-    //    int status;
-
-    //    //// Get an assembler object
-    //    assembler = assembler_create();
-    //    check(assembler != NULL);
-
-    //    // Get a Lexer object
-    //    lexer = lexer_create();
-    //    check(lexer != NULL);
-    //    check(lexer->text_seg != NULL);
-    //    fprintf(stdout, "[%s] lexer text segment:\n", __func__);
-    //    line_info_print(lexer->text_seg);
-    //    fprintf(stdout, "\n");
-    //    check(lexer->text_seg->label_str == NULL);
-    //    check(lexer->text_seg->label_str_len == 0);
-    //    check(lexer->text_seg->line_num == 0);
-    //    check(lexer->text_seg->addr == 0);
-    //    check(lexer->text_seg->immediate == 0);
-    //    check(lexer->text_seg->has_immediate == 0);
-
-    //    // Load the file 
-    //    status = lex_read_file(lexer, mov_test_filename);
-    //    check(status == 0);
-    //    check(lexer->text_seg->label_str == NULL);
-    //    check(lexer->text_seg->label_str_len == 0);
-    //    check(lexer->text_seg->line_num == 0);
-    //    check(lexer->text_seg->addr == 0);
-    //    check(lexer->text_seg->immediate == 0);
-    //    check(lexer->text_seg->has_immediate == 0);
-    //    //check(lexer->sym_table->size == 0);
-    //    lexer->verbose = 1;
-
-    //    // Lex the file, then take the src_repr and give it 
-    //    // to the assembler
-    //    lex_all(lexer);
-
-    //    assembler_set_repr(assembler, lexer->source_repr);
-    //    check(assembler->src_repr == lexer->source_repr);
-    //    check(assembler->instr_buf != NULL);
-    //    check(assembler->instr_buf->max_size == lexer->source_repr->size);
-    //    assembler->verbose = 1;
-
-    //    // Now assemble
-    //    status = assembler_assem(assembler);
-    //    fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
-    //    check(status == 0);
-
-    //    // For now, just print the contents of the instruction buffer here 
-    //    // TODO that this assembly output is technically wrong
-    //    for(int i = 0; i < assembler->instr_buf->size; ++i)
-    //    {
-    //        Instr* cur_instr = instr_buffer_get(assembler->instr_buf, i);
-    //        fprintf(stdout, "Instr %02d : ", i+1);
-    //        instr_print(cur_instr);
-    //        fprintf(stdout, "\n");
-    //    }
-
-    //    // TODO : create reference assembly to test against
-
-    //    assembler_destroy(assembler);
-    //    lexer_destroy(lexer);       // what is the problem here...?
-    //}
-
-    it("Should assemble the arithmetic instruction test file")
+    it("Should assemble the mov instruction test file")
     {
         Lexer* lexer;
         Assembler* assembler;
@@ -176,18 +100,9 @@ spec("Assembler")
         lexer = lexer_create();
         check(lexer != NULL);
         check(lexer->text_seg != NULL);
-        fprintf(stdout, "[%s] lexer text segment:\n", __func__);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->label_str_len == 0);
-        check(lexer->text_seg->line_num == 0);
-        check(lexer->text_seg->addr == 0);
-        check(lexer->text_seg->immediate == 0);
-        check(lexer->text_seg->has_immediate == 0);
 
         // Load the file 
-        status = lex_read_file(lexer, arith_test_filename);
+        status = lex_read_file(lexer, mov_test_filename);
         check(status == 0);
         check(lexer->text_seg->label_str == NULL);
         check(lexer->text_seg->label_str_len == 0);
@@ -215,6 +130,75 @@ spec("Assembler")
 
         // For now, just print the contents of the instruction buffer here 
         // TODO that this assembly output is technically wrong
+        fprintf(stdout, "[%s] there are %d instructions in buffer\n",
+               __func__, assembler->instr_buf->size);
+        for(int i = 0; i < assembler->instr_buf->size; ++i)
+        {
+            Instr* cur_instr = instr_buffer_get(assembler->instr_buf, i);
+            fprintf(stdout, "Instr %02d : ", i+1);
+            instr_print(cur_instr);
+            fprintf(stdout, "\n");
+        }
+
+        // TODO : create reference assembly to test against
+
+        assembler_destroy(assembler);
+        lexer_destroy(lexer);       // what is the problem here...?
+    }
+
+    it("Should assemble the arithmetic instruction test file")
+    {
+        Lexer* lexer;
+        Assembler* assembler;
+        int status;
+
+        //// Get an assembler object
+        assembler = assembler_create();
+        check(assembler != NULL);
+
+        // Get a Lexer object
+        lexer = lexer_create();
+        check(lexer != NULL);
+        check(lexer->text_seg != NULL);
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->label_str_len == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->immediate == 0);
+        check(lexer->text_seg->has_immediate == 0);
+
+        // Load the file 
+        status = lex_read_file(lexer, arith_test_filename);
+        check(status == 0);
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->label_str_len == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->immediate == 0);
+        check(lexer->text_seg->has_immediate == 0);
+        //check(lexer->sym_table->size == 0);
+        lexer->verbose = 1;
+
+        // Lex the file, then take the src_repr and give it 
+        // to the assembler
+        lex_all(lexer);
+
+        assembler_set_repr(assembler, lexer->source_repr);
+        check(assembler->src_repr == lexer->source_repr);
+        check(assembler->instr_buf != NULL);
+        // Note that the instruction buffer is one element larger
+        check(assembler->instr_buf->max_size == lexer->source_repr->size+1);
+        assembler->verbose = 1;
+
+        // Now assemble
+        status = assembler_assem(assembler);
+        fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
+        check(status == 0);
+
+        // For now, just print the contents of the instruction buffer here 
+        // TODO that this assembly output is technically wrong
+        fprintf(stdout, "[%s] there are %d instructions in buffer\n",
+               __func__, assembler->instr_buf->size);
         for(int i = 0; i < assembler->instr_buf->size; ++i)
         {
             Instr* cur_instr = instr_buffer_get(assembler->instr_buf, i);
