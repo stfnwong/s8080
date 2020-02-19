@@ -64,6 +64,7 @@ void assembler_destroy(Assembler* assem);
 
 // Copy repr from memory
 int assembler_set_repr(Assembler* assem, SourceInfo* repr);
+int assembler_copy_repr(Assembler* assem, SourceInfo* repr);
 
 // Assemble from current repr
 int assembler_assem_line(Assembler* assem, LineInfo* line);

@@ -213,6 +213,8 @@ uint8_t asm_pair_reg_to_code(char reg)
         case 'S':
             return 0x3;
     }
+
+    return 0x0;
 }
 
 /*
@@ -331,6 +333,9 @@ void asm_16bit_arith(Instr* dst, LineInfo* line)
 {
 }
 
+/*
+ * asm_reg_pair()
+ */
 void asm_reg_pair(Instr* dst, LineInfo* line, uint8_t op)
 {
     dst->instr = op;
@@ -338,6 +343,9 @@ void asm_reg_pair(Instr* dst, LineInfo* line, uint8_t op)
     dst->addr  = dst->addr;
 }
 
+/*
+ * asm_imm_2byte()
+ */
 void asm_imm_2byte(Instr* dst, LineInfo* line, uint8_t op)
 {
     dst->instr = (0x3 << 14) | (op << 11) | (0x6 << 8);
@@ -443,7 +451,7 @@ ASSEM_END:
 void assembler_destroy(Assembler* assem)
 {
     instr_buffer_destroy(assem->instr_buf);
-    source_info_destroy(assem->src_repr);
+    //source_info_destroy(assem->src_repr);
     free(assem);
 }
 
@@ -463,6 +471,21 @@ int assembler_set_repr(Assembler* assem, SourceInfo* repr)
         return -1;
     }
 
+    return 0;
+}
+
+int assembler_copy_repr(Assembler* assem, SourceInfo* repr)
+{
+    assem->src_repr = source_info_clone(repr);
+    if(assem->instr_buf != NULL)
+        instr_buffer_destroy(assem->instr_buf);
+
+    assem->instr_buf = instr_buffer_create(repr->size+1);
+    if(assem->instr_buf == NULL)
+    {
+        fprintf(stdout, "[%s] failed to create instruction buffer for assembler object\n", __func__);
+        return -1;
+    }
     return 0;
 }
 
@@ -567,13 +590,11 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
 
             // Move instructions 
             case LEX_MOV:
-                asm_mov(&cur_instr, line);
-                break;
-
             case LEX_POP:
-                break;
-
             case LEX_PUSH:
+            case LEX_SPHL:
+            case LEX_XCHG:
+                asm_mov(&cur_instr, line);
                 break;
 
             default:

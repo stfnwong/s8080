@@ -114,6 +114,7 @@ void line_info_print_instr(LineInfo* info)
     if(info == NULL || info->opcode == NULL)
         return;
 
+    // NOTE : valgrind gives invalid read of size 1 here
     if(info->label_str_len > 0)
         fprintf(stdout, "%s: ", info->label_str);
 
@@ -173,7 +174,6 @@ void line_info_print_instr(LineInfo* info)
     }
 }
 
-
 /*
  * line_info_copy()
  */
@@ -200,6 +200,7 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
     opcode_copy(dst->opcode, src->opcode);
     dst->label_str_len = src->label_str_len;
     // we may need to allocate some memory here for label string
+    // NOTE : use realloc here?
     if(dst->label_str_len > 0)
     {
         if(dst->label_str != NULL)
@@ -263,8 +264,13 @@ SOURCE_INFO_END:
 void source_info_destroy(SourceInfo* info)
 {
     // NOTE : not sure that all the memory is getting cleared here...
-    if(info == NULL || *info->buffer == NULL)
+    if(info == NULL)
         free(info);
+    else if(info->size == 0)
+    {
+        //free(info->buffer);     // fails?
+        free(info);
+    }
     else
     {
         for(int b = 0; b < info->max_size; ++b)

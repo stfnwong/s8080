@@ -117,10 +117,10 @@ spec("Assembler")
         // to the assembler
         lex_all(lexer);
 
-        assembler_set_repr(assembler, lexer->source_repr);
-        check(assembler->src_repr == lexer->source_repr);
+        status = assembler_copy_repr(assembler, lexer->source_repr);
+        check(status == 0);
         check(assembler->instr_buf != NULL);
-        check(assembler->instr_buf->max_size == lexer->source_repr->size);
+        check(assembler->instr_buf->max_size == lexer->source_repr->size+1);
         assembler->verbose = 1;
 
         // Now assemble
@@ -142,7 +142,9 @@ spec("Assembler")
 
         // TODO : create reference assembly to test against
 
+        fprintf(stdout, "[%s] destroying assembler...\n", __func__);
         assembler_destroy(assembler);
+        fprintf(stdout, "[%s] destroying lexer...\n", __func__);
         lexer_destroy(lexer);       // what is the problem here...?
     }
 
@@ -183,8 +185,8 @@ spec("Assembler")
         // to the assembler
         lex_all(lexer);
 
-        assembler_set_repr(assembler, lexer->source_repr);
-        check(assembler->src_repr == lexer->source_repr);
+        status = assembler_copy_repr(assembler, lexer->source_repr);
+        check(status == 0);
         check(assembler->instr_buf != NULL);
         // Note that the instruction buffer is one element larger
         check(assembler->instr_buf->max_size == lexer->source_repr->size+1);
@@ -207,10 +209,9 @@ spec("Assembler")
             fprintf(stdout, "\n");
         }
 
-        // TODO : create reference assembly to test against
-
+        fprintf(stdout, "[%s] destroying assembler...\n", __func__);
         assembler_destroy(assembler);
-        lexer_destroy(lexer);       // what is the problem here...?
+        fprintf(stdout, "[%s] destroying lexer...\n", __func__);
+        lexer_destroy(lexer); 
     }
-
 }

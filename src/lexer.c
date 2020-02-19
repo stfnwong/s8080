@@ -36,8 +36,11 @@ void symbol_init(Symbol* s)
  */
 void symbol_copy(Symbol* dst, Symbol* src)
 {
+    if(dst == NULL || src == NULL)
+        return;
     dst->addr = src->addr;
-    strncpy(dst->sym, src->sym, MAX_SYM_LEN);
+    memcpy(dst->sym, src->sym, MAX_SYM_LEN);
+    //strncpy(dst->sym, src->sym, MAX_SYM_LEN);
 }
 
 /*
@@ -681,7 +684,7 @@ int lex_parse_imm(Lexer* lexer, Token* tok)
 /*
  * lex_resolve_labels()
  */
-int lex_resolve_labels(Lexer* lexer)
+void lex_resolve_labels(Lexer* lexer)
 {
     // If there are no symbols, then nothing to do
     if(lexer->sym_table->size == 0)
@@ -729,11 +732,12 @@ int lex_line(Lexer* lexer)
             goto LEX_LINE_END;
         }
         // Copy label string
-        strcpy(lexer->text_seg->label_str, cur_token.token_str);
+        strncpy(lexer->text_seg->label_str, cur_token.token_str, lexer->token_buf_ptr);
+        //strcpy(lexer->text_seg->label_str, cur_token.token_str);
         lexer->text_seg->label_str_len = strlen(cur_token.token_str);
         // make a symbol object for this label
         cur_sym.addr = lexer->text_addr;
-        strncpy(&cur_sym.sym, &cur_token.token_str, strlen(cur_token.token_str));
+        strncpy(cur_sym.sym, cur_token.token_str, strlen(cur_token.token_str)); 
 
         // Add to symbol table
         status = symbol_table_add_sym(lexer->sym_table, &cur_sym);

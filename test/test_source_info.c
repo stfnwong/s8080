@@ -25,6 +25,30 @@ spec("SourceInfo")
         check(test_info->max_size == num_elems);
         check(test_info->size == 0);
 
+        // Are all the elements initialized?
+        for(int i = 0; i < test_info->max_size; ++i)
+        {
+            // we expect the memory to be allocated (since 
+            // elements are copied into the buffer)
+            check(test_info->buffer[i] != NULL);
+            // But each element with have the default/init
+            // values
+            check(test_info->buffer[i]->line_num == 0);
+            check(test_info->buffer[i]->addr == 0);
+            check(test_info->buffer[i]->immediate == 0);
+            check(test_info->buffer[i]->has_immediate == 0);
+            check(test_info->buffer[i]->label_str_len == 0);
+            check(test_info->buffer[i]->error == 0);
+            check(test_info->buffer[i]->label_str == NULL);
+            for(int r = 0; r < LINE_INFO_NUM_REG; ++r)
+                check(test_info->buffer[i]->reg[r] == '\0');
+
+            // Opcode is initnalized 
+            check(test_info->buffer[i]->opcode->instr == 0);
+            for(int r = 0; r < OPCODE_MNEMONIC_SIZE; ++r)
+                check(test_info->buffer[i]->opcode->mnemonic[r] == 0);
+        }
+
         source_info_destroy(test_info);
     }
 
@@ -73,6 +97,8 @@ spec("SourceInfo")
                 check(cur_line->has_immediate == 0);
             check(cur_line->line_num == e+1);
             check(cur_line->addr == 0xBEEF + e);
+            // Check that the pointers are not equal
+            check(dst_info->buffer[e] != src_info->buffer[e]);
         }
     
         source_info_destroy(src_info);

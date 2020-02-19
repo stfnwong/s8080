@@ -71,7 +71,7 @@ typedef struct
     int data_addr;
 
     // current line information
-    LineInfo*    text_seg;      // TODO : where to put the collection of LineInfos?
+    LineInfo*    text_seg;      
     SourceInfo*  source_repr;
     //DataSegment* data_seg;
     
@@ -110,7 +110,7 @@ int    lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_imm(Lexer* lexer, Token* tok);
 
 // Label resolution
-int    lex_resolve_labels(Lexer* lexer);
+void   lex_resolve_labels(Lexer* lexer);
 
 // Lex a line in the source 
 int    lex_line(Lexer* lexer);
