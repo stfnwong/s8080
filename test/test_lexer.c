@@ -19,6 +19,7 @@ spec("Lexer")
     static const char test_filename[]       = "asm/test_lexer.asm";
     static const char mov_test_filename[]   = "asm/test_mov.asm";
     static const char arith_test_filename[] = "asm/test_arith.asm";
+    static const char jmp_test_filename[]   = "asm/test_jmp.asm";
 
     it("Should initialize correctly")
     {
@@ -620,6 +621,45 @@ spec("Lexer")
         lexer_destroy(lexer);
     }
 
+    it("Should lex all the jump instructions correctly")
+    {
+        Lexer* lexer = lexer_create();
+
+        int status = lex_read_file(lexer, jmp_test_filename);
+        check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        lexer->verbose = 1;
+
+        lex_all(lexer);
+        fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
+                __func__, 
+                jmp_test_filename, 
+                lexer->source_repr->size
+        );
+
+        // Ensure there are no NULL elements in source repr
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            LineInfo* cur_line = source_info_get_idx(
+                    lexer->source_repr,
+                    l
+            );
+            check(cur_line != NULL);
+
+            // TODO : these should actually be tested, and in fact we should probably
+            // re-write the above line-by-line test to work on the source_repr and not
+            // on the current text segment.
+            // Just for debugging
+            line_info_print_instr(cur_line);        // TODO  remove
+            fprintf(stdout, "\n");
+        }
+
+        
+        // clean up
+        lexer_destroy(lexer);
+    }
+
     it("Lexes the arithmetic file into a SourceInfo when lex_all() is called")
     {
         Lexer* lexer = lexer_create();
@@ -648,6 +688,9 @@ spec("Lexer")
             );
             check(cur_line != NULL);
 
+            // TODO : these should actually be tested, and in fact we should probably
+            // re-write the above line-by-line test to work on the source_repr and not
+            // on the current text segment.
             // Just for debugging
             line_info_print_instr(cur_line);
             fprintf(stdout, "\n");
@@ -692,6 +735,7 @@ spec("Lexer")
         }
         check(lexer->sym_table->size == 1);
         check(strncmp(out_sym->sym, "MOVE_INSTR", 11) == 0);
+        check(out_sym->addr == 0x0);
 
         // clean up
         lexer_destroy(lexer);

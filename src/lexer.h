@@ -25,9 +25,9 @@ typedef struct
 } Symbol;
 
 Symbol* symbol_create(void);
-void symbol_init(Symbol* s);
-void symbol_copy(Symbol* dst, Symbol* src);
-void symbol_print(Symbol* s);
+void    symbol_init(Symbol* s);
+void    symbol_copy(Symbol* dst, Symbol* src);
+void    symbol_print(Symbol* s);
 
 /*
  * SymbolTable
@@ -96,7 +96,7 @@ void   lex_skip_whitespace(Lexer* lexer);
 void   lex_skip_comment(Lexer* lexer);
 
 // Update addreses
-void   lex_text_addr_incr(Lexer* lexer);
+void   lex_text_addr_incr(Lexer* lexer, int instr_size);
 void   lex_data_addr_incr(Lexer* lexer);
 
 //  extract tokens
@@ -108,6 +108,7 @@ int    lex_parse_one_reg(Lexer* lexer, Token* token);
 int    lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_imm(Lexer* lexer, Token* tok);
+int    lex_parse_jmp(Lexer* lexer, Token* tok);
 
 // Label resolution
 void   lex_resolve_labels(Lexer* lexer);

@@ -18,7 +18,9 @@ typedef struct
 {
     Opcode* opcode;
     char* label_str;
+    char* symbol_str;
     int   label_str_len;
+    int   symbol_str_len;
     // Position
     int   line_num;
     int   addr;

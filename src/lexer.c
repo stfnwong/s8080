@@ -378,9 +378,9 @@ void lex_skip_comment(Lexer* lexer)
 /*
  * lex_text_addr_incr()
  */
-void lex_text_addr_incr(Lexer* lexer)
+void lex_text_addr_incr(Lexer* lexer, int instr_size)
 {
-    lexer->text_addr += 4;
+    lexer->text_addr += 4 * instr_size;
 }
 
 /*
@@ -690,6 +690,31 @@ int lex_parse_imm(Lexer* lexer, Token* tok)
 }
 
 /*
+ * lex_parse_jmp()
+ */
+int lex_parse_jmp(Lexer* lexer, Token* tok)
+{
+    if(tok->type == SYM_LITERAL || tok->type == SYM_LABEL)
+    {
+        lexer->text_seg->symbol_str = malloc(sizeof(char) * strlen(tok->token_str));
+        lexer->text_seg->symbol_str_len = strlen(tok->token_str);
+        strcpy(lexer->text_seg->symbol_str, tok->token_str);
+    }
+    else
+    {
+        fprintf(stdout, "[%s] line %d:%d ERROR: expected symbol or literal, got %s\n",
+                __func__, 
+                lexer->cur_line, 
+                lexer->cur_col,
+                TOKEN_TYPE_TO_STR[tok->type]
+               );
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
  * lex_resolve_labels()
  */
 void lex_resolve_labels(Lexer* lexer)
@@ -698,18 +723,28 @@ void lex_resolve_labels(Lexer* lexer)
     if(lexer->sym_table->size == 0)
         return;
 
+    LineInfo* cur_line;
+    Symbol* out_sym;
     // walk over the source repr, each time there is a label
     // look it up in the symbol table and insert the address of
     // that symbol in the immediate field
     for(int l = 0; l < lexer->source_repr->size; ++l)
     {
-        LineInfo* cur_line = source_info_get_idx(
-                lexer->source_repr,
-                l
-        );
-        if(cur_line->label_str_len > 0)
+        cur_line = source_info_get_idx(lexer->source_repr, l);
+        if(cur_line->symbol_str_len > 0)
         {
             // lookup the label in the symbol table
+            out_sym = symbol_table_get_str(
+                    lexer->sym_table, 
+                    cur_line->symbol_str,
+                    cur_line->symbol_str_len
+            );
+            // if the symbol is valid then update the line
+            if(out_sym != NULL)
+            {
+                lexer->source_repr->buffer[l]->immediate = out_sym->addr;
+                lexer->source_repr->buffer[l]->has_immediate = 1;
+            }
         }
     }
 }
@@ -720,6 +755,7 @@ void lex_resolve_labels(Lexer* lexer)
 int lex_line(Lexer* lexer)
 {
     int status = 0;
+    int instr_size = 1;
     Opcode cur_opcode;
     Token cur_token;
     Token tok_a, tok_b;
@@ -780,6 +816,7 @@ int lex_line(Lexer* lexer)
             case LEX_INR:
             case LEX_INX:
             case LEX_LDAX:
+            case LEX_ORA:
             case LEX_POP:
             case LEX_PUSH:
             case LEX_SBB:
@@ -788,15 +825,18 @@ int lex_line(Lexer* lexer)
             case LEX_XRA:
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_one_reg(lexer, &cur_token);
+                instr_size = 1;
                 break;
 
             case LEX_ACI:
             case LEX_ADI:
             case LEX_ANI:
+            case LEX_ORI:
             case LEX_SUI:
             case LEX_SBI:
                 lex_next_token(lexer, &cur_token);
                 status = lex_parse_imm(lexer, &cur_token);
+                instr_size = 2;
                 break;
 
             case LEX_MOV:
@@ -804,21 +844,37 @@ int lex_line(Lexer* lexer)
                 lex_next_token(lexer, &tok_a);
                 lex_next_token(lexer, &tok_b);
                 status = lex_parse_two_reg(lexer, &tok_a, &tok_b);
+                instr_size = 1;
                 break;
 
             case LEX_MVI:
                 lex_next_token(lexer, &tok_a);
                 lex_next_token(lexer, &tok_b);
                 status = lex_parse_reg_imm(lexer, &tok_a, &tok_b);
+                instr_size = 2;
+                break;
+
+            case LEX_PCHL:
+                instr_size = 1;
                 break;
 
             case LEX_LXI:
+                instr_size = 3;
                 fprintf(stdout, "[%s] yet to implement LXI...\n", __func__);
                 break;
 
-            case LEX_ORA:
-                lex_next_token(lexer, &cur_token);
-                status = lex_parse_one_reg(lexer, &cur_token);
+            // Control flow instructions
+            // These are assembled into three bytes
+            case LEX_JP:
+            case LEX_JMP:
+            case LEX_JC:
+            case LEX_JNC:
+            case LEX_JZ:
+                lex_next_token(lexer, &tok_a);  // should be a literal or a label
+                status = lex_parse_jmp(lexer, &tok_a);
+
+
+                instr_size = 3;
                 break;
 
             default:
@@ -845,7 +901,7 @@ LEX_LINE_END:
         fprintf(stdout, "[%s] something went wrong...\n", __func__);
         lexer->text_seg->error = 1;
     }
-    lex_text_addr_incr(lexer);
+    lex_text_addr_incr(lexer, instr_size);
     lexer->text_seg->addr = lexer->text_addr;
 
     status = source_info_add_line(lexer->source_repr, lexer->text_seg);

@@ -33,7 +33,8 @@ LineInfo* line_info_create(void)
     if(!info->opcode)
         goto INFO_END;
 
-    info->label_str = NULL;
+    info->label_str  = NULL;
+    info->symbol_str = NULL;
     line_info_init(info);
 
 INFO_END:
@@ -78,6 +79,12 @@ void line_info_init(LineInfo* info)
         info->label_str = NULL;
     }
     info->label_str_len = 0;
+    if(info->symbol_str != NULL)
+    {
+        free(info->symbol_str);
+        info->symbol_str = NULL;
+    }
+    info->symbol_str_len = 0;
     info->error = 0;
 }
 
@@ -98,11 +105,13 @@ void line_info_print(LineInfo* info)
     if(info->has_immediate)
         fprintf(stdout, "    imm    : %d (0x%X)\n", info->immediate, info->immediate);
     else
-        fprintf(stdout, "    no immediate\n");
+        fprintf(stdout, "    imm    : none\n");
 
     fprintf(stdout, "    error  : %s\n", (info->error) ? "YES" : "NO");
     fprintf(stdout, "    Opcode : ");
     opcode_print(info->opcode);
+    if(info->symbol_str_len > 0)
+        fprintf(stdout, " %s ", info->symbol_str);
     fprintf(stdout, "\n");
 }
 

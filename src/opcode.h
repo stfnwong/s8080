@@ -47,6 +47,9 @@ typedef enum {
     LEX_IN,
     LEX_INR,
     LEX_INX,
+    LEX_JC,
+    LEX_JMP,
+    LEX_JNC,
     LEX_JNZ,
     LEX_JP,
     LEX_JZ,
@@ -60,6 +63,7 @@ typedef enum {
     LEX_ORA,
     LEX_ORI,
     LEX_OUT,
+    LEX_PCHL,
     LEX_POP,
     LEX_PUSH,
     LEX_RAA,
@@ -82,8 +86,8 @@ typedef enum {
 } instr_code;
 
 // Move to *.c file in next commit
-static const int NUM_LEX_INSTR = 50;  // TODO :  better way of doing this
-extern const Opcode LEX_INSTRUCTIONS[50];
+static const int NUM_LEX_INSTR = 54;  // TODO :  better way of doing this
+extern const Opcode LEX_INSTRUCTIONS[54];
 
 // Opcode lookup
 typedef struct

@@ -94,6 +94,46 @@ spec("SymbolTable")
         out_sym = symbol_table_get_str(test_table, "TEST_9", 6);
         check(out_sym != NULL);
 
+        symbol_table_destroy(test_table);
+    }
+
+    it("Should allow lookup by index")
+    {
+        SymbolTable* test_table;
+        int table_size = 32;
+        int num_syms = 10;
+        char label_str[32];
+
+        // create the table
+        test_table = symbol_table_create(table_size);
+        check(test_table != NULL);
+
+        Symbol  test_sym;
+        Symbol* out_sym;
+
+        strncpy(label_str, "TEST_0\0", 7);
+        for(int s = 0; s < num_syms; ++s)
+        {
+            test_sym.addr = 0xD0D0 + s;
+            strncpy(test_sym.sym, label_str, 7);
+            symbol_table_add_sym(test_table, &test_sym);
+            label_str[5] += 1;      // TODO  : should work since this is ASCII, but not robust
+            check(test_table->size == s + 1);
+        }
+        check(test_table->size == num_syms);
+
+        // Now start looking up symbols by string
+        out_sym = symbol_table_get_idx(test_table, num_syms + 1);
+        check(out_sym == NULL);
+        out_sym = symbol_table_get_idx(test_table, 0);
+        check(out_sym != NULL);
+        check(strncmp(out_sym->sym, "TEST_0", 5) == 0);
+        out_sym = symbol_table_get_idx(test_table, 1);
+        check(out_sym != NULL);
+        check(strncmp(out_sym->sym, "TEST_1", 5) == 0);
+        out_sym = symbol_table_get_idx(test_table, 9);
+        check(out_sym != NULL);
+        check(strncmp(out_sym->sym, "TEST_9", 5) == 0);
 
         symbol_table_destroy(test_table);
     }
