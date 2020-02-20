@@ -13,7 +13,6 @@
 // testing framework
 #include "bdd-for-c.h"
 
-static const char test_filename[] = "asm/test_lexer.asm";
 static const char mov_test_filename[] = "asm/test_mov.asm";
 static const char arith_test_filename[] = "asm/test_arith.asm";
 
@@ -47,6 +46,7 @@ spec("Assembler")
         Assembler* assem;
         SourceInfo* test_repr;
         int num_lines = 32;
+        int status;
 
         assem = assembler_create();
         check(assem != NULL);
@@ -76,7 +76,8 @@ spec("Assembler")
             test_line->immediate = (l % 2 == 0) ? l : 0;
             source_info_add_line(test_repr, test_line);
         }
-        assembler_set_repr(assem, test_repr);
+        status = assembler_set_repr(assem, test_repr);
+        check(status == 0);
         check(assem->src_repr != NULL);
         check(assem->instr_buf != NULL);
         check(assem->instr_buf->max_size == test_repr->size+1);
@@ -117,7 +118,7 @@ spec("Assembler")
         // to the assembler
         lex_all(lexer);
 
-        status = assembler_copy_repr(assembler, lexer->source_repr);
+        status = assembler_set_repr(assembler, lexer->source_repr);
         check(status == 0);
         check(assembler->instr_buf != NULL);
         check(assembler->instr_buf->max_size == lexer->source_repr->size+1);
@@ -185,7 +186,7 @@ spec("Assembler")
         // to the assembler
         lex_all(lexer);
 
-        status = assembler_copy_repr(assembler, lexer->source_repr);
+        status = assembler_set_repr(assembler, lexer->source_repr);
         check(status == 0);
         check(assembler->instr_buf != NULL);
         // Note that the instruction buffer is one element larger

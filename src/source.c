@@ -216,6 +216,23 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
     return 0;
 }
 
+/*
+ * line_info_struct_size()
+ */
+int line_info_struct_size(LineInfo* info)
+{
+    return sizeof(*info) + info->label_str_len + sizeof(*info->opcode);
+}
+
+/*
+ * line_info_serialize()
+ */
+void line_info_serialize(LineInfo* info, uint8_t* buffer, int len)
+{
+    memcpy(buffer, info->opcode, sizeof(*info->opcode));
+    //memcpy(buffer + sizeof(*info->opcode), 
+}
+
 
 // ================ SOURCE INFO ================ //
 /*
@@ -377,6 +394,33 @@ int source_info_empty(SourceInfo* info)
     return (info->size == 0) ? 1 : 0;
 }
 
+/*
+ * source_info_write()
+ */
+int source_info_write(SourceInfo* info, const char* filename)
+{
+    FILE* fp;
+
+    fp = fopen(filename, "wb");
+    if(!fp)
+    {
+        fprintf(stderr, "[%s] failed to open file %s for writing\n",
+               __func__, filename);
+        return -1;
+    }
+
+    // Write the number of records, and the max size
+    fwrite(&info->size, sizeof(int), 1, fp);        
+    fwrite(&info->max_size, sizeof(int), 1, fp);        
+
+    // Now write each of the Lineinfo structures
+
+
+    fclose(fp);
+
+    return 0;
+}
+
 
 // ================ DATA SEGMENT ================ //
 /*
@@ -432,8 +476,9 @@ Token* create_token(void)
                 __func__);
         return NULL;
     }
-    token->type         = SYM_NONE;
-    token->token_str[0] = '\0';     // or memset()?
+    token->type          = SYM_NONE;
+    token->token_str_len = 0;
+    token->token_str[0]  = '\0';     // or memset()?
 
     return token;
 }
@@ -444,7 +489,9 @@ Token* create_token(void)
 void token_init(Token* token)
 {
     token->type = SYM_NONE;
-    token->token_str[0] = '\0';
+    token->token_str_len = 0;
+    memset(token->token_str, 0, TOKEN_BUF_SIZE);
+    //token->token_str[0] = '\0';
 }
 
 /*

@@ -114,8 +114,8 @@ void   lex_resolve_labels(Lexer* lexer);
 
 // Lex a line in the source 
 int    lex_line(Lexer* lexer);
-
 int    lex_all(Lexer* lexer);
+int    lex_write_repr(Lexer* lexer, const char* filename);
 
 
 #endif /*__EMU_LEXER_H*/

@@ -60,11 +60,11 @@ typedef struct
 Assembler* assembler_create(void);
 void assembler_destroy(Assembler* assem);
 
-// Read repr from disk
+// Read repr from disk ? 
 
 // Copy repr from memory
 int assembler_set_repr(Assembler* assem, SourceInfo* repr);
-int assembler_copy_repr(Assembler* assem, SourceInfo* repr);
+//int assembler_copy_repr(Assembler* assem, SourceInfo* repr);
 
 // Assemble from current repr
 int assembler_assem_line(Assembler* assem, LineInfo* line);

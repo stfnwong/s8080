@@ -39,8 +39,8 @@ void symbol_copy(Symbol* dst, Symbol* src)
     if(dst == NULL || src == NULL)
         return;
     dst->addr = src->addr;
-    memcpy(dst->sym, src->sym, MAX_SYM_LEN);
-    //strncpy(dst->sym, src->sym, MAX_SYM_LEN);
+    //memcpy(dst->sym, src->sym, MAX_SYM_LEN);
+    strncpy(dst->sym, src->sym, strlen(src->sym));
 }
 
 /*
@@ -457,6 +457,7 @@ int lex_extract_literal(Lexer* lexer, Token* token)
 
     token->type = SYM_LITERAL;
     strncpy(token->token_str, lexer->token_buf, tok_ptr);
+    token->token_str_len = tok_ptr;
 
     // Check if the last character is an 'H'
     if(lexer->token_buf[tok_ptr] == 'H' || 
@@ -487,14 +488,12 @@ void lex_next_token(Lexer* lexer, Token* token)
     lex_scan_token(lexer);
 
     token_init(token);
-
     // Now check the token in the buffer
     if(isdigit(lexer->token_buf[0]))
     {
         token->type = SYM_LITERAL;
         goto TOKEN_END;
     }
-
     // We would check here for directives
 
     // Check for registers 
@@ -507,9 +506,11 @@ void lex_next_token(Lexer* lexer, Token* token)
            (strncmp(lexer->token_buf, "E", 1) == 0) ||
            (strncmp(lexer->token_buf, "H", 1) == 0) ||
            (strncmp(lexer->token_buf, "L", 1) == 0) ||
-           (strncmp(lexer->token_buf, "M", 1) == 0))    // assemble this as mem read
+           (strncmp(lexer->token_buf, "M", 1) == 0) ||  // assemble this as mem read
+           (strncmp(lexer->token_buf, "S", 1) == 0))    // assemble this as stack pointer
         {
             token->type = SYM_REG;
+            token->token_str_len = 1;
             goto TOKEN_END;
         }
     }
@@ -521,7 +522,6 @@ void lex_next_token(Lexer* lexer, Token* token)
             &opcode, 
             lexer->token_buf
     );
-
     if(opcode.instr != LEX_INVALID)
     {
         if(lexer->verbose)
@@ -532,6 +532,7 @@ void lex_next_token(Lexer* lexer, Token* token)
                     LEX_INSTRUCTIONS[opcode.instr].mnemonic);
         }
         token->type = SYM_INSTR;
+        token->token_str_len = (int) strlen(lexer->token_buf);
         goto TOKEN_END;
     }
 
@@ -545,6 +546,7 @@ void lex_next_token(Lexer* lexer, Token* token)
 
 TOKEN_END:
     // If this is a label, then null-out any trailing ':' characters
+    // TODO : null character not in the right place?
     if(token->type == SYM_LABEL)
     {
         int copy_size;
@@ -553,19 +555,25 @@ TOKEN_END:
         else
             copy_size = lexer->token_buf_ptr;
         strncpy(token->token_str, lexer->token_buf, copy_size);
-        token->token_str[copy_size] = '\0';
+        token->token_str[copy_size+1] = '\0';
+        token->token_str_len = copy_size + 1;
     }
     else
     {
         strcpy(token->token_str, lexer->token_buf);
-        token->token_str[lexer->token_buf_ptr] = '\0';
+        token->token_str[lexer->token_buf_ptr+1] = '\0';
+        token->token_str_len = lexer->token_buf_ptr + 1;
     }
 
     if(lexer->verbose)
     {
         fprintf(stdout, "[%s]  (line %d:%d) got token [%s] of type %s with value [%s]\n",
-               __func__, lexer->cur_line, lexer->cur_col, 
-               lexer->token_buf, TOKEN_TYPE_TO_STR[token->type],  token->token_str
+               __func__, 
+               lexer->cur_line, 
+               lexer->cur_col, 
+               lexer->token_buf, 
+               TOKEN_TYPE_TO_STR[token->type],  
+               token->token_str
         );
     }
 }
@@ -688,7 +696,7 @@ void lex_resolve_labels(Lexer* lexer)
 {
     // If there are no symbols, then nothing to do
     if(lexer->sym_table->size == 0)
-        return 0;
+        return;
 
     // walk over the source repr, each time there is a label
     // look it up in the symbol table and insert the address of
@@ -719,7 +727,9 @@ int lex_line(Lexer* lexer)
 
     token_init(&tok_a);
     token_init(&tok_b);
+    token_init(&cur_token);
     line_info_init(lexer->text_seg);
+
     lex_next_token(lexer, &cur_token);
 
     if(cur_token.type == SYM_LABEL)
@@ -732,12 +742,12 @@ int lex_line(Lexer* lexer)
             goto LEX_LINE_END;
         }
         // Copy label string
-        strncpy(lexer->text_seg->label_str, cur_token.token_str, lexer->token_buf_ptr);
-        //strcpy(lexer->text_seg->label_str, cur_token.token_str);
-        lexer->text_seg->label_str_len = strlen(cur_token.token_str);
+        //strncpy(lexer->text_seg->label_str, cur_token.token_str, lexer->token_buf_ptr);
+        strcpy(lexer->text_seg->label_str, cur_token.token_str);
+        lexer->text_seg->label_str_len = cur_token.token_str_len;
         // make a symbol object for this label
         cur_sym.addr = lexer->text_addr;
-        strncpy(cur_sym.sym, cur_token.token_str, strlen(cur_token.token_str)); 
+        strncpy(cur_sym.sym, cur_token.token_str, cur_token.token_str_len);
 
         // Add to symbol table
         status = symbol_table_add_sym(lexer->sym_table, &cur_sym);
@@ -879,7 +889,27 @@ int lex_all(Lexer* lexer)
             return status;
     }
 
-    // TODO : labels, label resolution
+    // Resolve label addresses
+    lex_resolve_labels(lexer);
+
+    return 0;
+}
+
+int lex_write_repr(Lexer* lexer, const char* filename)
+{
+    if(lexer->source_repr == NULL)
+        return -1;
+
+    FILE* fp;
+
+    fp = fopen(filename, "wb");
+    if(!fp)
+    {
+        fprintf(stderr, "[%s] failed to open file %s for writing\n",
+                __func__, filename);
+        return -1;
+    }
+
 
     return 0;
 }

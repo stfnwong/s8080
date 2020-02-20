@@ -191,7 +191,6 @@ spec("SourceInfo")
     {
         int num_elems;
         int status;
-        const char* label = "LABEL\0";
         SourceInfo* test_info;
         LineInfo*   test_line;
         Opcode* test_op;

@@ -688,9 +688,10 @@ spec("Lexer")
                     s
             );
             check(out_sym != NULL);
-            fprintf(stdout, "[%s] 0x%04X : %s\n", __func__, out_sym->addr, out_sym->sym);
+            fprintf(stdout, "[%s] 0x%04X : %s (len = %ld)\n", __func__, out_sym->addr, out_sym->sym, strlen(out_sym->sym));
         }
         check(lexer->sym_table->size == 1);
+        check(strncmp(out_sym->sym, "MOVE_INSTR", 11) == 0);
 
         // clean up
         lexer_destroy(lexer);

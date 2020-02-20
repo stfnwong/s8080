@@ -474,20 +474,23 @@ int assembler_set_repr(Assembler* assem, SourceInfo* repr)
     return 0;
 }
 
-int assembler_copy_repr(Assembler* assem, SourceInfo* repr)
-{
-    assem->src_repr = source_info_clone(repr);
-    if(assem->instr_buf != NULL)
-        instr_buffer_destroy(assem->instr_buf);
-
-    assem->instr_buf = instr_buffer_create(repr->size+1);
-    if(assem->instr_buf == NULL)
-    {
-        fprintf(stdout, "[%s] failed to create instruction buffer for assembler object\n", __func__);
-        return -1;
-    }
-    return 0;
-}
+/*
+ * assembler_copy_repr()
+ */
+//int assembler_copy_repr(Assembler* assem, SourceInfo* repr)
+//{
+//    assem->src_repr = source_info_clone(repr);
+//    if(assem->instr_buf != NULL)
+//        instr_buffer_destroy(assem->instr_buf);
+//
+//    assem->instr_buf = instr_buffer_create(repr->size+1);
+//    if(assem->instr_buf == NULL)
+//    {
+//        fprintf(stdout, "[%s] failed to create instruction buffer for assembler object\n", __func__);
+//        return -1;
+//    }
+//    return 0;
+//}
 
 /*
  * assembler_assem_line()

@@ -31,7 +31,7 @@ spec("SymbolTable")
         Symbol* out_sym;
 
         test_sym.addr = 0xBEEF;
-        strncpy(&test_sym.sym, "TEST\0", 5);
+        strncpy(test_sym.sym, "TEST\0", 5);
         symbol_print(&test_sym);
 
         symbol_table_add_sym(test_table, &test_sym);
@@ -77,7 +77,7 @@ spec("SymbolTable")
         for(int s = 0; s < num_syms; ++s)
         {
             test_sym.addr = 0xD0D0 + s;
-            strncpy(&test_sym.sym, label_str, 7);
+            strncpy(test_sym.sym, label_str, 7);
             symbol_table_add_sym(test_table, &test_sym);
             label_str[5] += 1;      // TODO  : should work since this is ASCII, but not robust
             check(test_table->size == s + 1);

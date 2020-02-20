@@ -10,22 +10,22 @@
 
 #define TOKEN_BUF_SIZE 16
 #define LINE_INFO_NUM_REG 2
+
 #include "opcode.h"
 
 // Text segment
 typedef struct 
 {
     Opcode* opcode;
+    char* label_str;
+    int   label_str_len;
     // Position
     int   line_num;
     int   addr;
-    
     // arguments 
     int   has_immediate;
     int   immediate;
     char  reg[LINE_INFO_NUM_REG];
-    char* label_str;
-    int   label_str_len;
     // error info
     int   error;
 } LineInfo;
@@ -36,6 +36,8 @@ void      line_info_init(LineInfo* info);
 void      line_info_print(LineInfo* info);
 void      line_info_print_instr(LineInfo* info);
 int       line_info_copy(LineInfo* dst, LineInfo* src);
+int       line_info_struct_size(LineInfo* info);
+void      line_info_serialize(LineInfo* info, uint8_t* buffer, int len);
 
 // ==== Buffer for LineInfo Structures
 typedef struct
@@ -54,6 +56,7 @@ LineInfo*   source_info_get_idx(SourceInfo* info, int idx);
 SourceInfo* source_info_clone(SourceInfo* src);
 int         source_info_full(SourceInfo* info);
 int         source_info_empty(SourceInfo* info);
+int         source_info_write(SourceInfo* info, const char* filename);
 
 
 // Data segment
@@ -85,6 +88,7 @@ extern const char* TOKEN_TYPE_TO_STR[6];
 typedef struct 
 {
     TokenType type;
+    int       token_str_len;
     char      token_str[TOKEN_BUF_SIZE];
 } Token;
 
