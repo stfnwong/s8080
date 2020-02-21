@@ -190,7 +190,7 @@ spec("Lexer")
         // Lexing the first line (MOVI: MVI, A, 077H
         // We expect to have the label MOVI
         check(lexer->text_seg->label_str != NULL);
-        check(lexer->text_seg->label_str_len == 4);
+        check(lexer->text_seg->label_str_len == 5);
         check(strncmp(lexer->text_seg->label_str, "MOVI", 4) == 0);
         // followed by the instruction MVI
         check(lexer->text_seg->opcode->instr == LEX_MVI);
@@ -290,111 +290,6 @@ spec("Lexer")
         check(lexer->text_seg->line_num == 0);
         check(lexer->text_seg->addr == 0);
 
-        // Skip the first few lines (which are comments and so on)
-        while(lexer->cur_line < 5)
-            lex_advance(lexer);
-
-        lexer->verbose = 1;
-
-        // MOVE_INSTR: MOV A, B
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-
-        check(lexer->text_seg->label_str != NULL);
-        check(lexer->text_seg->label_str_len == 10);
-        check(strncmp(lexer->text_seg->label_str, "MOVE_INSTR", 10) == 0);
-        // MOV B, C
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_MOV);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "MOV", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'B');
-        check(lexer->text_seg->reg[1] == 'C');
-        check(lexer->text_seg->has_immediate == 0);
-        check(lexer->text_seg->immediate == 0);
-
-        // MOV A, M
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_MOV);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "MOV", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'A');
-        check(lexer->text_seg->reg[1] == 'M');
-        check(lexer->text_seg->has_immediate == 0);
-        check(lexer->text_seg->immediate == 0);
-
-        // PUSH D
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_PUSH);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "PUSH", 4) == 0);
-        check(lexer->text_seg->reg[0] == 'D');
-        check(lexer->text_seg->reg[1] == '\0');
-        check(lexer->text_seg->has_immediate == 0);
-        check(lexer->text_seg->immediate == 0);
-
-        // MOV E, A
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_MOV);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "MOV", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'E');
-        check(lexer->text_seg->reg[1] == 'A');
-        check(lexer->text_seg->has_immediate == 0);
-        check(lexer->text_seg->immediate == 0);
-
-        // MVI C, 2
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_MVI);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "MVI", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'C');
-        check(lexer->text_seg->reg[1] == '\0');
-        check(lexer->text_seg->has_immediate == 1);
-        check(lexer->text_seg->immediate == 0x2);
-
-        // POP D
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
-        fprintf(stdout, "\n");
-
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_POP);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "POP", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'D');
-        check(lexer->text_seg->reg[1] == '\0');
-        check(lexer->text_seg->has_immediate == 0);
-        check(lexer->text_seg->immediate == 0);
-        
-        // clean up
-        lexer_destroy(lexer);
-    }
-
-    it("Lexes the move file into a SourceInfo when lex_all() is called")
-    {
-        Lexer* lexer = lexer_create();
-
-        int status = lex_read_file(lexer, mov_test_filename);
-        check(status == 0);
-        check(lexer->text_seg->line_num == 0);
-        check(lexer->text_seg->addr == 0);
-
         // Lex the file 
         lex_all(lexer);
         // Now check the internal SourceInfo
@@ -405,19 +300,99 @@ spec("Lexer")
         );
 
         // Print each element
+        LineInfo* cur_line;
         for(int l = 0; l < lexer->source_repr->size; ++l)
         {
-            LineInfo* cur_line = source_info_get_idx(
-                    lexer->source_repr,
-                    l
-            );
+            cur_line = source_info_get_idx(lexer->source_repr, l);
             check(cur_line != NULL);
-
-            // Just for debugging
-            line_info_print_instr(cur_line);
-            fprintf(stdout, "\n");
         }
 
+        // MOVE_INSTR: MOV A, B
+        cur_line = source_info_get_idx(lexer->source_repr, 0);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str != NULL);
+        check(cur_line->label_str_len == 11);
+        check(strncmp(cur_line->label_str, "MOVE_INSTR", 10) == 0);
+        // MOV B, C
+        cur_line = source_info_get_idx(lexer->source_repr, 1);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_MOV);
+        check(strncmp(cur_line->opcode->mnemonic, "MOV", 3) == 0);
+        check(cur_line->reg[0] == 'B');
+        check(cur_line->reg[1] == 'C');
+        check(cur_line->has_immediate == 0);
+        check(cur_line->immediate == 0);
+
+        // MOV A, M
+        cur_line = source_info_get_idx(lexer->source_repr, 2);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_MOV);
+        check(strncmp(cur_line->opcode->mnemonic, "MOV", 3) == 0);
+        check(cur_line->reg[0] == 'A');
+        check(cur_line->reg[1] == 'M');
+        check(cur_line->has_immediate == 0);
+        check(cur_line->immediate == 0);
+
+        // PUSH D
+        cur_line = source_info_get_idx(lexer->source_repr, 3);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_PUSH);
+        check(strncmp(cur_line->opcode->mnemonic, "PUSH", 4) == 0);
+        check(cur_line->reg[0] == 'D');
+        check(cur_line->reg[1] == '\0');
+        check(cur_line->has_immediate == 0);
+        check(cur_line->immediate == 0);
+
+        // MOV E, A
+        cur_line = source_info_get_idx(lexer->source_repr, 4);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_MOV);
+        check(strncmp(cur_line->opcode->mnemonic, "MOV", 3) == 0);
+        check(cur_line->reg[0] == 'E');
+        check(cur_line->reg[1] == 'A');
+        check(cur_line->has_immediate == 0);
+        check(cur_line->immediate == 0);
+
+        // MVI C, 2
+        cur_line = source_info_get_idx(lexer->source_repr, 5);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_MVI);
+        check(strncmp(cur_line->opcode->mnemonic, "MVI", 3) == 0);
+        check(cur_line->reg[0] == 'C');
+        check(cur_line->reg[1] == '\0');
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0x2);
+
+        // POP D
+        cur_line = source_info_get_idx(lexer->source_repr, 6);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_POP);
+        check(strncmp(cur_line->opcode->mnemonic, "POP", 3) == 0);
+        check(cur_line->reg[0] == 'D');
+        check(cur_line->reg[1] == '\0');
+        check(cur_line->has_immediate == 0);
+        check(cur_line->immediate == 0);
+        
         // clean up
         lexer_destroy(lexer);
     }
@@ -430,192 +405,197 @@ spec("Lexer")
         check(status == 0);
         check(lexer->text_seg->line_num == 0);
         check(lexer->text_seg->addr == 0);
-        lexer->verbose = 1;
 
-        // Skip the first few lines (which are comments and so on)
-        while(lexer->cur_line < 5)
-            lex_advance(lexer);
-        
-        // ARITH_INSTR: ADD A
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        // lex the file
+        lex_all(lexer);
+
+        LineInfo* cur_line;
+        // Check that there aren't null lines in the source repr
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            check(cur_line != NULL);
+        }
+
+        // get the first line
+        cur_line = source_info_get_idx(lexer->source_repr, 0);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
-
-        check(lexer->text_seg->label_str != NULL);
-        check(lexer->text_seg->label_str_len == 11);
-        check(strncmp(lexer->text_seg->label_str, "ARITH_INSTR", 10) == 0);
+        check(cur_line->label_str != NULL);
+        //check(cur_line->label_str_len == 10);
+        check(strncmp(cur_line->label_str, "ARITH_INSTR", 10) == 0);
         // ADD A section
-        check(lexer->text_seg->opcode->instr == LEX_ADD);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "ADD", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'C');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->opcode->instr == LEX_ADD);
+        check(strncmp(cur_line->opcode->mnemonic, "ADD", 3) == 0);
+        check(cur_line->reg[0] == 'C');
+        check(cur_line->reg[1] == '\0');
 
         // SUB B
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 1);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_SUB);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "SUB", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'A');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_SUB);
+        check(strncmp(cur_line->opcode->mnemonic, "SUB", 3) == 0);
+        check(cur_line->reg[0] == 'A');
+        check(cur_line->reg[1] == '\0');
 
         // ADI 7
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 2);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_ADI);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "ADI", 3) == 0);
-        check(lexer->text_seg->has_immediate == 1);
-        check(lexer->text_seg->immediate == 0x7);
-        check(lexer->text_seg->reg[0] == '\0');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_ADI);
+        check(strncmp(cur_line->opcode->mnemonic, "ADI", 3) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0x7);
+        check(cur_line->reg[0] == '\0');
+        check(cur_line->reg[1] == '\0');
 
         // ORA A
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 3);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_ORA);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "ORA", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'B');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_ORA);
+        check(strncmp(cur_line->opcode->mnemonic, "ORA", 3) == 0);
+        check(cur_line->reg[0] == 'B');
+        check(cur_line->reg[1] == '\0');
 
         // XRA D
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 4);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_XRA);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "XRA", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'D');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_XRA);
+        check(strncmp(cur_line->opcode->mnemonic, "XRA", 3) == 0);
+        check(cur_line->reg[0] == 'D');
+        check(cur_line->reg[1] == '\0');
 
         // ANA H
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 5);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_ANA);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "ANA", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'H');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_ANA);
+        check(strncmp(cur_line->opcode->mnemonic, "ANA", 3) == 0);
+        check(cur_line->reg[0] == 'H');
+        check(cur_line->reg[1] == '\0');
 
         // ADC E
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 6);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_ADC);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "ADC", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'E');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_ADC);
+        check(strncmp(cur_line->opcode->mnemonic, "ADC", 3) == 0);
+        check(cur_line->reg[0] == 'E');
+        check(cur_line->reg[1] == '\0');
 
         // CMP A
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 7);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_CMP);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "CMP", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'A');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_CMP);
+        check(strncmp(cur_line->opcode->mnemonic, "CMP", 3) == 0);
+        check(cur_line->reg[0] == 'A');
+        check(cur_line->reg[1] == '\0');
 
         // SBB L
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 8);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_SBB);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "SBB", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'L');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_SBB);
+        check(strncmp(cur_line->opcode->mnemonic, "SBB", 3) == 0);
+        check(cur_line->reg[0] == 'L');
+        check(cur_line->reg[1] == '\0');
 
         // DAD H
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 9);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_DAD);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "DAD", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'H');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_DAD);
+        check(strncmp(cur_line->opcode->mnemonic, "DAD", 3) == 0);
+        check(cur_line->reg[0] == 'H');
+        check(cur_line->reg[1] == '\0');
 
         // INR D
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 10);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_INR);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "INR", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'D');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_INR);
+        check(strncmp(cur_line->opcode->mnemonic, "INR", 3) == 0);
+        check(cur_line->reg[0] == 'D');
+        check(cur_line->reg[1] == '\0');
 
         // INX D
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 11);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_INX);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "INX", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'D');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_INX);
+        check(strncmp(cur_line->opcode->mnemonic, "INX", 3) == 0);
+        check(cur_line->reg[0] == 'D');
+        check(cur_line->reg[1] == '\0');
 
         // INR H
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 12);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_INR);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "INR", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'H');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_INR);
+        check(strncmp(cur_line->opcode->mnemonic, "INR", 3) == 0);
+        check(cur_line->reg[0] == 'H');
+        check(cur_line->reg[1] == '\0');
 
         // INX H
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 13);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_INX);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "INX", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'H');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_INX);
+        check(strncmp(cur_line->opcode->mnemonic, "INX", 3) == 0);
+        check(cur_line->reg[0] == 'H');
+        check(cur_line->reg[1] == '\0');
 
         // DAD B
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 14);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_DAD);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "DAD", 3) == 0);
-        check(lexer->text_seg->reg[0] == 'B');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_DAD);
+        check(strncmp(cur_line->opcode->mnemonic, "DAD", 3) == 0);
+        check(cur_line->reg[0] == 'B');
+        check(cur_line->reg[1] == '\0');
 
         // LDAX B
-        lex_line(lexer);
-        line_info_print(lexer->text_seg);
+        cur_line = source_info_get_idx(lexer->source_repr, 15);
+        line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
 
-        check(lexer->text_seg->label_str == NULL);
-        check(lexer->text_seg->opcode->instr == LEX_LDAX);
-        check(strncmp(lexer->text_seg->opcode->mnemonic, "LDAX", 4) == 0);
-        check(lexer->text_seg->reg[0] == 'B');
-        check(lexer->text_seg->reg[1] == '\0');
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_LDAX);
+        check(strncmp(cur_line->opcode->mnemonic, "LDAX", 4) == 0);
+        check(cur_line->reg[0] == 'B');
+        check(cur_line->reg[1] == '\0');
 
         // clean up
         lexer_destroy(lexer);
@@ -655,46 +635,6 @@ spec("Lexer")
             fprintf(stdout, "\n");
         }
 
-        
-        // clean up
-        lexer_destroy(lexer);
-    }
-
-    it("Lexes the arithmetic file into a SourceInfo when lex_all() is called")
-    {
-        Lexer* lexer = lexer_create();
-
-        int status = lex_read_file(lexer, arith_test_filename);
-        check(status == 0);
-        check(lexer->text_seg->line_num == 0);
-        check(lexer->text_seg->addr == 0);
-        //lexer->verbose = 1;
-
-        // Lex the file 
-        lex_all(lexer);
-        // Now check the internal SourceInfo
-        fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
-                __func__, 
-                arith_test_filename, 
-                lexer->source_repr->size
-        );
-
-        // Print each element
-        for(int l = 0; l < lexer->source_repr->size; ++l)
-        {
-            LineInfo* cur_line = source_info_get_idx(
-                    lexer->source_repr,
-                    l
-            );
-            check(cur_line != NULL);
-
-            // TODO : these should actually be tested, and in fact we should probably
-            // re-write the above line-by-line test to work on the source_repr and not
-            // on the current text segment.
-            // Just for debugging
-            line_info_print_instr(cur_line);
-            fprintf(stdout, "\n");
-        }
         // clean up
         lexer_destroy(lexer);
     }
