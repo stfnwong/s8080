@@ -522,6 +522,23 @@ void lex_next_token(Lexer* lexer, Token* token)
             goto TOKEN_END;
         }
     }
+    // Check for PSW 'register'
+    if(strncmp(lexer->token_buf, "PSW", 3) == 0)
+    {
+        // This produces the string 'P' 
+        // TODO : replace the character strings with enums
+        token->type = SYM_REG;
+        token->token_str_len = 1;
+        goto TOKEN_END;
+    }
+
+    // Check for strings
+    if(lexer->token_buf[0] == '"')
+    {
+        // TODO : need to keep lexing until we find another '"'
+        token->type = SYM_STRING;
+        goto TOKEN_END;
+    }
 
     // Check if the token is an instruction
     opcode_init(&opcode);
@@ -726,6 +743,34 @@ int lex_parse_jmp(Lexer* lexer, Token* tok)
 }
 
 /*
+ * lex_parse_data()
+ */
+int lex_parse_data(Lexer* lexer, Token* tok)
+{
+    if(tok->type == SYM_LITERAL)
+    {
+        lexer->text_seg->immediate     = lex_extract_literal(lexer, tok);
+        lexer->text_seg->has_immediate = 1;
+    }
+    else if(tok->type == SYM_STRING)
+    {
+        fprintf(stdout, "[%s] TODO: actually this needs to be an array....\n", __func__);
+    }
+    else
+    {
+        fprintf(stdout, "[%s] line %d:%d ERROR: expected string or literal, got %s\n",
+                __func__, 
+                lexer->cur_line, 
+                lexer->cur_col,
+                TOKEN_TYPE_TO_STR[tok->type]
+               );
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
  * lex_resolve_labels()
  */
 void lex_resolve_labels(Lexer* lexer)
@@ -814,6 +859,16 @@ int lex_line(Lexer* lexer)
         opcode_init(&cur_opcode);
         opcode_table_find_mnemonic(lexer->op_table, &cur_opcode, cur_token.token_str);
 
+        if(lexer->verbose)
+        {
+            fprintf(stdout, "[%s] (line %d:%d) lexing %s\n",
+                    __func__, 
+                    lexer->cur_line,
+                    lexer->cur_col,
+                    cur_opcode.mnemonic
+            );
+        }
+
         switch(cur_opcode.instr)
         {
             // Single register
@@ -841,6 +896,7 @@ int lex_line(Lexer* lexer)
             case LEX_ACI:
             case LEX_ADI:
             case LEX_ANI:
+            case LEX_CPI:
             case LEX_ORI:
             case LEX_SUI:
             case LEX_SBI:
@@ -882,8 +938,32 @@ int lex_line(Lexer* lexer)
             case LEX_JZ:
                 lex_next_token(lexer, &tok_a);  // should be a literal or a label
                 status = lex_parse_jmp(lexer, &tok_a);
-
                 instr_size = 3;
+                break;
+
+            // subroutine call instructions 
+            case LEX_CALL:
+            case LEX_CZ:
+            case LEX_CNZ:
+            case LEX_CM:
+            case LEX_CP:
+            case LEX_CPE:
+            case LEX_CPO:
+                lex_next_token(lexer, &tok_a);
+                status = lex_parse_imm(lexer, &tok_a);
+                instr_size = 2;
+                break;
+
+            // subroutine return instructions
+            case LEX_RET:
+            case LEX_RC:
+            case LEX_RNC:
+            case LEX_RZ:
+            case LEX_RM:
+            case LEX_RP:
+            case LEX_RPE:
+            case LEX_RPO:
+                instr_size = 1;
                 break;
 
             default:

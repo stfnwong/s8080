@@ -36,22 +36,35 @@ typedef enum {
     LEX_ANA,
     LEX_AND,
     LEX_ANI,
+    LEX_CALL,
+    LEX_CC,
+    LEX_CM,
     LEX_CMA,
     LEX_CMP,
+    LEX_CNZ,
+    LEX_CP,
+    LEX_CPE,
     LEX_CPI,
+    LEX_CPO,
     LEX_CZ,
     LEX_DAA,
     LEX_DAD,
     LEX_DCR,
     LEX_DCX,
+    LEX_DB,
+    LEX_DS,
+    LEX_DW,
     LEX_IN,
     LEX_INR,
     LEX_INX,
     LEX_JC,
+    LEX_JM,
     LEX_JMP,
     LEX_JNC,
     LEX_JNZ,
     LEX_JP,
+    LEX_JPE,
+    LEX_JPO,
     LEX_JZ,
     LEX_LDA,
     LEX_LDAX,
@@ -69,8 +82,17 @@ typedef enum {
     LEX_RAA,
     LEX_RAL,
     LEX_RAR,
+    LEX_RC,
+    LEX_RET,
     LEX_RLC,
+    LEX_RM,
+    LEX_RNC,
+    LEX_RP,
+    LEX_RPE,
+    LEX_RPO,
     LEX_RRC,
+    LEX_RZ,
+    LEX_RNZ,
     LEX_SBB,
     LEX_SBI,
     LEX_SPHL,
@@ -86,8 +108,8 @@ typedef enum {
 } instr_code;
 
 // Move to *.c file in next commit
-static const int NUM_LEX_INSTR = 54;  // TODO :  better way of doing this
-extern const Opcode LEX_INSTRUCTIONS[54];
+static const int NUM_LEX_INSTR = 76;  // TODO :  better way of doing this
+extern const Opcode LEX_INSTRUCTIONS[76];
 
 // Opcode lookup
 typedef struct

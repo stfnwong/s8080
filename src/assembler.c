@@ -415,6 +415,154 @@ void asm_mov(Instr* dst, LineInfo* line)
     dst->addr = line->addr;
 }
 
+/*
+ * asm_jp_to_code()
+ */
+uint16_t asm_jp_to_code(uint8_t instr)
+{
+    uint16_t code = (0x3 << 22) | (0x1 << 18);
+
+    switch(instr)
+    {
+        case LEX_JMP:
+        case LEX_JNZ:
+            code = code | (0x1 << 17);
+            break;
+        case LEX_JZ:
+            code = code | (0x1 << 19);
+            break;
+        case LEX_JNC:
+            code = code | (0x2 << 19);
+            break;
+        case LEX_JC:
+            code = code | (0x3 << 19);
+            break;
+        case LEX_JPO:
+            code = code | (0x4 << 19);
+            break;
+        case LEX_JPE:
+            code = code | (0x5 << 19);
+            break;
+        case LEX_JP:
+            code = code | (0x6 << 19);
+            break;
+        case LEX_JM:
+            code = code | (0x7 << 19);
+            break;
+    }
+
+    return code;
+}
+
+/*
+ * asm_jp()
+ */
+void asm_jp(Instr* dst, LineInfo* line)
+{
+    dst->instr = asm_jp_to_code(line->opcode->instr);
+    dst->instr = dst->instr | ((line->immediate & 0x00FF) << 8);
+    dst->instr = dst->instr | (line->immediate & 0xFF00);
+    dst->size  = 3;
+    dst->addr  = line->addr;
+}
+
+/*
+ * asm_ret_to_code()
+ */
+uint8_t asm_ret_to_code(uint8_t instr)
+{
+    uint8_t code = 0x3 << 6;
+    
+    switch(instr)
+    {
+        case LEX_RET:
+            code = code | 0x9;
+            break;
+        case LEX_RC:
+            code = code | (0x3 << 3);
+            break;
+        case LEX_RNC:
+            code = code | (0x2 << 3);
+            break;
+        case LEX_RZ:
+            code = code | (0x1 << 3);
+            break;
+        case LEX_RNZ:
+            break;
+        case LEX_RM:
+            code = code | (0x7 << 3);
+            break;
+        case LEX_RP:
+            code = code | (0x6 << 3);
+            break;
+        case LEX_RPE:
+            code = code | (0x5 << 3);
+            break;
+        case LEX_RPO:
+            code = code | (0x4 << 3);
+            break;
+    }
+
+    return code;
+}
+
+/*
+ * asm_ret()
+ */
+void asm_ret(Instr* dst, LineInfo* line)
+{
+    dst->instr = asm_ret_to_code(line->opcode->instr);
+    dst->size  = 1;
+    dst->addr  = line->addr;
+}
+
+/*
+ * asm_call_to_code()
+ */
+uint16_t asm_call_to_code(uint8_t instr)
+{
+    uint16_t code = (0x3 << 14) | (0x1 << 10);
+
+    switch(instr)
+    {
+        case LEX_CALL:
+            code = code | (0x1 << 11) | (0x1 << 9);
+            break;
+        case LEX_CZ:
+            code = code | (0x1 << 11);
+            break;
+        case LEX_CC:
+            code = code | (0x3 << 11);
+            break;
+        case LEX_CPO:
+            code = code | (0x4 << 11);
+            break;
+        case LEX_CPE:
+            code = code | (0x5 << 11);
+            break;
+        case LEX_CP:
+            code = code | (0x6 << 11);
+            break;
+        case LEX_CM:
+            code = code | (0x7 << 11);
+            break;
+    }
+
+    return code;
+}
+
+/*
+ * asm_call()
+ */
+void asm_call(Instr* dst, LineInfo* line)
+{
+    dst->instr = asm_call_to_code(line->opcode->instr);
+    dst->instr = dst->instr | ((line->immediate & 0x00FF) << 8);
+    dst->instr = dst->instr | (line->immediate & 0xFF00);
+    dst->size = 2;
+    dst->addr = line->addr;
+}
+
 
 /*
  * assembler_create()
@@ -601,6 +749,38 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 break;
 
             // jump instructions
+            case LEX_JP:
+            case LEX_JMP:
+            case LEX_JC:
+            case LEX_JNC:
+            case LEX_JZ:
+            case LEX_JNZ:
+                asm_jp(&cur_instr, line);
+                break;
+
+            // subroutine call instructions 
+            case LEX_CALL:
+            case LEX_CC:
+                break;
+
+            // subroutine return instructions 
+            case LEX_RET:
+            case LEX_RC:
+            case LEX_RNC:
+            case LEX_RZ:
+            case LEX_RNZ:
+            case LEX_RM:
+            case LEX_RP:
+            case LEX_RPE:
+            case LEX_RPO:
+                asm_ret(&cur_instr, line);
+                break;
+
+            // data instructions 
+            case LEX_DB:
+            case LEX_DS:
+            case LEX_DW:
+                break;
 
             default:
             {

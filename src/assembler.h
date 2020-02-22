@@ -47,6 +47,8 @@ int          instr_buffer_empty(InstrBuffer* buf);
 /*
  * ASSEMBLER
  */
+// TODO : maybe its simpler to compute the addresses here since we 
+// can hard-code the instruction sizes. 
 typedef struct
 {
     // Instruction buffer   ( TODO : data segment buffer)

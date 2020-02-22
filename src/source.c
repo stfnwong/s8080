@@ -177,6 +177,7 @@ void line_info_print_instr(LineInfo* info)
             fprintf(stdout, "%04X", info->immediate);
             break;
 
+        // Jump instructions 
         case LEX_JC:
         case LEX_JP:
         case LEX_JMP:
@@ -187,6 +188,8 @@ void line_info_print_instr(LineInfo* info)
             else
                 fprintf(stdout, "[0x%04X] ", info->immediate);
             break;
+
+        // Subroutine instructions 
 
         // If this instruction just has an opcode then do nothing
         default:

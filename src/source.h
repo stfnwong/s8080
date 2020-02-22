@@ -83,6 +83,7 @@ typedef enum {
     SYM_LABEL, 
     SYM_INSTR,
     SYM_REG,
+    SYM_STRING,
     SYM_EOF
 } TokenType;
 
