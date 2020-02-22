@@ -39,6 +39,10 @@ void      line_info_print(LineInfo* info);
 void      line_info_print_instr(LineInfo* info);
 int       line_info_copy(LineInfo* dst, LineInfo* src);
 int       line_info_struct_size(LineInfo* info);
+int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
+int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
+
+// TODO : work out what this method will actually do
 void      line_info_serialize(LineInfo* info, uint8_t* buffer, int len);
 
 // ==== Buffer for LineInfo Structures

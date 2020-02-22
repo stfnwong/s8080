@@ -173,17 +173,17 @@ Lexer* lexer_create(void)
         goto LEXER_END;
 
     // src params 
-    lexer->src           = NULL;
-    lexer->src_len       = 0;
-
+    lexer->src             = NULL;
+    lexer->src_len         = 0;
     // init params
-    lexer->cur_pos       = 0;
-    lexer->cur_line      = 1;
-    lexer->cur_col       = 1;
-    lexer->cur_char      = '\0';
-    lexer->token_buf_ptr = 0;
-    lexer->text_addr     = 0;
-    lexer->data_addr     = 0;
+    lexer->cur_pos         = 0;
+    lexer->cur_line        = 1;
+    lexer->cur_col         = 1;
+    lexer->cur_char        = '\0';
+    lexer->token_buf_ptr   = 0;
+    lexer->text_addr       = 0;
+    lexer->data_addr       = 0;
+    lexer->text_start_addr = 0;
     // Make the token buffer equal to an empty string
     lexer->token_buf[0]  = '\0';
 
@@ -376,6 +376,14 @@ void lex_skip_comment(Lexer* lexer)
 }
 
 /*
+ * lex_set_text_start_addr()
+ */
+void lex_set_text_start_addr(Lexer* lexer, int addr)
+{
+    lexer->text_start_addr = addr;
+}
+
+/*
  * lex_text_addr_incr()
  */
 void lex_text_addr_incr(Lexer* lexer, int instr_size)
@@ -546,7 +554,6 @@ void lex_next_token(Lexer* lexer, Token* token)
 
 TOKEN_END:
     // If this is a label, then null-out any trailing ':' characters
-    // TODO : null character not in the right place?
     if(token->type == SYM_LABEL)
     {
         int copy_size;
@@ -696,9 +703,13 @@ int lex_parse_jmp(Lexer* lexer, Token* tok)
 {
     if(tok->type == SYM_LITERAL || tok->type == SYM_LABEL)
     {
-        lexer->text_seg->symbol_str = malloc(sizeof(char) * strlen(tok->token_str));
-        lexer->text_seg->symbol_str_len = strlen(tok->token_str);
-        strcpy(lexer->text_seg->symbol_str, tok->token_str);
+        int status = line_info_set_symbol_str(
+                lexer->text_seg, 
+                tok->token_str, 
+                strlen(tok->token_str)
+        );
+        if(status < 0)
+            return status;
     }
     else
     {
@@ -770,17 +781,16 @@ int lex_line(Lexer* lexer)
 
     if(cur_token.type == SYM_LABEL)
     {
-        lexer->text_seg->label_str = malloc(sizeof(char) * strlen(cur_token.token_str));
-        if(!lexer->text_seg)
-        {
-            fprintf(stderr, "[%s] failed to allocate memory for lexer->text_seg->label_str (%ld chars)\n", __func__, strlen(cur_token.token_str));
-            status = -1;
+        status = line_info_set_label_str(
+                lexer->text_seg,
+                cur_token.token_str,
+                strlen(cur_token.token_str)
+        );
+        if(status < 0)
             goto LEX_LINE_END;
-        }
-        // Copy label string
-        //strncpy(lexer->text_seg->label_str, cur_token.token_str, lexer->token_buf_ptr);
-        strcpy(lexer->text_seg->label_str, cur_token.token_str);
-        lexer->text_seg->label_str_len = cur_token.token_str_len;
+
+        //strcpy(lexer->text_seg->label_str, cur_token.token_str);
+        //lexer->text_seg->label_str_len = cur_token.token_str_len;
         // make a symbol object for this label
         cur_sym.addr = lexer->text_addr;
         strncpy(cur_sym.sym, cur_token.token_str, cur_token.token_str_len);
@@ -873,7 +883,6 @@ int lex_line(Lexer* lexer)
                 lex_next_token(lexer, &tok_a);  // should be a literal or a label
                 status = lex_parse_jmp(lexer, &tok_a);
 
-
                 instr_size = 3;
                 break;
 
@@ -923,6 +932,7 @@ int lex_all(Lexer* lexer)
     // TODO : some init phase?
     int status;
     lexer->cur_char = lexer->src[0];
+    lexer->text_addr = lexer->text_start_addr;
 
     while(lexer->cur_pos < lexer->src_len)
     {

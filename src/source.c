@@ -111,7 +111,7 @@ void line_info_print(LineInfo* info)
     fprintf(stdout, "    Opcode : ");
     opcode_print(info->opcode);
     if(info->symbol_str_len > 0)
-        fprintf(stdout, " %s ", info->symbol_str);
+        fprintf(stdout, " [%s] ", info->symbol_str);
     fprintf(stdout, "\n");
 }
 
@@ -177,6 +177,17 @@ void line_info_print_instr(LineInfo* info)
             fprintf(stdout, "%04X", info->immediate);
             break;
 
+        case LEX_JC:
+        case LEX_JP:
+        case LEX_JMP:
+        case LEX_JNC:
+        case LEX_JZ:
+            if(info->symbol_str_len > 0)
+                fprintf(stdout, "<%s> [0x%04X] ", info->symbol_str, info->immediate);
+            else
+                fprintf(stdout, "[0x%04X] ", info->immediate);
+            break;
+
         // If this instruction just has an opcode then do nothing
         default:
             break;
@@ -219,7 +230,17 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
             return -1;
         strncpy(dst->label_str, src->label_str, dst->label_str_len);
     }
-
+    // Also copy the symbol string 
+    dst->symbol_str_len = src->symbol_str_len;
+    if(dst->symbol_str_len > 0)
+    {
+        if(dst->symbol_str != NULL)
+            free(dst->symbol_str);
+        dst->symbol_str = malloc(sizeof(char) * dst->symbol_str_len);
+        if(!dst->symbol_str)
+            return -1;
+        strncpy(dst->symbol_str, src->symbol_str, dst->symbol_str_len);
+    }
     dst->error = src->error;
 
     return 0;
@@ -234,8 +255,43 @@ int line_info_struct_size(LineInfo* info)
 }
 
 /*
+ * line_info_set_label_str()
+ */
+int line_info_set_label_str(LineInfo* info, char* str, int len)
+{
+    if(info->label_str != NULL)
+        free(info->label_str);
+    info->label_str = malloc(sizeof(char) * len+1);
+    if(!info->label_str)
+        return -1;
+    info->label_str_len = len;
+    strncpy(info->label_str, str, info->label_str_len);
+    info->label_str[len] = '\0';
+
+    return 0;
+}
+
+/*
+ * line_info_set_symbol_str()
+ */
+int line_info_set_symbol_str(LineInfo* info, char* str, int len)
+{
+    if(info->symbol_str != NULL)
+        free(info->symbol_str);
+    info->symbol_str = malloc(sizeof(char) * len+1);
+    if(!info->symbol_str)
+        return -1;
+    info->symbol_str_len = len;
+    strncpy(info->symbol_str, str, info->symbol_str_len);
+    info->symbol_str[len] = '\0';
+
+    return 0;
+}
+
+/*
  * line_info_serialize()
  */
+// TODO : what to do about this function....
 void line_info_serialize(LineInfo* info, uint8_t* buffer, int len)
 {
     memcpy(buffer, info->opcode, sizeof(*info->opcode));

@@ -600,6 +600,8 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 asm_mov(&cur_instr, line);
                 break;
 
+            // jump instructions
+
             default:
             {
                 fprintf(stdout, "[%s] unknown opcode %02X [%s]\n", 

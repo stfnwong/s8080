@@ -190,7 +190,7 @@ spec("Lexer")
         // Lexing the first line (MOVI: MVI, A, 077H
         // We expect to have the label MOVI
         check(lexer->text_seg->label_str != NULL);
-        check(lexer->text_seg->label_str_len == 5);
+        check(lexer->text_seg->label_str_len == 4);
         check(strncmp(lexer->text_seg->label_str, "MOVI", 4) == 0);
         // followed by the instruction MVI
         check(lexer->text_seg->opcode->instr == LEX_MVI);
@@ -313,7 +313,7 @@ spec("Lexer")
         fprintf(stdout, "\n");
 
         check(cur_line->label_str != NULL);
-        check(cur_line->label_str_len == 11);
+        check(cur_line->label_str_len == 10);
         check(strncmp(cur_line->label_str, "MOVE_INSTR", 10) == 0);
         // MOV B, C
         cur_line = source_info_get_idx(lexer->source_repr, 1);
@@ -422,8 +422,8 @@ spec("Lexer")
         line_info_print_instr(cur_line);
         fprintf(stdout, "\n");
         check(cur_line->label_str != NULL);
-        //check(cur_line->label_str_len == 10);
-        check(strncmp(cur_line->label_str, "ARITH_INSTR", 10) == 0);
+        check(cur_line->label_str_len == 11);
+        check(strncmp(cur_line->label_str, "ARITH_INSTR", 11) == 0);
         // ADD A section
         check(cur_line->opcode->instr == LEX_ADD);
         check(strncmp(cur_line->opcode->mnemonic, "ADD", 3) == 0);
@@ -609,7 +609,8 @@ spec("Lexer")
         check(status == 0);
         check(lexer->text_seg->line_num == 0);
         check(lexer->text_seg->addr == 0);
-        lexer->verbose = 1;
+        // Set the start address to something memorable 
+        lex_set_text_start_addr(lexer, 0xBEEF);
 
         lex_all(lexer);
         fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
@@ -619,21 +620,125 @@ spec("Lexer")
         );
 
         // Ensure there are no NULL elements in source repr
+        LineInfo* cur_line;
         for(int l = 0; l < lexer->source_repr->size; ++l)
         {
-            LineInfo* cur_line = source_info_get_idx(
-                    lexer->source_repr,
-                    l
-            );
+            cur_line = source_info_get_idx(lexer->source_repr, l);
             check(cur_line != NULL);
-
-            // TODO : these should actually be tested, and in fact we should probably
-            // re-write the above line-by-line test to work on the source_repr and not
-            // on the current text segment.
-            // Just for debugging
-            line_info_print_instr(cur_line);        // TODO  remove
-            fprintf(stdout, "\n");
         }
+
+        // SOME_LABEL: ANI 0
+        cur_line = source_info_get_idx(lexer->source_repr, 0);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+        check(cur_line->label_str != NULL);
+        check(cur_line->label_str_len == 10);   
+        check(strncmp(cur_line->label_str, "SOME_LABEL", 10) == 0);
+        // ADD A section
+        check(cur_line->opcode->instr == LEX_ANI);
+        check(strncmp(cur_line->opcode->mnemonic, "ANI", 3) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0);
+
+        // OTHER_LABEL: ADI 7
+        cur_line = source_info_get_idx(lexer->source_repr, 1);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+        
+        check(cur_line->label_str != NULL);
+        check(cur_line->label_str_len == 11);   
+        check(strncmp(cur_line->label_str, "OTHER_LABEL", cur_line->label_str_len) == 0);
+        check(cur_line->opcode->instr == LEX_ADI);
+        check(strncmp(cur_line->opcode->mnemonic, "ADI", 3) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 7);
+        
+        // JMP_INSTR: JMP SOME_LABEL
+        cur_line = source_info_get_idx(lexer->source_repr, 2);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str != NULL);
+        check(cur_line->label_str_len == 9);   
+        check(strncmp(cur_line->label_str, "JMP_INSTR", 9) == 0);
+        check(cur_line->opcode->instr == LEX_JMP);
+        check(strncmp(cur_line->opcode->mnemonic, "JMP", 3) == 0);
+
+        check(cur_line->symbol_str != NULL);
+        check(cur_line->symbol_str_len == 10);
+        check(strncmp(cur_line->symbol_str, "SOME_LABEL", cur_line->symbol_str_len) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+
+        // JMP OTHER_LABEL
+        cur_line = source_info_get_idx(lexer->source_repr, 3);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_JMP);
+        check(strncmp(cur_line->opcode->mnemonic, "JMP", 3) == 0);
+        check(cur_line->symbol_str != NULL);
+        check(cur_line->symbol_str_len == 11);
+        check(strncmp(cur_line->symbol_str, "OTHER_LABEL", cur_line->symbol_str_len) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF + 8);
+
+        // JZ SOME_LABEL
+        cur_line = source_info_get_idx(lexer->source_repr, 4);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_JZ);
+        check(strncmp(cur_line->opcode->mnemonic, "JZ", 3) == 0);
+        check(cur_line->symbol_str != NULL);
+        check(cur_line->symbol_str_len == 10);
+        check(strncmp(cur_line->symbol_str, "SOME_LABEL", cur_line->symbol_str_len) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+
+        // JNC OTHER_LABEL
+        cur_line = source_info_get_idx(lexer->source_repr, 5);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_JNC);
+        check(strncmp(cur_line->opcode->mnemonic, "JNC", 3) == 0);
+        check(cur_line->symbol_str != NULL);
+        check(cur_line->symbol_str_len == 11);
+        check(strncmp(cur_line->symbol_str, "OTHER_LABEL", cur_line->symbol_str_len) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF + 8);
+
+        // JP SOME_LABEL
+        cur_line = source_info_get_idx(lexer->source_repr, 6);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_JP);
+        check(strncmp(cur_line->opcode->mnemonic, "JP", 3) == 0);
+        check(cur_line->symbol_str != NULL);
+        check(cur_line->symbol_str_len == 10);
+        check(strncmp(cur_line->symbol_str, "SOME_LABEL", cur_line->symbol_str_len) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+
+        // JC OTHER_LABEL
+        cur_line = source_info_get_idx(lexer->source_repr, 7);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_JC);
+        check(strncmp(cur_line->opcode->mnemonic, "JC", 3) == 0);
+        check(cur_line->symbol_str != NULL);
+        check(cur_line->symbol_str_len == 11);
+        check(strncmp(cur_line->symbol_str, "OTHER_LABEL", cur_line->symbol_str_len) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF + 8);
 
         // clean up
         lexer_destroy(lexer);

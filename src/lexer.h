@@ -69,6 +69,7 @@ typedef struct
     // address bookkeeping
     int text_addr;
     int data_addr;
+    int text_start_addr;
 
     // current line information
     LineInfo*    text_seg;      
@@ -96,6 +97,7 @@ void   lex_skip_whitespace(Lexer* lexer);
 void   lex_skip_comment(Lexer* lexer);
 
 // Update addreses
+void   lex_set_text_start_addr(Lexer* lexer, int addr);
 void   lex_text_addr_incr(Lexer* lexer, int instr_size);
 void   lex_data_addr_incr(Lexer* lexer);
 
