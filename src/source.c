@@ -17,7 +17,12 @@ const char* TOKEN_TYPE_TO_STR[] = {
     "LABEL",
     "INSTR",
     "REGISTER",
+    "STRING",
     "EOF"
+};
+
+const char* REG_TYPE_TO_STR[] = {
+    "NONE", "A", "B", "C", "D", "H", "L", "M", "PSW"
 };
 
 // ================ LINE INFO ================ //
@@ -70,7 +75,7 @@ void line_info_init(LineInfo* info)
     info->has_immediate = 0;
     info->immediate = 0;
     for(int a = 0; a < LINE_INFO_NUM_REG; ++a)
-        info->reg[a] = '\0';
+        info->reg[a] = REG_NONE;
 
     // Ensure that there is no string memory
     if(info->label_str != NULL)
@@ -148,22 +153,22 @@ void line_info_print_instr(LineInfo* info)
         case LEX_STAX:
         case LEX_SUB:
         case LEX_XRA:
-            fprintf(stdout, "%c ", info->reg[0]);
+            fprintf(stdout, "%s ", REG_TYPE_TO_STR[info->reg[0]]);
             break;
 
         // Two register arguments 
         case LEX_MOV:
-            fprintf(stdout, "%c, %c", info->reg[0], info->reg[1]);
+            fprintf(stdout, "%s, %s", REG_TYPE_TO_STR[info->reg[0]], REG_TYPE_TO_STR[info->reg[1]]);
             break;
 
         // One register and one 8bit immediate
         case LEX_MVI:
-            fprintf(stdout, "%c 0x%02X ", info->reg[0], info->immediate);
+            fprintf(stdout, "%s 0x%02X ", REG_TYPE_TO_STR[info->reg[0]], info->immediate);
             break;
             
         // One register and one 16bit immediate
         case LEX_LXI:
-            fprintf(stdout, "%c 0x%04X ", info->reg[0], info->immediate);
+            fprintf(stdout, "%s 0x%04X ", REG_TYPE_TO_STR[info->reg[0]], info->immediate);
             break;
 
         // 8-bit immediate arguments 
@@ -189,7 +194,9 @@ void line_info_print_instr(LineInfo* info)
                 fprintf(stdout, "[0x%04X] ", info->immediate);
             break;
 
-        // Subroutine instructions 
+        // Subroutine call instructions 
+        
+        // Subroutine return instructions 
 
         // If this instruction just has an opcode then do nothing
         default:

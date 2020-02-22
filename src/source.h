@@ -13,6 +13,22 @@
 
 #include "opcode.h"
 
+typedef enum
+{
+    REG_NONE,
+    REG_A,
+    REG_B,
+    REG_C,
+    REG_D,
+    REG_E,
+    REG_H,
+    REG_L,
+    REG_M,
+    REG_PSW
+} RegType;
+
+extern const char* REG_TYPE_TO_STR[10];
+
 // Text segment
 typedef struct 
 {
@@ -27,7 +43,7 @@ typedef struct
     // arguments 
     int   has_immediate;
     int   immediate;
-    char  reg[LINE_INFO_NUM_REG];
+    int   reg[LINE_INFO_NUM_REG];
     // error info
     int   error;
 } LineInfo;

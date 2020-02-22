@@ -41,7 +41,7 @@ spec("SourceInfo")
             check(test_info->buffer[i]->error == 0);
             check(test_info->buffer[i]->label_str == NULL);
             for(int r = 0; r < LINE_INFO_NUM_REG; ++r)
-                check(test_info->buffer[i]->reg[r] == '\0');
+                check(test_info->buffer[i]->reg[r] == REG_NONE);
 
             // Opcode is initnalized 
             check(test_info->buffer[i]->opcode->instr == 0);
@@ -129,8 +129,8 @@ spec("SourceInfo")
 
         test_line->line_num = 44;
         test_line->addr     = 0xBEEF;
-        test_line->reg[0]   = 'A';
-        test_line->reg[1]   = 'C';
+        test_line->reg[0]   = REG_A;
+        test_line->reg[1]   = REG_C;
         // add a labelc
         test_line->label_str = malloc(sizeof(char) * strlen(label));
         check(test_line->label_str != NULL);
@@ -165,7 +165,7 @@ spec("SourceInfo")
 
         // calling this again should insert into next position
         test_line->addr += 4;
-        test_line->reg[0] = 'B';
+        test_line->reg[0] = REG_B;
         free(test_line->label_str);
         test_line->label_str = NULL;
         test_line->label_str_len = 0;
@@ -218,7 +218,7 @@ spec("SourceInfo")
             test_op->instr = LEX_ADD;
             strncpy(test_op->mnemonic, "ADD\0", 4);
             test_line->opcode = test_op;
-            test_line->reg[0] = 'E';
+            test_line->reg[0] = REG_E;
             // add the line
             status = source_info_add_line(test_info, test_line);
             check(status == 0);

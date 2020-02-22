@@ -31,7 +31,7 @@ spec("LineInfo")
 
         // Also check that the register values are initialized correctly
         for(int r = 0; r < LINE_INFO_NUM_REG; ++r)
-            check(test_info->reg[r] == '\0');
+            check(test_info->reg[r] == REG_NONE);
 
         // Opcode check
         check(test_info->opcode != NULL);
@@ -65,6 +65,8 @@ spec("LineInfo")
         status = line_info_set_label_str(src_info, "TEST_LABEL\0", strlen("TEST_LABEL\0"));
         check(status == 0);
         src_info->label_str_len = strlen("TEST_LABEL\0");
+        src_info->reg[0] = REG_A;
+        src_info->reg[1] = REG_H;
 
         status = line_info_copy(dst_info, src_info);
         check(status == 0);

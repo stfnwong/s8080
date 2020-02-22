@@ -47,13 +47,13 @@ int main(int argc, char *argv[])
 
     // Start lexing the file
     status = lex_all(lexer);
-    //if(status < 0)
-    //{
-    //    fprintf(stderr, "[%s] failed to lex file %s\n",
-    //           __func__, argv[1]);
-    //    status = -1;
-    //    goto CLEANUP;
-    //}
+    if(status < 0)
+    {
+        fprintf(stderr, "[%s] failed to lex file %s\n",
+               __func__, argv[1]);
+        status = -1;
+        goto CLEANUP;
+    }
 
     status = assembler_set_repr(assem, lexer->source_repr);
     if(status < 0)
