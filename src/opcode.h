@@ -23,7 +23,7 @@ Opcode* opcode_create(void);
 void    opcode_destroy(Opcode* opcode);
 void    opcode_init(Opcode* opcode);
 void    opcode_print(Opcode* opcode);
-void    opcode_copy(Opcode* dst, Opcode* src);
+void    opcode_copy(Opcode* dst, const Opcode* src);
 
 
 // Instruction codes used by Lexer
