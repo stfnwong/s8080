@@ -13,6 +13,7 @@
 
 #include "opcode.h"
 
+// Register names 
 typedef enum
 {
     REG_NONE,
@@ -28,6 +29,8 @@ typedef enum
     REG_PSW         // program status word (A + flags)
 } RegType;
 
+// String conversion arrays
+extern const char* TOKEN_TYPE_TO_STR[7];
 extern const char* REG_TYPE_TO_STR[10];
 
 // Text segment
@@ -107,8 +110,6 @@ typedef enum {
     SYM_STRING,
     SYM_EOF
 } TokenType;
-
-extern const char* TOKEN_TYPE_TO_STR[6];
 
 /*
  * Token object

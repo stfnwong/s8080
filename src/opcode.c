@@ -137,7 +137,7 @@ void opcode_print(Opcode* opcode)
 /*
  * opcode_copy()
  */
-void opcode_copy(Opcode* dst, Opcode* src)
+void opcode_copy(Opcode* dst, const Opcode* src)
 {
     dst->instr = src->instr;
     memcpy(dst->mnemonic, src->mnemonic, OPCODE_MNEMONIC_SIZE);

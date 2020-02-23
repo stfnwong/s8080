@@ -162,55 +162,41 @@ int instr_buffer_empty(InstrBuffer* buf)
 }
 
 
-
 // ROUTINES FOR EACH INSTRUCTION
 // TODO : Data segment
 
-/*
- * asm_reg_to_code()
- */
-uint8_t asm_reg_to_code(char reg)
-{
-    switch(reg)
-    {
-        case 'A':
-            return 0x7;
-        case 'B':
-            return 0x0;
-        case 'C':
-            return 0x1;
-        case 'D':
-            return 0x2;
-        case 'E':
-            return 0x3;
-        case 'H':
-            return 0x4;
-        case 'L':
-            return 0x5;
-        case 'M':
-            return 0x6;
-        default:
-            return 0x0;
-    }
-}
+// This array works for
+// - register or memory to accumulator instructions
+// - single register instructions
+const uint8_t asm_reg_to_code[] = {
+    0x0,    // REG_NONE
+    0x7,    // REG_A
+    0x0,    // REG_B
+    0x1,    // REG_C
+    0x2,    // REG_D
+    0x3,    // REG_E,
+    0x4,    // REG_H
+    0x5,    // REG_L,
+    0x6,    // REG_M
+};
 
 /*
  * asm_pair_reg_to_code()
  */
-uint8_t asm_pair_reg_to_code(char reg)
+uint8_t asm_pair_reg_to_code(uint8_t reg)
 {
     switch(reg)
     {
-        case 'B':
-        case 'C':
+        case REG_B:
+        case REG_C:
             return 0x0;
-        case 'D':
-        case 'E':
+        case REG_D:
+        case REG_E:
             return 0x1;
-        case 'H':
-        case 'L':
+        case REG_H:
+        case REG_L:
             return 0x2;
-        case 'S':
+        case REG_S:
             return 0x3;
     }
 
@@ -322,7 +308,7 @@ uint8_t asm_mov_instr_to_code(uint8_t instr)
 void asm_8bit_arith(Instr* dst, LineInfo* line)
 {
     dst->instr = asm_arith_instr_to_code(line->opcode->instr);
-    dst->instr = dst->instr | line->reg[0];
+    dst->instr = dst->instr | asm_reg_to_code[line->reg[0]];
     dst->addr  = line->addr;
 }
 
@@ -376,7 +362,7 @@ void asm_mvi(Instr* dst, LineInfo* line)
 {
     dst->instr = (0x6 << 8);
     // TODO : not quite the same code LUT as other instructions
-    dst->instr = dst->instr | (asm_reg_to_code(line->reg[0]) << 11);
+    dst->instr = dst->instr | (asm_reg_to_code[line->reg[0]] << 11);
     dst->instr = dst->instr | line->immediate;
     dst->size  = 2;
     dst->addr  = line->addr;
@@ -388,7 +374,7 @@ void asm_mvi(Instr* dst, LineInfo* line)
 void asm_ldax(Instr* dst, LineInfo* line)
 {
     dst->instr = 0x9;
-    if(line->reg[0] == 'D')
+    if(line->reg[0] == REG_D)
         dst->instr = dst->instr | (0x1 << 4);
     dst->addr = line->addr;
 }
@@ -399,7 +385,7 @@ void asm_ldax(Instr* dst, LineInfo* line)
 void asm_stax(Instr* dst, LineInfo* line)
 {
     dst->instr = 0x1 << 1;
-    if(line->reg[0] == 'D')
+    if(line->reg[0] == REG_D)
         dst->instr = dst->instr | (0x1 << 4);
     dst->addr = line->addr;
 }
@@ -410,17 +396,18 @@ void asm_stax(Instr* dst, LineInfo* line)
 void asm_mov(Instr* dst, LineInfo* line)
 {
     dst->instr = asm_mov_instr_to_code(line->opcode->instr);
-    dst->instr = dst->instr | (asm_reg_to_code(line->reg[0]) << 3);
-    dst->instr = dst->instr |  asm_reg_to_code(line->reg[1]);
+    dst->instr = dst->instr | (asm_reg_to_code[line->reg[0]] << 3);
+    dst->instr = dst->instr |  asm_reg_to_code[line->reg[1]];
     dst->addr = line->addr;
 }
 
 /*
  * asm_jp_to_code()
+ * 3 bytes
  */
-uint16_t asm_jp_to_code(uint8_t instr)
+uint32_t asm_jp_to_code(uint8_t instr)
 {
-    uint16_t code = (0x3 << 22) | (0x1 << 18);
+    uint32_t code = (0x3 << 22) | (0x1 << 18);
 
     switch(instr)
     {
