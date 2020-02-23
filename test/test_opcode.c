@@ -92,7 +92,7 @@ spec("Opcode")
 
         opcode_table_find_mnemonic(optable, &test_op, "INVALID");
         check(test_op.instr == LEX_INVALID);
-        check(strncmp(test_op.mnemonic, "\0\0\0", 3) == 0);
+        check(strncmp(test_op.mnemonic, "INVALID", 7) == 0);
 
         opcode_table_destroy(optable);
     }

@@ -108,8 +108,8 @@ typedef enum {
 } instr_code;
 
 // Move to *.c file in next commit
-static const int NUM_LEX_INSTR = 76;  // TODO :  better way of doing this
-extern const Opcode LEX_INSTRUCTIONS[76];
+static const int NUM_LEX_INSTR = 75;  // TODO :  better way of doing this
+extern const Opcode LEX_INSTRUCTIONS[75];
 
 // Opcode lookup
 typedef struct
