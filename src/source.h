@@ -23,8 +23,9 @@ typedef enum
     REG_E,
     REG_H,
     REG_L,
-    REG_M,
-    REG_PSW
+    REG_M,          // memory word
+    REG_S,          // stack pointer
+    REG_PSW         // program status word (A + flags)
 } RegType;
 
 extern const char* REG_TYPE_TO_STR[10];
@@ -33,19 +34,19 @@ extern const char* REG_TYPE_TO_STR[10];
 typedef struct 
 {
     Opcode* opcode;
-    char* label_str;
-    char* symbol_str;
-    int   label_str_len;
-    int   symbol_str_len;
+    char*   label_str;
+    char*   symbol_str;
+    int     label_str_len;
+    int     symbol_str_len;
     // Position
-    int   line_num;
-    int   addr;
+    int     line_num;
+    int     addr;
     // arguments 
-    int   has_immediate;
-    int   immediate;
-    int   reg[LINE_INFO_NUM_REG];
+    int     has_immediate;
+    int     immediate;
+    RegType reg[LINE_INFO_NUM_REG];
     // error info
-    int   error;
+    int     error;
 } LineInfo;
 
 LineInfo* line_info_create(void);
@@ -58,8 +59,12 @@ int       line_info_struct_size(LineInfo* info);
 int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
 int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
 
-// TODO : work out what this method will actually do
-void      line_info_serialize(LineInfo* info, uint8_t* buffer, int len);
+/*
+ * reg_char_to_code()
+ * Convert a character to a register enum code
+ */
+uint8_t   reg_char_to_code(char r);
+
 
 // ==== Buffer for LineInfo Structures
 typedef struct

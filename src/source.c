@@ -298,16 +298,48 @@ int line_info_set_symbol_str(LineInfo* info, char* str, int len)
     return 0;
 }
 
-/*
- * line_info_serialize()
- */
-// TODO : what to do about this function....
-void line_info_serialize(LineInfo* info, uint8_t* buffer, int len)
-{
-    memcpy(buffer, info->opcode, sizeof(*info->opcode));
-    //memcpy(buffer + sizeof(*info->opcode), 
-}
 
+/*
+ * reg_char_to_code()
+ */
+uint8_t reg_char_to_code(char r)
+{
+    switch(r)
+    {
+        case 'A':
+        case 'a':
+            return REG_A;
+        case 'B':
+        case 'b':
+            return REG_B;
+        case 'C':
+        case 'c':
+            return REG_C;
+        case 'D':
+        case 'd':
+            return REG_D;
+        case 'E':
+        case 'e':
+            return REG_E;
+        case 'H':
+        case 'h':
+            return REG_H;
+        case 'L':
+        case 'l':
+            return REG_L;
+        case 'M':
+        case 'm':
+            return REG_M;
+        case 'S':
+        case 's':
+            return REG_S;
+        case 'P':
+        case 'p':
+            return REG_PSW;
+    }
+
+    return REG_NONE;
+}
 
 // ================ SOURCE INFO ================ //
 /*

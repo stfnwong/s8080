@@ -515,21 +515,13 @@ void lex_next_token(Lexer* lexer, Token* token)
            (strncmp(lexer->token_buf, "H", 1) == 0) ||
            (strncmp(lexer->token_buf, "L", 1) == 0) ||
            (strncmp(lexer->token_buf, "M", 1) == 0) ||  // assemble this as mem read
+           (strncmp(lexer->token_buf, "PSW", 3) == 0) || 
            (strncmp(lexer->token_buf, "S", 1) == 0))    // assemble this as stack pointer
         {
             token->type = SYM_REG;
             token->token_str_len = 1;
             goto TOKEN_END;
         }
-    }
-    // Check for PSW 'register'
-    if(strncmp(lexer->token_buf, "PSW", 3) == 0)
-    {
-        // This produces the string 'P' 
-        // TODO : replace the character strings with enums
-        token->type = SYM_REG;
-        token->token_str_len = 1;
-        goto TOKEN_END;
     }
 
     // Check for strings
@@ -618,7 +610,7 @@ int lex_parse_one_reg(Lexer* lexer, Token* token)
         }
         return -1;
     }
-    lexer->text_seg->reg[0] = token->token_str[0];
+    lexer->text_seg->reg[0] = reg_char_to_code(token->token_str[0]);
 
     return 0;
 }
@@ -652,8 +644,8 @@ int lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b)
         return -1;
     }
 
-    lexer->text_seg->reg[0] = tok_a->token_str[0];
-    lexer->text_seg->reg[1] = tok_b->token_str[0];
+    lexer->text_seg->reg[0] = reg_char_to_code(tok_a->token_str[0]);
+    lexer->text_seg->reg[1] = reg_char_to_code(tok_b->token_str[0]);
 
     return 0;
 }
@@ -684,7 +676,7 @@ int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
         return -1;
     }
 
-    lexer->text_seg->reg[0]        = tok_a->token_str[0];
+    lexer->text_seg->reg[0]        = reg_char_to_code(tok_a->token_str[0]);
     fprintf(stdout, "[%s] getting literal.....\n", __func__);
     lexer->text_seg->immediate     = lex_extract_literal(lexer, tok_b);
     lexer->text_seg->has_immediate = 1;
