@@ -1,0 +1,18 @@
+# Travis config for S8080
+# 
+# Stefan Wong 8080
+
+language: c
+sudo: false
+compiler: gcc
+
+script: 
+    - make clean && make all
+    - ./bin/test/test_assembler
+    - ./bin/test/test_instr_buffer
+    - ./bin/test/test_lexer
+    - ./bin/test/test_line_info
+    - ./bin/test/test_opcode
+    - ./bin/test/test_source_info
+    - ./bin/test/test_symbol_table
+    - ./bin/test/test_token
