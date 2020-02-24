@@ -71,13 +71,11 @@ typedef struct
     // current line information
     LineInfo*    text_seg;      
     SourceInfo*  source_repr;
-    
     // Opcode table
     OpcodeTable* op_table;
     OpcodeTable* dir_table;
     // Symbol table
     SymbolTable* sym_table;
-
     // misc settings
     int verbose;
 } Lexer;
@@ -90,6 +88,7 @@ int    lex_read_file(Lexer* lexer, const char* filename);
 int    lex_is_whitespace(const char c);
 int    lex_is_comment(const char c);
 void   lex_advance(Lexer* lexer);
+int    lex_check_comma(Lexer* lexer); // look-ahead to see if there is a comma
 void   lex_skip_whitespace(Lexer* lexer);
 void   lex_skip_comment(Lexer* lexer);
 
@@ -109,6 +108,7 @@ int    lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_imm(Lexer* lexer, Token* tok);
 int    lex_parse_jmp(Lexer* lexer, Token* tok);
+int    lex_parse_data_arg(Lexer* lexer, Token* tok);
 int    lex_parse_data(Lexer* lexer, Token* tok);
 int    lex_parse_string(Lexer* lexer, Token* tok);
 //int    lex_parse_call(Lexer* lexer, Token* tok);

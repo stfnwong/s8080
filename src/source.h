@@ -101,6 +101,7 @@ typedef enum {
     SYM_INSTR,
     SYM_REG,
     SYM_STRING,
+    SYM_COMMA,
     SYM_EOF
 } TokenType;
 

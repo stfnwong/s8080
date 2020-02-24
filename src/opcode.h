@@ -115,7 +115,6 @@ extern const Opcode LEX_INSTRUCTIONS[75];
 typedef enum 
 {
     DIR_INVALID,
-    DIR_CPU,
     DIR_END,
     DIR_ENDIF,
     DIR_ENDM,
@@ -126,8 +125,9 @@ typedef enum
     DIR_SET
 } directive_code;
 
-static const int NUM_LEX_DIR = 10;
-extern const Opcode LEX_DIRECTIVES[10];
+// Number of directives (for reference outside this file)
+static const int NUM_LEX_DIR = 9;
+extern const Opcode LEX_DIRECTIVES[9];
 
 // Opcode lookup
 typedef struct

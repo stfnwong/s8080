@@ -19,6 +19,7 @@ const char* TOKEN_TYPE_TO_STR[] = {
     "INSTR",
     "REGISTER",
     "STRING",
+    "COMMA",
     "EOF"
 };
 

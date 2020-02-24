@@ -94,14 +94,14 @@ const Opcode LEX_INSTRUCTIONS[] = {
 const Opcode LEX_DIRECTIVES[] = 
 {
     {DIR_INVALID, "INVALID"},
-    {DIR_CPU,     "CPU"},
+    {DIR_END,     "END"},
     {DIR_ENDIF,   "ENDIF"},
     {DIR_ENDM,    "ENDM"},
     {DIR_EQU,     "EQU"},
     {DIR_IF,      "IF"},
     {DIR_MACRO,   "MACRO"},
     {DIR_ORG,     "ORG"},
-    {DIR_SET,     "SET"},
+    {DIR_SET,     "SET"}
 };
 
 /*

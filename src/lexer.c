@@ -338,6 +338,14 @@ void lex_advance(Lexer* lexer)
 }
 
 /*
+ * lex_check_comma()
+ */
+int lex_check_comma(Lexer* lexer)
+{
+    return (lexer->src[lexer->cur_pos+1] == ',') ? 1 : 0;
+}
+
+/*
  * lex_is_whitespace()
  */
 int lex_is_whitespace(const char c)
@@ -432,7 +440,6 @@ void lex_scan_token(Lexer* lexer)
             lex_advance(lexer);
             break;
         }
-
         lexer->token_buf[lexer->token_buf_ptr] = lexer->cur_char;
         lex_advance(lexer);
         lexer->token_buf_ptr++;
@@ -496,7 +503,10 @@ void lex_next_string(Lexer* lexer, Token* token)
     while(lexer->token_buf_ptr < TOKEN_BUF_SIZE-1)
     {
         if(lexer->cur_char == '"')      // the end of this string
+        {
+            lex_advance(lexer);
             break;                      
+        }
         if(lexer->cur_char == EOF)      // got to the end of the file
             break;
         if(lexer->cur_char == '\0')     // got a null
@@ -531,15 +541,6 @@ void lex_next_token(Lexer* lexer, Token* token)
         goto TOKEN_END;
     }
 
-    // If the last character is ':', then this 
-    // is a label even if it would match some other 
-    // category
-    //if(lexer->token_buf[strlen(lexer->token_buf)-1] == ':')
-    //{
-    //    token->type = SYM_LABEL;
-    //    goto TOKEN_END;
-    //}
-
     // Check for registers 
     if(strlen(lexer->token_buf) == 1)
     {
@@ -554,6 +555,13 @@ void lex_next_token(Lexer* lexer, Token* token)
            (strncmp(lexer->token_buf, "S", 1) == 0))    // stack ptr
         {
             token->type = SYM_REG;
+            token->token_str_len = 1;
+            goto TOKEN_END;
+        }
+
+        if(lexer->token_buf[0] == ',')
+        {
+            token->type = SYM_COMMA;
             token->token_str_len = 1;
             goto TOKEN_END;
         }
@@ -649,13 +657,12 @@ TOKEN_END:
 
     if(lexer->verbose)
     {
-        fprintf(stdout, "[%s]  (line %d:%d) got token [%s] of type %s with value [%s]\n",
+        fprintf(stdout, "[%s]  (line %d:%d) got token [%s] of type %s \n",
                __func__, 
                lexer->cur_line, 
                lexer->cur_col, 
-               lexer->token_buf, 
-               TOKEN_TYPE_TO_STR[token->type],  
-               token->token_str
+               token->token_str,
+               TOKEN_TYPE_TO_STR[token->type]
         );
     }
 }
@@ -665,6 +672,8 @@ TOKEN_END:
  */
 int lex_parse_one_reg(Lexer* lexer, Token* token)
 {
+    int status = 0;
+
     if(token->type != SYM_REG)
     {
         if(lexer->verbose)
@@ -674,11 +683,11 @@ int lex_parse_one_reg(Lexer* lexer, Token* token)
                    lexer->cur_col, TOKEN_TYPE_TO_STR[token->type]
             );
         }
-        return -1;
+        status = -1;
     }
     lexer->text_seg->reg[0] = reg_char_to_code(token->token_str[0]);
 
-    return 0;
+    return status;
 }
 
 /*
@@ -686,6 +695,8 @@ int lex_parse_one_reg(Lexer* lexer, Token* token)
  */
 int lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b)
 {
+    int status = 0;
+
     if(tok_a->type != SYM_REG)
     {
         if(lexer->verbose)
@@ -695,7 +706,7 @@ int lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b)
                    lexer->cur_col, TOKEN_TYPE_TO_STR[tok_a->type]
             );
         }
-        return -1;
+        status = -1;
     }
 
     if(tok_b->type != SYM_REG)
@@ -707,13 +718,13 @@ int lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b)
                    lexer->cur_col, TOKEN_TYPE_TO_STR[tok_b->type]
             );
         }
-        return -1;
+        status = -1;
     }
 
     lexer->text_seg->reg[0] = reg_char_to_code(tok_a->token_str[0]);
     lexer->text_seg->reg[1] = reg_char_to_code(tok_b->token_str[0]);
 
-    return 0;
+    return status;
 }
 
 /*
@@ -721,6 +732,8 @@ int lex_parse_two_reg(Lexer* lexer, Token* tok_a, Token* tok_b)
  */
 int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
 {
+    int status = 0;
+
     if(tok_a->type != SYM_REG)
     {
         if(lexer->verbose)
@@ -730,7 +743,7 @@ int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
                    lexer->cur_col, TOKEN_TYPE_TO_STR[tok_a->type]
             );
         }
-        return -1;
+        status = -1;
     }
 
     // Second arg could also be a symbol to be resolved in next pass
@@ -742,12 +755,11 @@ int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
     }
     else if(tok_b->type == SYM_LABEL)
     {
-        int status = line_info_set_symbol_str(
+        status = line_info_set_symbol_str(
                 lexer->text_seg,
                 tok_b->token_str,
                 strlen(tok_b->token_str)
         );
-        return status;
     }
     else
     {
@@ -755,10 +767,10 @@ int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
                __func__, lexer->cur_line, lexer->cur_col, 
                TOKEN_TYPE_TO_STR[tok_b->type]
         );
-        return -1;
+        status = -1;
     }
 
-    return 0;
+    return status;
 }
 
 /*
@@ -766,6 +778,8 @@ int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
  */
 int lex_parse_imm(Lexer* lexer, Token* tok)
 {
+    int status = 0;
+
     if(tok->type == SYM_LITERAL)
     {
         lexer->text_seg->immediate     = lex_extract_literal(lexer, tok);
@@ -773,12 +787,11 @@ int lex_parse_imm(Lexer* lexer, Token* tok)
     }
     else if(tok->type == SYM_LABEL)
     {
-        int status = line_info_set_symbol_str(
+        status = line_info_set_symbol_str(
                 lexer->text_seg,
                 tok->token_str,
                 strlen(tok->token_str)
         );
-        return status;
     }
     else
     {
@@ -786,10 +799,10 @@ int lex_parse_imm(Lexer* lexer, Token* tok)
                __func__, lexer->cur_line, lexer->cur_col, 
                TOKEN_TYPE_TO_STR[tok->type]
         );
-        return -1;
+        status = -1;
     }
 
-    return 0;
+    return status;
 }
 
 /*
@@ -797,15 +810,20 @@ int lex_parse_imm(Lexer* lexer, Token* tok)
  */
 int lex_parse_jmp(Lexer* lexer, Token* tok)
 {
-    if(tok->type == SYM_LITERAL || tok->type == SYM_LABEL)
+    int status = 0;
+
+    if(tok->type == SYM_LABEL)
     {
-        int status = line_info_set_symbol_str(
+        status = line_info_set_symbol_str(
                 lexer->text_seg, 
                 tok->token_str, 
                 strlen(tok->token_str)
         );
-        if(status < 0)
-            return status;
+    }
+    else if(tok->type == SYM_LITERAL)
+    {
+        lexer->text_seg->immediate     = lex_extract_literal(lexer, tok);
+        lexer->text_seg->has_immediate = 1;
     }
     else
     {
@@ -815,22 +833,23 @@ int lex_parse_jmp(Lexer* lexer, Token* tok)
                 lexer->cur_col,
                 TOKEN_TYPE_TO_STR[tok->type]
                );
-        return -1;
+        status = -1;
     }
 
-    return 0;
+    return status;
 }
 
 /*
- * lex_parse_data()
+ * lex_parse_data_arg()
  */
-int lex_parse_data(Lexer* lexer, Token* tok)
+int lex_parse_data_arg(Lexer* lexer, Token* tok)
 {
     int status;
     if(tok->type == SYM_LITERAL)
     {
         lexer->text_seg->immediate     = lex_extract_literal(lexer, tok);
         lexer->text_seg->has_immediate = 1;
+        status = 0;
     }
     else if(tok->type == SYM_STRING)
     {
@@ -856,10 +875,44 @@ int lex_parse_data(Lexer* lexer, Token* tok)
                 lexer->cur_col,
                 TOKEN_TYPE_TO_STR[tok->type]
                );
-        return -1;
+        status = -1;
     }
 
-    return 0;
+    return status;
+}
+
+/*
+ * lex_parse_data()
+ */
+int lex_parse_data(Lexer* lexer, Token* tok)
+{
+    int status;
+
+    // deal with the current token
+    status = lex_parse_data_arg(lexer, tok);
+    if(status < 0)
+        goto LEX_PARSE_DATA_END;
+    
+    while(lex_check_comma(lexer))
+    {
+        lex_next_token(lexer, tok);
+        status = lex_parse_data_arg(lexer, tok);
+        if(status < 0)
+            goto LEX_PARSE_DATA_END;
+        // TODO : actually we need to to be able to extend this
+        // since the current implementation only writes the 
+        // last byte
+        status = line_info_set_byte_array(
+                lexer->text_seg,
+                tok->token_str,
+                strlen(tok->token_str)
+        );
+        if(status < 0)
+            goto LEX_PARSE_DATA_END;
+    }
+
+LEX_PARSE_DATA_END:
+    return status;
 }
 
 /*
@@ -867,6 +920,8 @@ int lex_parse_data(Lexer* lexer, Token* tok)
  */
 int lex_parse_string(Lexer* lexer, Token* tok)
 {
+    int status = 0;
+
     if(tok->type != SYM_STRING)
     {
         fprintf(stdout, "[%s] line %d:%d ERROR: expected string, got %s\n",
@@ -875,15 +930,15 @@ int lex_parse_string(Lexer* lexer, Token* tok)
                 lexer->cur_col,
                 TOKEN_TYPE_TO_STR[tok->type]
                );
-        return -1;
+        status = -1;
     }
-    int status = line_info_set_byte_array(
+    status = line_info_set_byte_array(
             lexer->text_seg,
             tok->token_str,
             strlen(tok->token_str)
     );
 
-    return status ;
+    return status;
 }
 
 
@@ -952,8 +1007,6 @@ int lex_line(Lexer* lexer)
         if(status < 0)
             goto LEX_LINE_END;
 
-        //strcpy(lexer->text_seg->label_str, cur_token.token_str);
-        //lexer->text_seg->label_str_len = cur_token.token_str_len;
         // make a symbol object for this label
         cur_sym.addr = lexer->text_addr;
         strncpy(cur_sym.sym, cur_token.token_str, cur_token.token_str_len);
@@ -989,9 +1042,6 @@ int lex_line(Lexer* lexer)
 
         switch(cur_opcode.instr)
         {
-            case DIR_CPU:
-                fprintf(stdout, "[%s] got CPU\n", __func__);
-                break;
             case DIR_END:
                 fprintf(stdout, "[%s] got END\n", __func__);
                 break;
@@ -1123,15 +1173,15 @@ int lex_line(Lexer* lexer)
 
             // subroutine call instructions 
             case LEX_CALL:
-            case LEX_CZ:
             case LEX_CNZ:
             case LEX_CM:
             case LEX_CP:
             case LEX_CPE:
             case LEX_CPO:
+            case LEX_CZ:
                 lex_next_token(lexer, &tok_a);
-                status = lex_parse_data(lexer, &tok_a);
-                fprintf(stdout, "[%s] status for lex_parse_data() for call-type instruction = %d\n", __func__, status);
+                status = lex_parse_data_arg(lexer, &tok_a);
+                fprintf(stdout, "[%s] status for lex_parse_data_arg() for call-type instruction = %d\n", __func__, status);
                 instr_size = 2;
                 break;
 
@@ -1151,7 +1201,13 @@ int lex_line(Lexer* lexer)
             case LEX_DB:
             case LEX_DW:
                 lex_next_token(lexer, &tok_a);
-                status = lex_parse_string(lexer, &tok_a);
+                status = lex_parse_data(lexer, &tok_a);
+                lex_next_token(lexer, &tok_a);
+                // something like 
+                // while(token is a comma)
+                //  lex_next_token()
+                //  parse_string(with new token)
+                // TODO : Note that DB can accept comma-delimited arg lists
                 instr_size = 1;
                 break;
 
