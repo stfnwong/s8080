@@ -8,7 +8,7 @@
 #ifndef __EMU_SOURCE_H
 #define __EMU_SOURCE_H
 
-#define TOKEN_BUF_SIZE 16
+#define TOKEN_BUF_SIZE 64
 #define LINE_INFO_NUM_REG 2
 
 #include "opcode.h"
@@ -36,20 +36,22 @@ extern const char* REG_TYPE_TO_STR[10];
 // Text segment
 typedef struct 
 {
-    Opcode* opcode;
-    char*   label_str;
-    char*   symbol_str;
-    int     label_str_len;
-    int     symbol_str_len;
+    Opcode*  opcode;
+    char*    label_str;
+    char*    symbol_str;
+    uint8_t* byte_array;
+    int      label_str_len;
+    int      symbol_str_len;
+    int      byte_array_len;
     // Position
-    int     line_num;
-    int     addr;
+    int      line_num;
+    int      addr;
     // arguments 
-    int     has_immediate;
-    int     immediate;
-    RegType reg[LINE_INFO_NUM_REG];
+    int      has_immediate;
+    int      immediate;
+    RegType  reg[LINE_INFO_NUM_REG];
     // error info
-    int     error;
+    int      error;
 } LineInfo;
 
 LineInfo* line_info_create(void);
@@ -61,6 +63,7 @@ int       line_info_copy(LineInfo* dst, LineInfo* src);
 int       line_info_struct_size(LineInfo* info);
 int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
 int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
+int       line_info_set_byte_array(LineInfo* info, uint8_t* array, int len);
 
 /*
  * reg_char_to_code()
@@ -89,22 +92,12 @@ int         source_info_empty(SourceInfo* info);
 int         source_info_write(SourceInfo* info, const char* filename);
 
 
-// Data segment
-typedef struct
-{
-    uint8_t* data;
-    int      data_size;
-    int      addr;
-} DataSegment;
-
-DataSegment* data_segment_create(int size);
-void data_segment_destroy(DataSegment* segment);
-
 // ======== TOKEN ======== //
 typedef enum {
     SYM_NONE, 
     SYM_LITERAL, 
     SYM_LABEL, 
+    SYM_DIRECTIVE,
     SYM_INSTR,
     SYM_REG,
     SYM_STRING,
@@ -124,7 +117,5 @@ typedef struct
 Token* create_token(void);
 void   token_init(Token* token);
 void   destroy_token(Token* token);
-
-
 
 #endif /*__EMU_SOURCE_H*/

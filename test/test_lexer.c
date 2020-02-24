@@ -50,6 +50,8 @@ spec("Lexer")
 
         // Check the opcode table
         check(lexer->op_table != NULL);
+        // Check the directive table 
+        check(lexer->dir_table != NULL);
         // Check the SourceInfo object
         check(lexer->source_repr == NULL);
         // Check the SymbolTable

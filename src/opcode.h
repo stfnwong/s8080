@@ -111,6 +111,24 @@ typedef enum {
 static const int NUM_LEX_INSTR = 75;  // TODO :  better way of doing this
 extern const Opcode LEX_INSTRUCTIONS[75];
 
+// Psuedo ops / assembler directives
+typedef enum 
+{
+    DIR_INVALID,
+    DIR_CPU,
+    DIR_END,
+    DIR_ENDIF,
+    DIR_ENDM,
+    DIR_EQU,
+    DIR_IF,
+    DIR_MACRO,
+    DIR_ORG,
+    DIR_SET
+} directive_code;
+
+static const int NUM_LEX_DIR = 10;
+extern const Opcode LEX_DIRECTIVES[10];
+
 // Opcode lookup
 typedef struct
 {
@@ -121,6 +139,7 @@ typedef struct
 } OpcodeTable;
 
 OpcodeTable* opcode_table_create(void);
+OpcodeTable* opcode_table_create_dir(void);
 void         opcode_table_destroy(OpcodeTable* optable);
 void         opcode_table_print(OpcodeTable* optable);
 

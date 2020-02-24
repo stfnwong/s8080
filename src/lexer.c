@@ -209,6 +209,9 @@ Lexer* lexer_create(void)
     lexer->op_table = opcode_table_create();
     if(!lexer->op_table)
         goto LEXER_END;
+    lexer->dir_table = opcode_table_create_dir();
+    if(!lexer->dir_table)
+        goto LEXER_END;
 
 LEXER_END:
     if(!lexer || !lexer->text_seg || !lexer->op_table)
@@ -486,6 +489,31 @@ int lex_extract_literal(Lexer* lexer, Token* token)
 }
 
 /*
+ * lex_next_string()
+ */
+void lex_next_string(Lexer* lexer, Token* token)
+{
+    while(lexer->token_buf_ptr < TOKEN_BUF_SIZE-1)
+    {
+        if(lexer->cur_char == '"')      // the end of this string
+            break;                      
+        if(lexer->cur_char == EOF)      // got to the end of the file
+            break;
+        if(lexer->cur_char == '\0')     // got a null
+            break;
+
+        lexer->token_buf[lexer->token_buf_ptr] = lexer->cur_char;
+        lex_advance(lexer);
+        lexer->token_buf_ptr++;
+    }
+
+    lexer->token_buf[lexer->token_buf_ptr] = '\0';
+    // move the cursor forward by one if we landed on a seperator
+    if(lexer->cur_char == ',' || lexer->cur_char == ':' || lexer->cur_char == ' ')
+        lex_advance(lexer);
+}
+
+/*
  * lex_next_token()
  */
 void lex_next_token(Lexer* lexer, Token* token)
@@ -502,7 +530,15 @@ void lex_next_token(Lexer* lexer, Token* token)
         token->type = SYM_LITERAL;
         goto TOKEN_END;
     }
-    // We would check here for directives
+
+    // If the last character is ':', then this 
+    // is a label even if it would match some other 
+    // category
+    //if(lexer->token_buf[strlen(lexer->token_buf)-1] == ':')
+    //{
+    //    token->type = SYM_LABEL;
+    //    goto TOKEN_END;
+    //}
 
     // Check for registers 
     if(strlen(lexer->token_buf) == 1)
@@ -514,9 +550,17 @@ void lex_next_token(Lexer* lexer, Token* token)
            (strncmp(lexer->token_buf, "E", 1) == 0) ||
            (strncmp(lexer->token_buf, "H", 1) == 0) ||
            (strncmp(lexer->token_buf, "L", 1) == 0) ||
-           (strncmp(lexer->token_buf, "M", 1) == 0) ||  // assemble this as mem read
-           (strncmp(lexer->token_buf, "PSW", 3) == 0) || 
-           (strncmp(lexer->token_buf, "S", 1) == 0))    // assemble this as stack pointer
+           (strncmp(lexer->token_buf, "M", 1) == 0) ||  // mem read
+           (strncmp(lexer->token_buf, "S", 1) == 0))    // stack ptr
+        {
+            token->type = SYM_REG;
+            token->token_str_len = 1;
+            goto TOKEN_END;
+        }
+    }
+    else if(strlen(lexer->token_buf) == 3)
+    {
+        if(strncmp(lexer->token_buf, "PSW", 3) == 0)
         {
             token->type = SYM_REG;
             token->token_str_len = 1;
@@ -527,8 +571,30 @@ void lex_next_token(Lexer* lexer, Token* token)
     // Check for strings
     if(lexer->token_buf[0] == '"')
     {
-        // TODO : need to keep lexing until we find another '"'
+        lex_next_string(lexer, token);
         token->type = SYM_STRING;
+        goto TOKEN_END;
+    }
+
+    // Check for directives. In this implementation we don't have 
+    // leading '.' characters before a directive.
+    opcode_init(&opcode);
+    opcode_table_find_mnemonic(
+            lexer->dir_table,
+            &opcode,
+            lexer->token_buf
+    );
+    if(opcode.instr != DIR_INVALID)
+    {
+        if(lexer->verbose)
+        {
+            fprintf(stdout, "[%s] got directive %d [%s]\n", 
+                    __func__, 
+                    opcode.instr, 
+                    LEX_DIRECTIVES[opcode.instr].mnemonic);
+        }
+        token->type = SYM_DIRECTIVE;
+        token->token_str_len = (int) strlen(lexer->token_buf);
         goto TOKEN_END;
     }
 
@@ -667,21 +733,30 @@ int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
         return -1;
     }
 
-    if(tok_b->type != SYM_LITERAL)
+    // Second arg could also be a symbol to be resolved in next pass
+    if(tok_b->type == SYM_LITERAL)
     {
-        fprintf(stdout, "[%s] line %d:%d, ERROR: expected immediate, got %s\n",
+        lexer->text_seg->reg[0]        = reg_char_to_code(tok_a->token_str[0]);
+        lexer->text_seg->immediate     = lex_extract_literal(lexer, tok_b);
+        lexer->text_seg->has_immediate = 1;
+    }
+    else if(tok_b->type == SYM_LABEL)
+    {
+        int status = line_info_set_symbol_str(
+                lexer->text_seg,
+                tok_b->token_str,
+                strlen(tok_b->token_str)
+        );
+        return status;
+    }
+    else
+    {
+        fprintf(stdout, "[%s] line %d:%d, ERROR: expected immediate or label, got %s\n",
                __func__, lexer->cur_line, lexer->cur_col, 
                TOKEN_TYPE_TO_STR[tok_b->type]
         );
         return -1;
     }
-
-    lexer->text_seg->reg[0]        = reg_char_to_code(tok_a->token_str[0]);
-    fprintf(stdout, "[%s] getting literal.....\n", __func__);
-    lexer->text_seg->immediate     = lex_extract_literal(lexer, tok_b);
-    lexer->text_seg->has_immediate = 1;
-
-    fprintf(stdout, "[%s] literal was %d.....\n", __func__, lexer->text_seg->immediate);
 
     return 0;
 }
@@ -691,16 +766,28 @@ int lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b)
  */
 int lex_parse_imm(Lexer* lexer, Token* tok)
 {
-    if(tok->type != SYM_LITERAL)
+    if(tok->type == SYM_LITERAL)
     {
-        fprintf(stdout, "[%s] line %d:%d, ERROR: expected immediate, got %s\n",
+        lexer->text_seg->immediate     = lex_extract_literal(lexer, tok);
+        lexer->text_seg->has_immediate = 1;
+    }
+    else if(tok->type == SYM_LABEL)
+    {
+        int status = line_info_set_symbol_str(
+                lexer->text_seg,
+                tok->token_str,
+                strlen(tok->token_str)
+        );
+        return status;
+    }
+    else
+    {
+        fprintf(stdout, "[%s] line %d:%d, ERROR: expected immediate or label, got %s\n",
                __func__, lexer->cur_line, lexer->cur_col, 
                TOKEN_TYPE_TO_STR[tok->type]
         );
         return -1;
     }
-    lexer->text_seg->immediate     = lex_extract_literal(lexer, tok);
-    lexer->text_seg->has_immediate = 1;
 
     return 0;
 }
@@ -739,6 +826,7 @@ int lex_parse_jmp(Lexer* lexer, Token* tok)
  */
 int lex_parse_data(Lexer* lexer, Token* tok)
 {
+    int status;
     if(tok->type == SYM_LITERAL)
     {
         lexer->text_seg->immediate     = lex_extract_literal(lexer, tok);
@@ -746,7 +834,19 @@ int lex_parse_data(Lexer* lexer, Token* tok)
     }
     else if(tok->type == SYM_STRING)
     {
-        fprintf(stdout, "[%s] TODO: actually this needs to be an array....\n", __func__);
+        status = line_info_set_byte_array(
+                lexer->text_seg,
+                tok->token_str,
+                strlen(tok->token_str)
+        );
+    }
+    else if(tok->type == SYM_LABEL)
+    {
+        status = line_info_set_symbol_str(
+                lexer->text_seg,
+                tok->token_str,
+                strlen(tok->token_str)
+        );
     }
     else
     {
@@ -761,6 +861,31 @@ int lex_parse_data(Lexer* lexer, Token* tok)
 
     return 0;
 }
+
+/*
+ * lex_parse_string()
+ */
+int lex_parse_string(Lexer* lexer, Token* tok)
+{
+    if(tok->type != SYM_STRING)
+    {
+        fprintf(stdout, "[%s] line %d:%d ERROR: expected string, got %s\n",
+                __func__, 
+                lexer->cur_line, 
+                lexer->cur_col,
+                TOKEN_TYPE_TO_STR[tok->type]
+               );
+        return -1;
+    }
+    int status = line_info_set_byte_array(
+            lexer->text_seg,
+            tok->token_str,
+            strlen(tok->token_str)
+    );
+
+    return status ;
+}
+
 
 /*
  * lex_resolve_labels()
@@ -816,6 +941,7 @@ int lex_line(Lexer* lexer)
 
     lex_next_token(lexer, &cur_token);
 
+    // Handle labels
     if(cur_token.type == SYM_LABEL)
     {
         status = line_info_set_label_str(
@@ -841,13 +967,75 @@ int lex_line(Lexer* lexer)
             );
             goto LEX_LINE_END;
         }
-
         // Get the next token ready
         lex_next_token(lexer, &cur_token);
     }
 
+    // Parse directives 
+    if(cur_token.type == SYM_DIRECTIVE)
+    {
+        // TODO : in the refactor we should find a way to not have to do this (lookup the code) twice
+        opcode_init(&cur_opcode);
+        opcode_table_find_mnemonic(lexer->dir_table, &cur_opcode, cur_token.token_str);
+        if(lexer->verbose)
+        {
+            fprintf(stdout, "[%s] (line %d:%d) lexing %s\n",
+                    __func__, 
+                    lexer->cur_line,
+                    lexer->cur_col,
+                    cur_opcode.mnemonic
+            );
+        }
+
+        switch(cur_opcode.instr)
+        {
+            case DIR_CPU:
+                fprintf(stdout, "[%s] got CPU\n", __func__);
+                break;
+            case DIR_END:
+                fprintf(stdout, "[%s] got END\n", __func__);
+                break;
+            case DIR_ENDIF:
+                fprintf(stdout, "[%s] got ENDIF\n", __func__);
+                break;
+            case DIR_ENDM:
+                fprintf(stdout, "[%s] got ENDM\n", __func__);
+                break;
+            case DIR_IF:
+                fprintf(stdout, "[%s] got IF\n", __func__);
+                break;
+            case DIR_MACRO:
+                fprintf(stdout, "[%s] got MACRO\n", __func__);
+                break;
+            case DIR_ORG:
+                fprintf(stdout, "[%s] got ORG\n", __func__);
+                break;
+            case DIR_SET:
+                fprintf(stdout, "[%s] got SET\n", __func__);
+                break;
+
+            default:
+                if(lexer->verbose)
+                {
+                    fprintf(stderr, "[%s] invalid directive with value %s\n", __func__, cur_opcode.mnemonic);
+                }
+                goto LEX_LINE_END;
+        }
+
+        if(status < 0)
+        {
+            fprintf(stderr, "[%s] failed to lex directive %s\n", __func__, cur_token.token_str);
+            goto LEX_LINE_END;
+        }
+
+        lexer->text_seg->opcode->instr = cur_opcode.instr;
+        strcpy(lexer->text_seg->opcode->mnemonic, cur_opcode.mnemonic);
+    }
+
+    // Parse instructions 
     if(cur_token.type == SYM_INSTR)
     {
+        // TODO : in the refactor we should find a way to not have to do this (lookup the code) twice
         opcode_init(&cur_opcode);
         opcode_table_find_mnemonic(lexer->op_table, &cur_opcode, cur_token.token_str);
 
@@ -928,7 +1116,7 @@ int lex_line(Lexer* lexer)
             case LEX_JC:
             case LEX_JNC:
             case LEX_JZ:
-                lex_next_token(lexer, &tok_a);  // should be a literal or a label
+                lex_next_token(lexer, &tok_a);  // should be literal or label
                 status = lex_parse_jmp(lexer, &tok_a);
                 instr_size = 3;
                 break;
@@ -942,7 +1130,8 @@ int lex_line(Lexer* lexer)
             case LEX_CPE:
             case LEX_CPO:
                 lex_next_token(lexer, &tok_a);
-                status = lex_parse_imm(lexer, &tok_a);
+                status = lex_parse_data(lexer, &tok_a);
+                fprintf(stdout, "[%s] status for lex_parse_data() for call-type instruction = %d\n", __func__, status);
                 instr_size = 2;
                 break;
 
@@ -955,6 +1144,20 @@ int lex_line(Lexer* lexer)
             case LEX_RP:
             case LEX_RPE:
             case LEX_RPO:
+                instr_size = 1;
+                break;
+
+            // data instructions 
+            case LEX_DB:
+            case LEX_DW:
+                lex_next_token(lexer, &tok_a);
+                status = lex_parse_string(lexer, &tok_a);
+                instr_size = 1;
+                break;
+
+            case LEX_DS:
+                // Since this just reserves space, all the real 
+                // work is done in the assembler component
                 instr_size = 1;
                 break;
 

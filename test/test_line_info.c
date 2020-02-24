@@ -27,6 +27,8 @@ spec("LineInfo")
         check(test_info->label_str_len == 0);
         check(test_info->symbol_str == NULL);
         check(test_info->symbol_str_len == 0);
+        check(test_info->byte_array == NULL);
+        check(test_info->byte_array_len == 0);
         check(test_info->error == 0);
 
         // Also check that the register values are initialized correctly
@@ -64,7 +66,7 @@ spec("LineInfo")
         src_info->symbol_str_len = strlen("TEST_SYMBOL\0");
         status = line_info_set_label_str(src_info, "TEST_LABEL\0", strlen("TEST_LABEL\0"));
         check(status == 0);
-        src_info->label_str_len = strlen("TEST_LABEL\0");
+
         src_info->reg[0] = REG_A;
         src_info->reg[1] = REG_H;
 

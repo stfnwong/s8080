@@ -15,6 +15,7 @@ const char* TOKEN_TYPE_TO_STR[] = {
     "NONE",
     "LITERAL",
     "LABEL",
+    "DIRECTIVE",
     "INSTR",
     "REGISTER",
     "STRING",
@@ -40,6 +41,7 @@ LineInfo* line_info_create(void)
 
     info->label_str  = NULL;
     info->symbol_str = NULL;
+    info->byte_array = NULL;
     line_info_init(info);
 
 INFO_END:
@@ -90,6 +92,12 @@ void line_info_init(LineInfo* info)
         info->symbol_str = NULL;
     }
     info->symbol_str_len = 0;
+    if(info->byte_array != NULL)
+    {
+        free(info->byte_array);
+        info->byte_array = NULL;
+    }
+    info->byte_array_len = 0;
     info->error = 0;
 }
 
@@ -198,6 +206,11 @@ void line_info_print_instr(LineInfo* info)
         
         // Subroutine return instructions 
 
+        // Data instructions
+        case LEX_DB:
+            if(info->byte_array_len > 0)
+                fprintf(stdout, "<%s> ", info->byte_array);
+
         // If this instruction just has an opcode then do nothing
         default:
             break;
@@ -294,6 +307,22 @@ int line_info_set_symbol_str(LineInfo* info, char* str, int len)
     info->symbol_str_len = len;
     strncpy(info->symbol_str, str, info->symbol_str_len);
     info->symbol_str[len] = '\0';
+
+    return 0;
+}
+
+/*
+ * line_info_set_byte_array()
+ */
+int line_info_set_byte_array(LineInfo* info, uint8_t* array, int len)
+{
+    if(info->byte_array != NULL)
+        free(info->byte_array);
+    info->byte_array = malloc(sizeof(uint8_t) * len);
+    if(!info->byte_array)
+        return -1;
+    info->byte_array_len = len;
+    memcpy(info->byte_array, array, len);
 
     return 0;
 }
@@ -527,46 +556,6 @@ int source_info_write(SourceInfo* info, const char* filename)
 
     return 0;
 }
-
-
-// ================ DATA SEGMENT ================ //
-/*
- * data_segment_create()
- */
-DataSegment* data_segment_create(int size)
-{
-    DataSegment* segment;
-
-    segment = malloc(sizeof(*segment));
-    if(!segment)
-        goto SEGMENT_END;
-
-    segment->data = malloc(size * sizeof(uint8_t));
-    if(!segment->data)
-        goto SEGMENT_END;
-
-    segment->data_size = size;
-    segment->addr      = 0;
-
-SEGMENT_END:
-    if(!segment || ! segment->data)
-    {
-        fprintf(stderr, "[%s] failed to allocate memory for DataSegment\n", __func__);
-        return NULL;
-    }
-
-    return segment;
-}
-
-/*
- * data_segment_destroy()
- */
-void data_segment_destroy(DataSegment* segment)
-{
-    free(segment->data);
-    free(segment);
-}
-
 
 // ================ TOKEN ================ //
 /*

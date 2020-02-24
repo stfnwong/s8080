@@ -90,6 +90,20 @@ const Opcode LEX_INSTRUCTIONS[] = {
     {LEX_XRI,  "XRI"},
 };
 
+// Directive codes
+const Opcode LEX_DIRECTIVES[] = 
+{
+    {DIR_INVALID, "INVALID"},
+    {DIR_CPU,     "CPU"},
+    {DIR_ENDIF,   "ENDIF"},
+    {DIR_ENDM,    "ENDM"},
+    {DIR_EQU,     "EQU"},
+    {DIR_IF,      "IF"},
+    {DIR_MACRO,   "MACRO"},
+    {DIR_ORG,     "ORG"},
+    {DIR_SET,     "SET"},
+};
+
 /*
  * opcode_create()
  */
@@ -152,7 +166,6 @@ OpcodeTable* opcode_table_create(void)
     table = malloc(sizeof(*table));
     if(!table)
     {
-        //fprintf(stderr, "[%s] failed to allocate memory for OpcodeTable\n", __func__);
         status = -1;
         goto OPCODE_TABLE_END;
     }
@@ -201,6 +214,77 @@ OpcodeTable* opcode_table_create(void)
     }
 
 OPCODE_TABLE_END:
+    if(status < 0)
+    {
+        fprintf(stderr, "[%s] failed to create OpcodeTable\n", __func__);
+        if(table->op_array)
+            free(table->op_array);
+        free(table);
+        return NULL;
+    }
+
+    return table;
+}
+
+/*
+ * opcode_table_create_dir()
+ */
+OpcodeTable* opcode_table_create_dir(void)
+{
+    int status = 0;
+    OpcodeTable* table;
+
+    table = malloc(sizeof(*table));
+    if(!table)
+    {
+        status = -1;
+        goto OPCODE_TABLE_DIR_END;
+    }
+    table->null_op = NULL;
+    table->op_array = NULL;
+
+    table->null_op = malloc(sizeof(Opcode));
+    if(!table->null_op)
+    {
+        fprintf(stderr, "[%s] failed to allocate memory for Null Opcode\n", __func__);
+        status = -1;
+        goto OPCODE_TABLE_DIR_END;
+    }
+    opcode_init(table->null_op);
+
+    // Creare an array of opcodes to search
+    table->num_opcodes = NUM_LEX_DIR;
+    table->op_array = malloc(sizeof(*table->op_array) * table->num_opcodes);
+    if(!table->op_array)
+    {
+        status = -1;
+        goto OPCODE_TABLE_DIR_END;
+    }
+
+    // Try allocate table memory
+    for(int i = 0; i < table->num_opcodes; ++i)
+    {
+        table->op_array[i] = malloc(sizeof(*table->op_array[i]));
+        if(!table->op_array[i])
+        {
+            status = -1;
+            goto OPCODE_TABLE_DIR_END;
+        }
+        table->op_array[i] = opcode_create();
+        if(!table->op_array[i])
+        {
+            status = -1;
+            goto OPCODE_TABLE_DIR_END;
+        }
+    }
+
+    // Add directives to to the table
+    for(int i = 0; i < table->num_opcodes; ++i)
+    {
+        opcode_copy(table->op_array[i], &LEX_DIRECTIVES[i]);
+    }
+
+OPCODE_TABLE_DIR_END:
     if(status < 0)
     {
         fprintf(stderr, "[%s] failed to create OpcodeTable\n", __func__);

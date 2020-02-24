@@ -51,7 +51,6 @@ Symbol*      symbol_table_get_str(SymbolTable* table, char* str, int len);
 /*
  * Lexer object
  */
-// TODO : refactor so that addresses are handled only in the assembler
 typedef struct
 {
     // Source info 
@@ -72,10 +71,10 @@ typedef struct
     // current line information
     LineInfo*    text_seg;      
     SourceInfo*  source_repr;
-    //DataSegment* data_seg;
     
     // Opcode table
     OpcodeTable* op_table;
+    OpcodeTable* dir_table;
     // Symbol table
     SymbolTable* sym_table;
 
@@ -101,6 +100,7 @@ void   lex_data_addr_incr(Lexer* lexer);
 
 //  extract tokens
 void   lex_scan_token(Lexer* lexer);
+void   lex_next_string(Lexer* lexer, Token* token);
 void   lex_next_token(Lexer* lexer, Token* token);  
 
 // Parse instructions 
@@ -110,6 +110,8 @@ int    lex_parse_reg_imm(Lexer* lexer, Token* tok_a, Token* tok_b);
 int    lex_parse_imm(Lexer* lexer, Token* tok);
 int    lex_parse_jmp(Lexer* lexer, Token* tok);
 int    lex_parse_data(Lexer* lexer, Token* tok);
+int    lex_parse_string(Lexer* lexer, Token* tok);
+//int    lex_parse_call(Lexer* lexer, Token* tok);
 
 // Label resolution
 void   lex_resolve_labels(Lexer* lexer);

@@ -361,7 +361,6 @@ void asm_lxi(Instr* dst, LineInfo* line)
 void asm_mvi(Instr* dst, LineInfo* line)
 {
     dst->instr = (0x6 << 8);
-    // TODO : not quite the same code LUT as other instructions
     dst->instr = dst->instr | (asm_reg_to_code[line->reg[0]] << 11);
     dst->instr = dst->instr | line->immediate;
     dst->size  = 2;
