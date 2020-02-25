@@ -38,7 +38,7 @@ ByteNode* byte_node_create(uint8_t* data, int len)
     memcpy(node->data, data, node->len);
 
 BYTE_NODE_CREATE_END:
-    if(!node || *node->data)
+    if(!node || !node->data)
     {
         fprintf(stdout, "[%s] failed to create byte node (%d bytes)\n",
                 __func__, len);
