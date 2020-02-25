@@ -237,7 +237,13 @@ void byte_list_remove_end(ByteListHead* list)
  */
 void byte_list_remove_idx(ByteListHead* list, int idx)
 {
+    // TODO : It feels like if I sit down and think about 
+    // this some more that there should be a simpler way to 
+    // do this....
     if(idx < 0)
+        return;
+
+    if(list->len == 0 || list->first == NULL)
         return;
 
     if(idx >= list->len)
@@ -246,18 +252,35 @@ void byte_list_remove_idx(ByteListHead* list, int idx)
         return;
     }
 
-    ByteNode* node;
-    ByteNode* node_after;
-    node = list->first;
-    for(int i = 0; i < idx; ++i)
-        node = node->next;
+    if(idx == 0 && list->len > 1)
+    {
+        ByteNode* del_node = list->first;
+        ByteNode* node = list->first->next;
 
-    node_after = node->next;
-    node = node->prev;
+        byte_node_destroy(del_node);
+        list->first = node;
+        list->first->prev = NULL;
+    }
+    else if(list->len == 1)
+    {
+        byte_node_destroy(list->first);
+        list->first = NULL;
+    }
+    else
+    {
+        ByteNode* node;
+        ByteNode* node_after;
+        node = list->first;
+        for(int i = 0; i < idx; ++i)
+            node = node->next;
 
-    byte_node_destroy(node->next);
-    node->next = node_after;
-    node_after->prev = node;
+        node_after = node->next;
+        node = node->prev;
+
+        byte_node_destroy(node->next);
+        node->next = node_after;
+        node_after->prev = node;
+    }
     list->len--;
 }
 

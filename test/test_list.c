@@ -354,6 +354,30 @@ spec("List")
         check(check_node != NULL);
         check(check_node->data[0] == 0x04);
 
+        fprintf(stdout, "After removing element 1 of list...:\n\n");
+        byte_list_print(test_list);
+
+        // Now remove the first element
+        byte_list_remove_idx(test_list, 0);
+        check(test_list->len == 1);
+
+        check_node = byte_list_get(test_list, 0);
+        check(check_node != NULL);
+        check(check_node->data[0] == 0x4);
+        check_node = byte_list_get(test_list, 1);
+        check(check_node == NULL);
+
+        fprintf(stdout, "After removing element 0 of list...:\n\n");
+        byte_list_print(test_list);
+
+        // Removing the end will empty the list 
+        byte_list_remove_idx(test_list, 0);
+        check(test_list->len == 0);
+
+        // Trying to remove more elements should have no effect 
+        byte_list_remove_end(test_list);
+        check(test_list->len == 0);
+
         byte_list_destroy(test_list);
     }
 }
