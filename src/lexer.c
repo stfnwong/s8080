@@ -887,6 +887,12 @@ int lex_parse_data_arg(Lexer* lexer, Token* tok)
 int lex_parse_data(Lexer* lexer, Token* tok)
 {
     int status;
+    int data_line;
+
+    // once we go to a  new line we don't need to lex anymore tokens 
+    // into the buffer
+    data_line = lexer->cur_line;
+
 
     // deal with the current token
     status = lex_parse_data_arg(lexer, tok);

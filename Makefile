@@ -31,7 +31,7 @@ $(DISASSEM_OBJ): $(OBJ_DIR)/%.o : $(DISASSEM_SRC_DIR)/%.c
 obj: $(OBJECTS) 
 
 # ======== TEST ======== #
-TESTS=test_lexer test_token test_opcode test_line_info test_source_info test_assembler test_symbol_table test_instr_buffer
+TESTS=test_lexer test_token test_opcode test_line_info test_source_info test_assembler test_symbol_table test_instr_buffer test_list
 TEST_SOURCES=$(wildcard test/*.c)	
 TEST_OBJECTS  := $(TEST_SOURCES:test/%.c=$(OBJ_DIR)/%.o)
 
