@@ -140,8 +140,8 @@ int byte_list_append_node(ByteListHead* list, ByteNode* node)
 {
     if(node == NULL)
         return -1;
-    ByteNode* list_end;
 
+    ByteNode* list_end;
     if(list->first == NULL)
         list->first = node;
     else
@@ -164,16 +164,27 @@ int byte_list_append_data(ByteListHead* list, uint8_t* data, int len)
     ByteNode* node;
     ByteNode* list_end;
 
+    if(data == NULL)
+        return -1;
+
     node = byte_node_create(data, len);
     if(!node)
         return -1;
 
-    list_end = list->first;
-    while(list_end->next != NULL)
-        list_end = list_end->next;
+    if(list->first == NULL)
+    {
+        list->first = node;
+        node->prev = NULL;
+    }
+    else
+    {
+        list_end = list->first;
+        while(list_end->next != NULL)
+            list_end = list_end->next;
 
-    list_end->next = node;
-    node->prev     = list_end;
+        list_end->next = node;
+        node->prev     = list_end;
+    }
     list->len++;
 
     return 0;
@@ -207,8 +218,37 @@ void byte_list_remove_end(ByteListHead* list)
 
     node = node->prev;
     byte_node_destroy(node->next);
+    list->len--;
 }
 
+/*
+ * byte_list_remove_idx()
+ */
+void byte_list_remove_idx(ByteListHead* list, int idx)
+{
+    if(idx < 0)
+        return;
+
+    if(idx >= list->len)
+    {
+        byte_list_remove_end(list);
+        return;
+    }
+
+    ByteNode* node;
+    ByteNode* node_after;
+    node = list->first;
+    for(int i = 0; i < idx; ++i)
+        node = node->next;
+
+    node_after = node->next;
+    node = node->prev;
+
+    byte_node_destroy(node->next);
+    node->next = node_after;
+    node_after->prev = node;
+    list->len--;
+}
 
 /*
  * byte_list_print()
@@ -229,5 +269,8 @@ void byte_list_print(ByteListHead* list)
     cur_node = list->first;
     for(int i = 0; i < list->len; ++i)
     {
+        fprintf(stdout, "%3d " , i);
+        byte_node_print(cur_node);
+        cur_node = cur_node->next;
     }
 }
