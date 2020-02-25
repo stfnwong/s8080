@@ -125,7 +125,6 @@ void byte_list_destroy(ByteListHead* list)
             cur_node = cur_node->prev;
             byte_node_destroy(cur_node->next);
         }
-
         byte_node_destroy(list->first);
     }
 
@@ -212,12 +211,24 @@ void byte_list_remove_end(ByteListHead* list)
 {
     ByteNode* node;
 
-    node = list->first;
-    while(node->next != NULL)
-        node = node->next;
+    if(list->first == NULL)
+        return;
 
-    node = node->prev;
-    byte_node_destroy(node->next);
+    if(list->len == 1)
+    {
+        byte_node_destroy(list->first);
+        list->first = NULL;
+    }
+    else
+    {
+        node = list->first;
+        while(node->next != NULL)
+            node = node->next;
+
+        node = node->prev;
+        byte_node_destroy(node->next);
+        node->next = NULL;
+    }
     list->len--;
 }
 
