@@ -11,9 +11,9 @@
 #include <stdint.h>
 
 // TODO : move the definition out of the header
-typedef struct Vector Vector;
+typedef struct ByteVector ByteVector;
 
-struct Vector
+struct ByteVector
 {
     // I only need bytes for this, but a 'real' implementation
     // would use void* here.
@@ -24,14 +24,14 @@ struct Vector
     // I know I won't need that much data for this emulator
 };
 
-Vector*  vector_create(int capacity);
-void     vector_destroy(Vector* v);
+ByteVector*  vector_create(int capacity);
+void     vector_destroy(ByteVector* v);
 
-void     vector_push_back(Vector* v, uint8_t* data, int len);
-//uint8_t* vector_pop_back(Vector* v);
-uint8_t* vector_get(Vector* v, int idx);
-uint8_t  vector_get_val(Vector* v, int idx);
+void     vector_push_back(ByteVector* v, uint8_t* data, int len);
+//uint8_t* vector_pop_back(ByteVector* v);
+uint8_t* vector_get(ByteVector* v, int idx);
+uint8_t  vector_get_val(ByteVector* v, int idx);
 
-void     vector_extend(Vector* v);
+void     vector_extend(ByteVector* v);
 
 #endif /*__S8080_VECTOR_H*/

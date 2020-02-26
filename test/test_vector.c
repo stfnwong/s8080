@@ -12,12 +12,12 @@
 #include "bdd-for-c.h"
 
 
-spec("Vector")
+spec("ByteVector")
 {
     it("Should init correctly")
     {
         int test_capacity = 32;
-        Vector* test_vec;
+        ByteVector* test_vec;
 
         test_vec = vector_create(test_capacity);
         check(test_vec != NULL);
@@ -31,7 +31,7 @@ spec("Vector")
     {
         int test_capacity = 8;
         int total_test_size = 16;
-        Vector* test_vec;
+        ByteVector* test_vec;
 
         test_vec = vector_create(test_capacity);
         check(test_vec != NULL);
@@ -73,7 +73,7 @@ spec("Vector")
         int start_capacity = 2;
         int total_test_size = 64;
         uint8_t* val;
-        Vector* test_vec;
+        ByteVector* test_vec;
 
         test_vec = vector_create(start_capacity);
         check(test_vec != NULL);

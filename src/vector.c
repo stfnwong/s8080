@@ -13,9 +13,9 @@
 /*
  * vector_create()
  */
-Vector* vector_create(int capacity)
+ByteVector* vector_create(int capacity)
 {
-    Vector* vec;
+    ByteVector* vec;
 
     vec = malloc(sizeof(*vec));
     if(!vec)
@@ -35,7 +35,7 @@ Vector* vector_create(int capacity)
 /*
  * vector_destroy()
  */
-void vector_destroy(Vector* v)
+void vector_destroy(ByteVector* v)
 {
     free(v->data);
     free(v);
@@ -44,7 +44,7 @@ void vector_destroy(Vector* v)
 /*
  * vector_push_back()
  */
-void vector_push_back(Vector* v, uint8_t* data, int len)
+void vector_push_back(ByteVector* v, uint8_t* data, int len)
 {
     if((v->size + len) >= v->capacity)
         vector_extend(v);
@@ -60,7 +60,7 @@ void vector_push_back(Vector* v, uint8_t* data, int len)
 /*
  * vector_get()
  */
-uint8_t* vector_get(Vector* v, int idx)
+uint8_t* vector_get(ByteVector* v, int idx)
 {
     if(idx < 0 || idx >= v->size)
         return NULL;
@@ -72,7 +72,7 @@ uint8_t* vector_get(Vector* v, int idx)
 /*
  * vector_get_val()
  */
-uint8_t vector_get_val(Vector* v, int idx)
+uint8_t vector_get_val(ByteVector* v, int idx)
 {
     if(idx < 0 || idx >= v->size)
         return NULL;
@@ -84,7 +84,7 @@ uint8_t vector_get_val(Vector* v, int idx)
 /*
  * vector_extend()
  */
-void vector_extend(Vector* v)
+void vector_extend(ByteVector* v)
 {
     uint8_t* mem;
 
