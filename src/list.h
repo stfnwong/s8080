@@ -36,17 +36,17 @@ typedef struct
 {
     int       len;
     ByteNode* first;
-} ByteListHead;
+} ByteList;
 
-ByteListHead* byte_list_create(void);
-void          byte_list_destroy(ByteListHead* list);
-int           byte_list_append_node(ByteListHead* list, ByteNode* node);
-int           byte_list_append_data(ByteListHead* list, uint8_t* data, int len);
-ByteNode*     byte_list_get(ByteListHead* list, int idx);
-void          byte_list_remove_end(ByteListHead* list);
-void          byte_list_remove_idx(ByteListHead* list, int idx);
+ByteList* byte_list_create(void);
+void          byte_list_destroy(ByteList* list);
+int           byte_list_append_node(ByteList* list, ByteNode* node);
+int           byte_list_append_data(ByteList* list, uint8_t* data, int len);
+ByteNode*     byte_list_get(ByteList* list, int idx);
+void          byte_list_remove_end(ByteList* list);
+void          byte_list_remove_idx(ByteList* list, int idx);
 
-void          byte_list_print(ByteListHead* list);
+void          byte_list_print(ByteList* list);
 
 
 #endif /*__S8080_LIST_H*/

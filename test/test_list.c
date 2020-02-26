@@ -42,7 +42,7 @@ spec("List")
     it("Should init list head correctly")
     {
         int status;
-        ByteListHead* test_list;
+        ByteList* test_list;
 
         test_list = byte_list_create();
         check(test_list != NULL);
@@ -127,7 +127,7 @@ spec("List")
     it("Should append Nodes to list head")
     {
         int status;
-        ByteListHead* test_list;
+        ByteList* test_list;
 
         test_list = byte_list_create();
         check(test_list != NULL);
@@ -178,7 +178,7 @@ spec("List")
     it("Should allow insert and remove from end")
     {
         int status;
-        ByteListHead* test_list;
+        ByteList* test_list;
 
         test_list = byte_list_create();
         check(test_list != NULL);
@@ -283,7 +283,7 @@ spec("List")
     it("Should allow insert and remove from middle")
     {
         int status;
-        ByteListHead* test_list;
+        ByteList* test_list;
 
         test_list = byte_list_create();
         check(test_list != NULL);

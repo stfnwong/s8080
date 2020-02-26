@@ -86,9 +86,9 @@ void byte_node_print(ByteNode* node)
 /*
  * byte_list_create()
  */
-ByteListHead* byte_list_create(void)
+ByteList* byte_list_create(void)
 {
-    ByteListHead* head;
+    ByteList* head;
 
     head = malloc(sizeof(*head));
     if(!head)
@@ -100,7 +100,7 @@ ByteListHead* byte_list_create(void)
 BYTE_LIST_HEAD_END:
     if(!head)
     {
-        fprintf(stdout, "[%s] failed to allocate memory for ByteListHead\n", __func__);
+        fprintf(stdout, "[%s] failed to allocate memory for ByteList\n", __func__);
         return NULL;
     }
 
@@ -110,7 +110,7 @@ BYTE_LIST_HEAD_END:
 /*
  * byte_list_destroy()
  */
-void byte_list_destroy(ByteListHead* list)
+void byte_list_destroy(ByteList* list)
 {
     if(list->len > 0)
     {
@@ -135,7 +135,7 @@ void byte_list_destroy(ByteListHead* list)
 /*
  * byte_list_append_node()
  */
-int byte_list_append_node(ByteListHead* list, ByteNode* node)
+int byte_list_append_node(ByteList* list, ByteNode* node)
 {
     if(node == NULL)
         return -1;
@@ -158,7 +158,7 @@ int byte_list_append_node(ByteListHead* list, ByteNode* node)
 /*
  * byte_list_append_data()
  */
-int byte_list_append_data(ByteListHead* list, uint8_t* data, int len)
+int byte_list_append_data(ByteList* list, uint8_t* data, int len)
 {
     ByteNode* node;
     ByteNode* list_end;
@@ -192,7 +192,7 @@ int byte_list_append_data(ByteListHead* list, uint8_t* data, int len)
 /*
  * byte_list_get()
  */
-ByteNode* byte_list_get(ByteListHead* list, int idx)
+ByteNode* byte_list_get(ByteList* list, int idx)
 {
     if(idx < 0 || idx >= list->len)
         return NULL;
@@ -207,7 +207,7 @@ ByteNode* byte_list_get(ByteListHead* list, int idx)
 /*
  * byte_list_remove_end()
  */
-void byte_list_remove_end(ByteListHead* list)
+void byte_list_remove_end(ByteList* list)
 {
     ByteNode* node;
 
@@ -235,7 +235,7 @@ void byte_list_remove_end(ByteListHead* list)
 /*
  * byte_list_remove_idx()
  */
-void byte_list_remove_idx(ByteListHead* list, int idx)
+void byte_list_remove_idx(ByteList* list, int idx)
 {
     // TODO : It feels like if I sit down and think about 
     // this some more that there should be a simpler way to 
@@ -287,9 +287,9 @@ void byte_list_remove_idx(ByteListHead* list, int idx)
 /*
  * byte_list_print()
  */
-void byte_list_print(ByteListHead* list)
+void byte_list_print(ByteList* list)
 {
-    fprintf(stdout, "ByteListHead : ");
+    fprintf(stdout, "ByteList : ");
     if(list->len == 0)
     {
         fprintf(stdout, "[]");
