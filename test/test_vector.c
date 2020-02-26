@@ -117,7 +117,7 @@ spec("Vector")
         //check(test_vec->size == 36);
         //check(test_vec->capacity == 128);
 
-        // Memory gets freed along with vector
         vector_destroy(test_vec);
+        free(test_data);
     }
 }
