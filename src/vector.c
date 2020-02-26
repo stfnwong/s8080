@@ -62,10 +62,22 @@ void vector_push_back(Vector* v, uint8_t* data, int len)
  */
 uint8_t* vector_get(Vector* v, int idx)
 {
-    if(idx < 0 || idx > v->size)
+    if(idx < 0 || idx >= v->size)
         return NULL;
 
-    return v->data[idx];
+    return &v->data[idx];
+}
+
+
+/*
+ * vector_get_val()
+ */
+uint8_t vector_get_val(Vector* v, int idx)
+{
+    if(idx < 0 || idx >= v->size)
+        return NULL;
+
+    return v->data[idx];        // copy?
 }
 
 

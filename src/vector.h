@@ -30,6 +30,7 @@ void     vector_destroy(Vector* v);
 void     vector_push_back(Vector* v, uint8_t* data, int len);
 //uint8_t* vector_pop_back(Vector* v);
 uint8_t* vector_get(Vector* v, int idx);
+uint8_t  vector_get_val(Vector* v, int idx);
 
 void     vector_extend(Vector* v);
 
