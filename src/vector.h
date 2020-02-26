@@ -24,7 +24,13 @@ struct Vector
     // I know I won't need that much data for this emulator
 };
 
-Vector* vector_create(int capacity);
-void    vector_destroy(Vector* v);
+Vector*  vector_create(int capacity);
+void     vector_destroy(Vector* v);
+
+void     vector_push_back(Vector* v, uint8_t* data, int len);
+//uint8_t* vector_pop_back(Vector* v);
+uint8_t* vector_get(Vector* v, int idx);
+
+void     vector_extend(Vector* v);
 
 #endif /*__S8080_VECTOR_H*/
