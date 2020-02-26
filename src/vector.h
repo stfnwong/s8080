@@ -32,6 +32,6 @@ void     vector_push_back(ByteVector* v, uint8_t* data, int len);
 uint8_t* vector_get(ByteVector* v, int idx);
 uint8_t  vector_get_val(ByteVector* v, int idx);
 
-void     vector_extend(ByteVector* v);
+void     vector_extend(ByteVector* v, int ext_size);
 
 #endif /*__S8080_VECTOR_H*/

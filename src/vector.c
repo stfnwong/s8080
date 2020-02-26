@@ -47,7 +47,12 @@ void vector_destroy(ByteVector* v)
 void vector_push_back(ByteVector* v, uint8_t* data, int len)
 {
     if((v->size + len) >= v->capacity)
-        vector_extend(v);
+    {
+        if((v->size + len) > 2 * v->capacity)
+            vector_extend(v, v->capacity + len);
+        else
+            vector_extend(v, v->capacity);
+    }
 
     memcpy(v->data + v->size, data, len);
     v->size += len;
@@ -84,19 +89,19 @@ uint8_t vector_get_val(ByteVector* v, int idx)
 /*
  * vector_extend()
  */
-void vector_extend(ByteVector* v)
+void vector_extend(ByteVector* v, int ext_size)
 {
     uint8_t* mem;
 
-    mem = malloc(sizeof(uint8_t) * 2 * v->capacity);
+    mem = malloc(sizeof(uint8_t) * v->capacity + ext_size);
     if(!mem)
     {
-        fprintf(stdout, "[%s] failed to alloc %d bytes to extend vector\n", __func__, 2 * v->capacity);
+        fprintf(stdout, "[%s] failed to alloc %d bytes to extend vector\n", __func__, ext_size);
         return;
     }
 
     memcpy(mem, v->data, v->size);
     free(v->data);
     v->data = mem;
-    v->capacity = 2 * v->capacity;
+    v->capacity = v->capacity + ext_size;
 }

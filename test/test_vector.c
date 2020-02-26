@@ -111,11 +111,25 @@ spec("ByteVector")
         check(test_vec->size == 4);
         check(test_vec->capacity == 8);
 
-        // TODO : test is fine when we push back one or two elements 
-        // but fails if we try to extend by a large amount
-        //vector_push_back(test_vec, test_data + 4, 32);
-        //check(test_vec->size == 36);
-        //check(test_vec->capacity == 128);
+        // So far we have just pushed one element on at a 
+        // time. We can actually push multiple elements at once.
+
+        // before this call the capacity of the vector is 8
+        // since 32 > (8 * 2) we grow the vector to (2 * capacity) + len = 16 + 32 = 48
+        vector_push_back(test_vec, test_data + 4, 32);
+        check(test_vec->size == 36);
+        check(test_vec->capacity == 48);
+
+        // Adding another 32 elements will 'only' cause the vector to 
+        // double to 92 elements
+        vector_push_back(test_vec, test_data + 36, 32);
+        check(test_vec->size == 68);    // 32 + 36
+        check(test_vec->capacity == 96);
+
+        // If everything went well we should also be able to iterate over
+        // the elements in the vector and check them
+        for(int i = 0; i < test_vec->size; ++i)
+            check(test_data[i] == vector_get_val(test_vec, i));
 
         vector_destroy(test_vec);
         free(test_data);
