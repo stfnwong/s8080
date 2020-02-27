@@ -59,10 +59,6 @@ void vector_push_back(ByteVector* v, uint8_t* data, int len)
 }
 
 /*
- * vector_pop_back()
- */
-
-/*
  * vector_get()
  */
 uint8_t* vector_get(ByteVector* v, int idx)
@@ -72,7 +68,6 @@ uint8_t* vector_get(ByteVector* v, int idx)
 
     return &v->data[idx];
 }
-
 
 /*
  * vector_get_val()
@@ -84,7 +79,6 @@ uint8_t vector_get_val(ByteVector* v, int idx)
 
     return v->data[idx];        // copy?
 }
-
 
 /*
  * vector_extend()
@@ -104,4 +98,23 @@ void vector_extend(ByteVector* v, int ext_size)
     free(v->data);
     v->data = mem;
     v->capacity = v->capacity + ext_size;
+}
+
+/*
+ * vector_init()
+ */
+void vector_init(ByteVector* v)
+{
+    // set the memory to zero and reset the size,
+    // but leave the capacity as is
+    memset(v->data, 0, v->capacity);
+    v->size = 0;
+}
+
+/*
+ * vector_print()
+ */
+void vector_print(ByteVector* v)
+{
+
 }

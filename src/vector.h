@@ -24,14 +24,13 @@ struct ByteVector
     // I know I won't need that much data for this emulator
 };
 
-ByteVector*  vector_create(int capacity);
-void     vector_destroy(ByteVector* v);
-
-void     vector_push_back(ByteVector* v, uint8_t* data, int len);
-//uint8_t* vector_pop_back(ByteVector* v);
-uint8_t* vector_get(ByteVector* v, int idx);
-uint8_t  vector_get_val(ByteVector* v, int idx);
-
-void     vector_extend(ByteVector* v, int ext_size);
+ByteVector* vector_create(int capacity);
+void        vector_destroy(ByteVector* v);
+void        vector_push_back(ByteVector* v, uint8_t* data, int len);
+uint8_t*    vector_get(ByteVector* v, int idx);
+uint8_t     vector_get_val(ByteVector* v, int idx);
+void        vector_extend(ByteVector* v, int ext_size);
+void        vector_init(ByteVector* v);
+void        vector_print(ByteVector* v);
 
 #endif /*__S8080_VECTOR_H*/

@@ -47,6 +47,7 @@ spec("SourceInfo")
             check(test_info->buffer[i]->opcode->instr == 0);
             for(int r = 0; r < OPCODE_MNEMONIC_SIZE; ++r)
                 check(test_info->buffer[i]->opcode->mnemonic[r] == 0);
+            check(test_info->buffer[i]->byte_list != NULL);
         }
 
         source_info_destroy(test_info);
@@ -139,7 +140,6 @@ spec("SourceInfo")
         test_op.instr = LEX_MOV;
         strncpy(test_op.mnemonic, "MOV\0", 4);
         opcode_copy(test_line->opcode, &test_op);
-
         line_info_print(test_line);
 
         // Insert that LineInfo
@@ -151,12 +151,7 @@ spec("SourceInfo")
         check(test_info->cur_line == 1);
 
         out_line = source_info_get_idx(test_info, 0);
-
         line_info_print(out_line);
-
-        //fprintf(stdout, "[%s] &out_line = %p, &test_info = %p\n", 
-        //       __func__, &out_line, &test_info
-        //);
 
         check(out_line->line_num == test_line->line_num);
         check(out_line->addr == test_line->addr);
@@ -177,7 +172,6 @@ spec("SourceInfo")
         check(test_info->size == 2);
         check(test_info->cur_line == 2);
         out_line = source_info_get_idx(test_info, 1);
-
 
         check(out_line->addr == test_line->addr);
         check(out_line->line_num == test_line->line_num);

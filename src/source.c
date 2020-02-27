@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "source.h"
+#include "vector.h"
 
 
 const char* TOKEN_TYPE_TO_STR[] = {
@@ -34,19 +35,22 @@ LineInfo* line_info_create(void)
 
     info = malloc(sizeof(*info));
     if(!info)
-        goto INFO_END;
+        goto LINE_INFO_CREATE_END;
 
     info->opcode = malloc(sizeof(*info->opcode));
     if(!info->opcode)
-        goto INFO_END;
+        goto LINE_INFO_CREATE_END;
+
+    info->byte_array = vector_create(64);
+    if(!info->byte_array)
+        goto LINE_INFO_CREATE_END;
 
     info->label_str  = NULL;
     info->symbol_str = NULL;
-    info->byte_array = NULL;
     line_info_init(info);
 
-INFO_END:
-    if(!info || !info->opcode)
+LINE_INFO_CREATE_END:
+    if(!info || !info->opcode || !info->byte_array)
     {
         fprintf(stderr, "[%s] failed to allocate memory while creating LineInfo\n", __func__);
         return NULL;
@@ -60,6 +64,7 @@ INFO_END:
  */
 void line_info_destroy(LineInfo* info)
 {
+    vector_destroy(info->byte_array);
     free(info->opcode);
     free(info->label_str);
     free(info);
@@ -99,6 +104,9 @@ void line_info_init(LineInfo* info)
         info->byte_array = NULL;
     }
     info->byte_array_len = 0;
+    // reset the vector
+    vector_init(info->byte_array);
+
     info->error = 0;
 }
 
@@ -209,8 +217,9 @@ void line_info_print_instr(LineInfo* info)
 
         // Data instructions
         case LEX_DB:
-            if(info->byte_array_len > 0)
-                fprintf(stdout, "<%s> ", info->byte_array);
+            if(info->byte_array->size > 0)
+                vector_print(info->byte_array);
+            break;
 
         // If this instruction just has an opcode then do nothing
         default:

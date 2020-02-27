@@ -855,7 +855,7 @@ int lex_parse_data_arg(Lexer* lexer, Token* tok)
     {
         status = line_info_set_byte_array(
                 lexer->text_seg,
-                tok->token_str,
+                (uint8_t*) tok->token_str,
                 strlen(tok->token_str)
         );
     }
@@ -893,7 +893,6 @@ int lex_parse_data(Lexer* lexer, Token* tok)
     // into the buffer
     data_line = lexer->cur_line;
 
-
     // deal with the current token
     status = lex_parse_data_arg(lexer, tok);
     if(status < 0)
@@ -908,9 +907,11 @@ int lex_parse_data(Lexer* lexer, Token* tok)
         // TODO : actually we need to to be able to extend this
         // since the current implementation only writes the 
         // last byte
+
+        // TODO: put a vector in here for byte array
         status = line_info_set_byte_array(
                 lexer->text_seg,
-                tok->token_str,
+                (uint8_t*) tok->token_str,
                 strlen(tok->token_str)
         );
         if(status < 0)
@@ -940,7 +941,7 @@ int lex_parse_string(Lexer* lexer, Token* tok)
     }
     status = line_info_set_byte_array(
             lexer->text_seg,
-            tok->token_str,
+            (uint8_t*) tok->token_str,
             strlen(tok->token_str)
     );
 

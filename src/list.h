@@ -38,7 +38,7 @@ typedef struct
     ByteNode* first;
 } ByteList;
 
-ByteList* byte_list_create(void);
+ByteList*     byte_list_create(void);
 void          byte_list_destroy(ByteList* list);
 int           byte_list_append_node(ByteList* list, ByteNode* node);
 int           byte_list_append_data(ByteList* list, uint8_t* data, int len);

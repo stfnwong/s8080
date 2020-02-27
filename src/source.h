@@ -12,6 +12,7 @@
 #define LINE_INFO_NUM_REG 2
 
 #include "opcode.h"
+#include "vector.h"
 
 // Register names 
 typedef enum
@@ -39,7 +40,8 @@ typedef struct
     Opcode*  opcode;
     char*    label_str;
     char*    symbol_str;
-    uint8_t* byte_array;
+    //uint8_t* byte_array;
+    ByteVector*  byte_array;
     int      label_str_len;
     int      symbol_str_len;
     int      byte_array_len;
