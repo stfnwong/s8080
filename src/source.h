@@ -12,6 +12,7 @@
 #define LINE_INFO_NUM_REG 2
 
 #include "opcode.h"
+#include "list.h"
 
 // Register names 
 typedef enum
@@ -36,22 +37,23 @@ extern const char* REG_TYPE_TO_STR[10];
 // Text segment
 typedef struct 
 {
-    Opcode*  opcode;
-    char*    label_str;
-    char*    symbol_str;
-    uint8_t* byte_array;
-    int      label_str_len;
-    int      symbol_str_len;
-    int      byte_array_len;
+    Opcode*   opcode;
+    char*     label_str;
+    char*     symbol_str;
+    //uint8_t* byte_array;
+    ByteList* byte_array;
+    int       label_str_len;
+    int       symbol_str_len;
+    int       byte_array_len;
     // Position
-    int      line_num;
-    int      addr;
+    int       line_num;
+    int       addr;
     // arguments 
-    int      has_immediate;
-    int      immediate;
-    RegType  reg[LINE_INFO_NUM_REG];
+    int       has_immediate;
+    int       immediate;
+    RegType   reg[LINE_INFO_NUM_REG];
     // error info
-    int      error;
+    int       error;
 } LineInfo;
 
 LineInfo* line_info_create(void);
