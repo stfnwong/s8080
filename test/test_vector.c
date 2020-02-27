@@ -19,12 +19,12 @@ spec("ByteVector")
         int test_capacity = 32;
         ByteVector* test_vec;
 
-        test_vec = vector_create(test_capacity);
+        test_vec = byte_vector_create(test_capacity);
         check(test_vec != NULL);
         check(test_vec->size == 0);
         check(test_vec->capacity == test_capacity);
 
-        vector_destroy(test_vec);
+        byte_vector_destroy(test_vec);
     }
 
     it("Should allow access to references and values")
@@ -33,7 +33,7 @@ spec("ByteVector")
         int total_test_size = 16;
         ByteVector* test_vec;
 
-        test_vec = vector_create(test_capacity);
+        test_vec = byte_vector_create(test_capacity);
         check(test_vec != NULL);
         check(test_vec->size == 0);
         check(test_vec->capacity == test_capacity);
@@ -48,23 +48,23 @@ spec("ByteVector")
         // Don't worry about the growth rate here
         // Would also be nice if I could pass test_data[i] instead of (test_data + i)
         for(int i = 0; i < total_test_size; ++i)
-            vector_push_back(test_vec, test_data + i, 1);
+            byte_vector_push_back(test_vec, test_data + i, 1);
         check(test_vec->size == total_test_size);
 
         // Check that we can access by value
         for(int i = 0; i < total_test_size; ++i)
         {
-            uint8_t val = vector_get_val(test_vec, i);
+            uint8_t val = byte_vector_get_val(test_vec, i);
             check(val == test_data[i]);
         }
         // Check that we can access by reference
         for(int i = 0; i < total_test_size; ++i)
         {
-            uint8_t* ref = vector_get(test_vec, i);
+            uint8_t* ref = byte_vector_get(test_vec, i);
             check(*ref == test_data[i]);
         }
 
-        vector_destroy(test_vec);
+        byte_vector_destroy(test_vec);
         free(test_data);
     }
 
@@ -75,7 +75,7 @@ spec("ByteVector")
         uint8_t* val;
         ByteVector* test_vec;
 
-        test_vec = vector_create(start_capacity);
+        test_vec = byte_vector_create(start_capacity);
         check(test_vec != NULL);
         check(test_vec->size == 0);
         check(test_vec->capacity == start_capacity);
@@ -89,34 +89,34 @@ spec("ByteVector")
 
         // Since the capacity is two, after we insert 2 elements we
         // expect the capacity to increase to 4
-        vector_push_back(test_vec, test_data, 1);
+        byte_vector_push_back(test_vec, test_data, 1);
         check(test_vec->size == 1);
         check(test_vec->capacity == 2);
-        val = vector_get(test_vec, 0);
+        val = byte_vector_get(test_vec, 0);
         check(*val == 1);   // (0+1) % 256
 
         fprintf(stdout, "[%s] vector after pushing back 1 element\n", __func__);
-        vector_print(test_vec);
+        byte_vector_print(test_vec);
 
-        vector_push_back(test_vec, test_data + 1, 1);
+        byte_vector_push_back(test_vec, test_data + 1, 1);
         check(test_vec->size == 2);
         check(test_vec->capacity == 4);
-        val = vector_get(test_vec, 1);
+        val = byte_vector_get(test_vec, 1);
         check(*val == 2)    // (1 + 1) % 256
 
         fprintf(stdout, "[%s] vector after pushing back 2 elements\n", __func__);
-        vector_print(test_vec);
+        byte_vector_print(test_vec);
 
-        vector_push_back(test_vec, test_data + 2, 1);
+        byte_vector_push_back(test_vec, test_data + 2, 1);
         check(test_vec->size == 3);
         check(test_vec->capacity == 4);
-        val = vector_get(test_vec, 2);
+        val = byte_vector_get(test_vec, 2);
         check(*val == 3);   // (2 + 1) % 256
 
         fprintf(stdout, "[%s] vector after pushing back 3 elements\n", __func__);
-        vector_print(test_vec);
+        byte_vector_print(test_vec);
 
-        vector_push_back(test_vec, test_data + 3, 1);
+        byte_vector_push_back(test_vec, test_data + 3, 1);
         check(test_vec->size == 4);
         check(test_vec->capacity == 8);
 
@@ -125,28 +125,28 @@ spec("ByteVector")
 
         // before this call the capacity of the vector is 8
         // since 32 > (8 * 2) we grow the vector to (2 * capacity) + len = 16 + 32 = 48
-        vector_push_back(test_vec, test_data + 4, 32);
+        byte_vector_push_back(test_vec, test_data + 4, 32);
         check(test_vec->size == 36);
         check(test_vec->capacity == 48);
 
         fprintf(stdout, "[%s] vector after pushing back 32 more elements\n", __func__);
-        vector_print(test_vec);
+        byte_vector_print(test_vec);
 
         // Adding another 32 elements will 'only' cause the vector to 
         // double to 92 elements
-        vector_push_back(test_vec, test_data + 36, 32);
+        byte_vector_push_back(test_vec, test_data + 36, 32);
         check(test_vec->size == 68);    // 32 + 36
         check(test_vec->capacity == 96);
 
         fprintf(stdout, "[%s] vector after pushing back 32 more elements\n", __func__);
-        vector_print(test_vec);
+        byte_vector_print(test_vec);
 
         // If everything went well we should also be able to iterate over
         // the elements in the vector and check them
         for(int i = 0; i < test_vec->size; ++i)
-            check(test_data[i] == vector_get_val(test_vec, i));
+            check(test_data[i] == byte_vector_get_val(test_vec, i));
 
-        vector_destroy(test_vec);
+        byte_vector_destroy(test_vec);
         free(test_data);
     }
 }
