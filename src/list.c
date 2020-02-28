@@ -355,38 +355,18 @@ void byte_list_copy(ByteList* dst, ByteList* src)
     int status = 0;
     int cur_node_num = 0;
 
-    fprintf(stdout, "[%s] src list len = %d (%d bytes)\n",
-            __func__, byte_list_len(src), byte_list_total_bytes(src)
-           );
-
     ByteNode* src_node = src->first;
     while(src_node != NULL)
     {
-        //// How to get a new dst_node each time?
-        //ByteNode* dst_node = byte_node_create(
-        //        src_node->data,
-        //        src_node->len
-        //);
-        //if(!dst_node)
-        //{
-        //    fprintf(stdout, "[%s] failed to allocate memory for src_node %d/%d\n", __func__, cur_node_num+1, byte_list_len(dst));
-        //}
-
-        //status = byte_list_append_node(dst, dst_node);
         status = byte_list_append_data(dst, src_node->data, src_node->len);
         if(status < 0)
         {
             fprintf(stdout, "[%s] failed to append node to dst list\n", __func__);
-            // TODO : maybe have a cleanup label for this
             return;
         }
         cur_node_num++;
         src_node = src_node->next;
     }
-
-    // TODO : remove 
-    fprintf(stdout, "[%s] copied %d nodes, %d bytes in dst\n", 
-            __func__, cur_node_num, byte_list_total_bytes(dst));
 }
 
 /*

@@ -1254,7 +1254,7 @@ int lex_line(Lexer* lexer)
 
             // data instructions 
             case LEX_DB:
-            case LEX_DW:
+            case LEX_DW:        // Word size handled in assembler
                 status = lex_parse_data(lexer, &tok_a);
                 instr_size = 1;
                 break;

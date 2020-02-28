@@ -413,7 +413,6 @@ SourceInfo* source_info_create(int num_lines)
 
     info->max_size = num_lines;
     info->size     = 0;
-    info->cur_line = 0;
     info->buffer   = malloc(sizeof(*info->buffer) * info->max_size);
     if(!info->buffer)
         goto SOURCE_INFO_END;
@@ -475,10 +474,7 @@ int source_info_add_line(SourceInfo* info, LineInfo* line)
       
     status = line_info_copy(info->buffer[info->size], line);
     if(status >= 0)
-    {
         info->size++;
-        info->cur_line++;
-    }
 
     return status;
 }
@@ -494,11 +490,8 @@ int source_info_edit_line(SourceInfo* info, LineInfo* line, int idx)
         return -1;
 
     status = line_info_copy(info->buffer[idx], line);
-
     if(status >= 0)
-    {
         info->size++;
-    }
 
     return status;
 }
@@ -527,7 +520,6 @@ SourceInfo* source_info_clone(SourceInfo* src)
         goto CLONE_END;
 
     dst->size     = src->size;
-    dst->cur_line = src->cur_line;
     dst->max_size = src->max_size;
 
     for(int e = 0; e < src->size; ++e)

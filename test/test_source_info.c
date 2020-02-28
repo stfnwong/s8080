@@ -83,7 +83,6 @@ spec("SourceInfo")
         dst_info = source_info_clone(src_info);
         check(dst_info->size == src_info->size);
         check(dst_info->max_size == src_info->max_size);
-        check(dst_info->cur_line == src_info->cur_line);
 
         // Check all elements
         for(int e = 0; e < src_info->size; ++e)
@@ -148,7 +147,6 @@ spec("SourceInfo")
 
         // Check the line we just inserted.
         check(test_info->size == 1);
-        check(test_info->cur_line == 1);
 
         out_line = source_info_get_idx(test_info, 0);
         line_info_print(out_line);
@@ -170,7 +168,6 @@ spec("SourceInfo")
 
         // Check the line we just inserted.
         check(test_info->size == 2);
-        check(test_info->cur_line == 2);
         out_line = source_info_get_idx(test_info, 1);
 
         check(out_line->addr == test_line->addr);
