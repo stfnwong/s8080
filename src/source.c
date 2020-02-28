@@ -214,6 +214,8 @@ void line_info_print_instr(LineInfo* info)
 
         // Data instructions
         case LEX_DB:
+            if(byte_list_len(info->byte_list) > 0)
+                byte_list_print(info->byte_list);
             break;
 
         // If this instruction just has an opcode then do nothing
@@ -269,6 +271,9 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
             return -1;
         strncpy(dst->symbol_str, src->symbol_str, dst->symbol_str_len);
     }
+    // Also copy the byte list
+    byte_list_copy(dst->byte_list, src->byte_list);
+
     dst->error = src->error;
 
     return 0;

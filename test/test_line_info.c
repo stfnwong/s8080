@@ -145,6 +145,7 @@ spec("LineInfo")
         // If we clear the list now the size will reduce to zero
         line_info_clear_byte_list(test_info);
         check(line_info_byte_list_size(test_info) == 0);
+        check(byte_list_total_bytes(test_info->byte_list) == 0);
 
         byte_list_print(test_info->byte_list);
         fprintf(stdout, "\n");

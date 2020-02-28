@@ -20,6 +20,7 @@ spec("Lexer")
     static const char mov_test_filename[]   = "asm/test_mov.asm";
     static const char arith_test_filename[] = "asm/test_arith.asm";
     static const char jmp_test_filename[]   = "asm/test_jmp.asm";
+    static const char byte_list_filename[]  = "asm/test_byte_list.asm";
 
     it("Should initialize correctly")
     {
@@ -783,6 +784,108 @@ spec("Lexer")
         check(lexer->sym_table->size == 1);
         check(strncmp(out_sym->sym, "MOVE_INSTR", 11) == 0);
         check(out_sym->addr == 0x0);
+
+        // clean up
+        lexer_destroy(lexer);
+    }
+
+    it("Should lex DB instruction correctly")
+    {
+        Lexer* lexer = lexer_create();
+        Symbol* out_sym;
+
+        int status = lex_read_file(lexer, byte_list_filename);
+        check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->sym_table->size == 0);
+        lexer->verbose = 1;
+        // Lex the file 
+        status = lex_all(lexer);
+        //check(status == -1);    // should be -1 here since final DB will fail
+        fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
+                __func__, 
+                byte_list_filename, 
+                lexer->source_repr->size
+        );
+
+        // Ensure there are no NULL elements in source repr
+        LineInfo* cur_line;
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            check(cur_line != NULL);
+        }
+
+        // TEST_ARGS : DB "SOME CHARACTER STRING", 0dh, 0ah, 03h
+        cur_line = source_info_get_idx(lexer->source_repr, 0);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+        check(cur_line->label_str != NULL);
+        check(cur_line->label_str_len == 9);   // +1 for null character
+        check(strncmp(cur_line->label_str, "TEST_ARGS", 8) == 0);
+        check(cur_line->symbol_str == NULL);
+
+        check(cur_line->opcode->instr == LEX_DB);
+        check(strncmp(cur_line->opcode->mnemonic, "DB", 2) == 0);
+
+        fprintf(stdout, "[%s] %d args in byte list (%d bytes total)\n", 
+                __func__, 
+                byte_list_len(cur_line->byte_list),
+                byte_list_total_bytes(cur_line->byte_list)
+        );
+        check(byte_list_len(cur_line->byte_list) == 4);
+
+        // check the argument values 
+        ByteNode* cur_node;
+        // 1st arg
+        cur_node = byte_list_get(cur_line->byte_list, 0);
+        check(cur_node != NULL);
+        check(cur_node->len == 21);
+        uint8_t expected_str_data[] = {0x53, 0x4F, 0x4D, 0x45, 0x43, 0x48, 0x41, 
+                                      0x52, 0x41, 0x43, 0x54, 0x45, 0x52, 0x20,
+                                      0x53, 0x54, 0x52, 0x49, 0x4E, 0x47, 0x00};
+        check(memcmp(cur_node->data, expected_str_data, 21) == 0);
+
+        // 2nd arg
+        cur_node = byte_list_get(cur_line->byte_list, 1);
+        check(cur_node != NULL);
+        check(cur_node->len == 1);
+        check(cur_node->data[0] == 0xD);
+        // 3rd arg
+        cur_node = byte_list_get(cur_line->byte_list, 2);
+        check(cur_node != NULL);
+        check(cur_node->len == 1);
+        check(cur_node->data[0] == 0xA);
+        // 4th arg
+        cur_node = byte_list_get(cur_line->byte_list, 3);
+        check(cur_node != NULL);
+        check(cur_node->len == 1);
+        check(cur_node->data[0] == 0x3);
+        // Any other arg is is invalid and will return NULL
+        cur_node = byte_list_get(cur_line->byte_list, 4);
+        check(cur_node == NULL);
+
+        // DB 65h
+        cur_line = source_info_get_idx(lexer->source_repr, 1);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_DB);
+        check(strncmp(cur_line->opcode->mnemonic, "DB", 2) == 0);
+        check(cur_line->symbol_str == NULL);
+        check(byte_list_len(cur_line->byte_list) == 1);
+        // Check the arg c
+        cur_node = byte_list_get(cur_line->byte_list, 0);
+        check(cur_node != NULL);
+        check(cur_node->len == 1);
+        check(cur_node->data[0] == 0x65);
+
+        // Final invalid line will not lex and there will be no opcode
+        cur_line = source_info_get_idx(lexer->source_repr, 2);
+        line_info_print_instr(cur_line);
+        check(cur_line->error == 1);
 
         // clean up
         lexer_destroy(lexer);

@@ -66,6 +66,42 @@ void byte_node_zero(ByteNode* node)
 }
 
 /*
+ * byte_node_copy()
+ */
+void byte_node_copy(ByteNode* dst, ByteNode* src)
+{
+    if(dst == NULL || src == NULL)
+        return;
+
+    free(dst->data);
+    dst->data = malloc(sizeof(uint8_t) * src->len);
+    if(!dst->data)
+    {
+        fprintf(stdout, "[%s] failed to allocate memory for dst->data\n", __func__);
+        return;
+    }
+    memcpy(dst->data, src->data, src->len);
+    dst->len = src->len;
+}
+
+/*
+ * byte_node_set_next()
+ */
+void byte_node_set_next(ByteNode* node, ByteNode* n)
+{
+    node->next = n;
+}
+
+/*
+ * byte_node_set_prev()
+ */
+void byte_node_set_prev(ByteNode* node, ByteNode* p)
+{
+    node->prev = p;
+}
+
+
+/*
  * byte_node_print()
  */
 void byte_node_print(ByteNode* node)
@@ -131,6 +167,30 @@ void byte_list_destroy(ByteList* list)
     free(list);
 }
 
+/*
+ * byte_list_len()
+ */
+int byte_list_len(ByteList* list)
+{
+    return list->len;
+}
+
+/*
+ * byte_list_total_bytes()
+ */
+int byte_list_total_bytes(ByteList* list)
+{
+    int total = 0;
+    ByteNode* cur_node = list->first;
+
+    while(cur_node != NULL)
+    {
+        total += cur_node->len;
+        cur_node = cur_node->next;
+    }
+
+    return total;
+}
 
 /*
  * byte_list_append_node()
@@ -282,6 +342,51 @@ void byte_list_remove_idx(ByteList* list, int idx)
         node_after->prev = node;
     }
     list->len--;
+}
+
+/*
+ * byte_list_copy()
+ */
+void byte_list_copy(ByteList* dst, ByteList* src)
+{
+    if(dst == NULL || src == NULL)
+        return;
+
+    int status = 0;
+    int cur_node_num = 0;
+
+    fprintf(stdout, "[%s] src list len = %d (%d bytes)\n",
+            __func__, byte_list_len(src), byte_list_total_bytes(src)
+           );
+
+    ByteNode* src_node = src->first;
+    while(src_node != NULL)
+    {
+        //// How to get a new dst_node each time?
+        //ByteNode* dst_node = byte_node_create(
+        //        src_node->data,
+        //        src_node->len
+        //);
+        //if(!dst_node)
+        //{
+        //    fprintf(stdout, "[%s] failed to allocate memory for src_node %d/%d\n", __func__, cur_node_num+1, byte_list_len(dst));
+        //}
+
+        //status = byte_list_append_node(dst, dst_node);
+        status = byte_list_append_data(dst, src_node->data, src_node->len);
+        if(status < 0)
+        {
+            fprintf(stdout, "[%s] failed to append node to dst list\n", __func__);
+            // TODO : maybe have a cleanup label for this
+            return;
+        }
+        cur_node_num++;
+        src_node = src_node->next;
+    }
+
+    // TODO : remove 
+    fprintf(stdout, "[%s] copied %d nodes, %d bytes in dst\n", 
+            __func__, cur_node_num, byte_list_total_bytes(dst));
 }
 
 /*

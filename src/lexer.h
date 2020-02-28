@@ -89,6 +89,7 @@ int    lex_is_whitespace(const char c);
 int    lex_is_comment(const char c);
 void   lex_advance(Lexer* lexer);
 int    lex_check_comma(Lexer* lexer); // look-ahead to see if there is a comma
+int    lex_src_end(Lexer* lexer);
 void   lex_skip_whitespace(Lexer* lexer);
 void   lex_skip_comment(Lexer* lexer);
 
