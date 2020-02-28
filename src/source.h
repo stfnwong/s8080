@@ -12,7 +12,7 @@
 #define LINE_INFO_NUM_REG 2
 
 #include "opcode.h"
-#include "vector.h"
+#include "list.h"
 
 // Register names 
 typedef enum
@@ -37,23 +37,21 @@ extern const char* REG_TYPE_TO_STR[10];
 // Text segment
 typedef struct 
 {
-    Opcode*  opcode;
-    char*    label_str;
-    char*    symbol_str;
-    //uint8_t* byte_array;
-    ByteVector*  byte_array;
-    int      label_str_len;
-    int      symbol_str_len;
-    int      byte_array_len;
+    Opcode*   opcode;
+    char*     label_str;
+    char*     symbol_str;
+    ByteList* byte_list;
+    int       label_str_len;
+    int       symbol_str_len;
     // Position
-    int      line_num;
-    int      addr;
+    int       line_num;
+    int       addr;
     // arguments 
-    int      has_immediate;
-    int      immediate;
-    RegType  reg[LINE_INFO_NUM_REG];
+    int       has_immediate;
+    int       immediate;
+    RegType   reg[LINE_INFO_NUM_REG];
     // error info
-    int      error;
+    int       error;
 } LineInfo;
 
 LineInfo* line_info_create(void);
@@ -65,7 +63,10 @@ int       line_info_copy(LineInfo* dst, LineInfo* src);
 int       line_info_struct_size(LineInfo* info);
 int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
 int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
-int       line_info_set_byte_array(LineInfo* info, uint8_t* array, int len);
+int       line_info_append_byte_array(LineInfo* info, uint8_t* array, int len);
+//int       line_info_append_byte(LineInfo* info, uint8_t byte);
+int       line_info_byte_list_size(LineInfo* info);
+void      line_info_clear_byte_list(LineInfo* info);
 
 /*
  * reg_char_to_code()

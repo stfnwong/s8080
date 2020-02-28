@@ -11,9 +11,9 @@
 #include "vector.h"
 
 /*
- * vector_create()
+ * byte_vector_create()
  */
-ByteVector* vector_create(int capacity)
+ByteVector* byte_vector_create(int capacity)
 {
     ByteVector* vec;
 
@@ -33,25 +33,25 @@ ByteVector* vector_create(int capacity)
 }
 
 /*
- * vector_destroy()
+ * byte_vector_destroy()
  */
-void vector_destroy(ByteVector* v)
+void byte_vector_destroy(ByteVector* v)
 {
     free(v->data);
     free(v);
 }
 
 /*
- * vector_push_back()
+ * byte_vector_push_back()
  */
-void vector_push_back(ByteVector* v, uint8_t* data, int len)
+void byte_vector_push_back(ByteVector* v, uint8_t* data, int len)
 {
     if((v->size + len) >= v->capacity)
     {
         if((v->size + len) > 2 * v->capacity)
-            vector_extend(v, v->capacity + len);
+            byte_vector_extend(v, v->capacity + len);
         else
-            vector_extend(v, v->capacity);
+            byte_vector_extend(v, v->capacity);
     }
 
     memcpy(v->data + v->size, data, len);
@@ -59,9 +59,9 @@ void vector_push_back(ByteVector* v, uint8_t* data, int len)
 }
 
 /*
- * vector_get()
+ * byte_vector_get()
  */
-uint8_t* vector_get(ByteVector* v, int idx)
+uint8_t* byte_vector_get(ByteVector* v, int idx)
 {
     if(idx < 0 || idx >= v->size)
         return NULL;
@@ -70,9 +70,9 @@ uint8_t* vector_get(ByteVector* v, int idx)
 }
 
 /*
- * vector_get_val()
+ * byte_vector_get_val()
  */
-uint8_t vector_get_val(ByteVector* v, int idx)
+uint8_t byte_vector_get_val(ByteVector* v, int idx)
 {
     if(idx < 0 || idx >= v->size)
         return NULL;
@@ -81,9 +81,9 @@ uint8_t vector_get_val(ByteVector* v, int idx)
 }
 
 /*
- * vector_extend()
+ * byte_vector_extend()
  */
-void vector_extend(ByteVector* v, int ext_size)
+void byte_vector_extend(ByteVector* v, int ext_size)
 {
     uint8_t* mem;
 
@@ -101,9 +101,9 @@ void vector_extend(ByteVector* v, int ext_size)
 }
 
 /*
- * vector_init()
+ * byte_vector_init()
  */
-void vector_init(ByteVector* v)
+void byte_vector_init(ByteVector* v)
 {
     // set the memory to zero and reset the size,
     // but leave the capacity as is
@@ -112,9 +112,35 @@ void vector_init(ByteVector* v)
 }
 
 /*
- * vector_print()
+ * byte_vector_size()
  */
-void vector_print(ByteVector* v)
+int byte_vector_size(ByteVector* v)
 {
+    return v->size;
+}
 
+/*
+ * byte_vector_capacity()
+ */
+int byte_vector_capacity(ByteVector* v)
+{
+    return v->capacity;
+}
+
+
+/*
+ * byte_vector_print()
+ */
+void byte_vector_print(ByteVector* v)
+{
+    fprintf(stdout, "ByteVector [size: %d, capacity: %d] :\n", 
+            v->size, v->capacity);
+
+    for(int b = 0; b < v->size; ++b)
+    {
+        if((b > 0) && (b % 8 == 0))
+            fprintf(stdout, "\n");
+        fprintf(stdout, "%02X ", v->data[b]);
+    }
+    fprintf(stdout, "\n");
 }

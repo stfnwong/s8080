@@ -41,8 +41,8 @@ LineInfo* line_info_create(void)
     if(!info->opcode)
         goto LINE_INFO_CREATE_END;
 
-    info->byte_array = vector_create(64);
-    if(!info->byte_array)
+    info->byte_list = byte_list_create();
+    if(!info->byte_list)
         goto LINE_INFO_CREATE_END;
 
     info->label_str  = NULL;
@@ -50,7 +50,7 @@ LineInfo* line_info_create(void)
     line_info_init(info);
 
 LINE_INFO_CREATE_END:
-    if(!info || !info->opcode || !info->byte_array)
+    if(!info || !info->opcode || !info->byte_list)
     {
         fprintf(stderr, "[%s] failed to allocate memory while creating LineInfo\n", __func__);
         return NULL;
@@ -64,7 +64,7 @@ LINE_INFO_CREATE_END:
  */
 void line_info_destroy(LineInfo* info)
 {
-    vector_destroy(info->byte_array);
+    byte_list_destroy(info->byte_list);
     free(info->opcode);
     free(info->label_str);
     free(info);
@@ -98,14 +98,11 @@ void line_info_init(LineInfo* info)
         info->symbol_str = NULL;
     }
     info->symbol_str_len = 0;
-    if(info->byte_array != NULL)
-    {
-        free(info->byte_array);
-        info->byte_array = NULL;
-    }
-    info->byte_array_len = 0;
-    // reset the vector
-    vector_init(info->byte_array);
+    // This would be a good place to do some 
+    // optimization around not destroying and re-creating 
+    // the list 
+    byte_list_destroy(info->byte_list);
+    info->byte_list = byte_list_create();
 
     info->error = 0;
 }
@@ -120,7 +117,7 @@ void line_info_print(LineInfo* info)
     //fprintf(stdout, "LineInfo (line %d)\n", info->line_num);
     fprintf(stdout, "LineInfo :\n");
 
-    if(info->label_str_len > 0 && (info->label_str != NULL))
+    if((info->label_str_len > 0) && (info->label_str != NULL))
         fprintf(stdout, "    label  : %s\n", info->label_str);
 
     fprintf(stdout, "    line %d : addr 0x%04X\n", info->line_num, info->addr);
@@ -217,8 +214,6 @@ void line_info_print_instr(LineInfo* info)
 
         // Data instructions
         case LEX_DB:
-            if(info->byte_array->size > 0)
-                vector_print(info->byte_array);
             break;
 
         // If this instruction just has an opcode then do nothing
@@ -322,19 +317,38 @@ int line_info_set_symbol_str(LineInfo* info, char* str, int len)
 }
 
 /*
- * line_info_set_byte_array()
+ * line_info_append_byte_array()
  */
-int line_info_set_byte_array(LineInfo* info, uint8_t* array, int len)
+int line_info_append_byte_array(LineInfo* info, uint8_t* array, int len)
 {
-    if(info->byte_array != NULL)
-        free(info->byte_array);
-    info->byte_array = malloc(sizeof(uint8_t) * len);
-    if(!info->byte_array)
-        return -1;
-    info->byte_array_len = len;
-    memcpy(info->byte_array, array, len);
+    int status;
 
-    return 0;
+    status = byte_list_append_data(
+            info->byte_list,
+            array,
+            len
+    );
+
+    return status;
+}
+
+
+/*
+ * line_info_byte_list_size()
+ */
+int line_info_byte_list_size(LineInfo* info)
+{
+    return info->byte_list->len;
+}
+
+/*
+ * line_info_clear_byte_list()
+ */
+// Probably some optimizations can be done here later
+void line_info_clear_byte_list(LineInfo* info)
+{
+    byte_list_destroy(info->byte_list);
+    info->byte_list = byte_list_create();
 }
 
 
