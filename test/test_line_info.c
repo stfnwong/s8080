@@ -27,8 +27,7 @@ spec("LineInfo")
         check(test_info->label_str_len == 0);
         check(test_info->symbol_str == NULL);
         check(test_info->symbol_str_len == 0);
-        check(test_info->byte_array == NULL);
-        check(test_info->byte_array_len == 0);
+        check(test_info->byte_list != NULL);
         check(test_info->error == 0);
 
         // Also check that the register values are initialized correctly
@@ -85,5 +84,72 @@ spec("LineInfo")
 
         line_info_destroy(src_info);
         line_info_destroy(dst_info);
+    }
+
+    /*
+     * Note that the motivation for this requirement is due to static 
+     * data being 'inline' in 8080 assembly. In other words, there isn't
+     * a data segment. 
+     */
+    it("Should allow inline data to be appended")
+    {
+        int status;
+        LineInfo* test_info;
+
+        test_info = line_info_create();
+        check(test_info != NULL);
+        check(test_info->line_num == 0);
+        check(test_info->addr == 0);
+
+        // Lets set up a DB instruction
+        //check(test_info->opcode->instr == LEX_DB);
+        test_info->opcode->instr = LEX_DB;
+        strncpy(test_info->opcode->mnemonic, "DB\0", 3);
+
+        int data_size = 32;
+        uint8_t* test_data = malloc(sizeof(uint8_t) * data_size);
+        check(test_data != NULL);
+
+        for(int i = 0; i < data_size; ++i)
+            test_data[i] = (i+1) % 256;
+
+        // Append some test data to the line. Imagine that this 
+        // is a string of bytes that is an argument to DB
+        check(line_info_byte_list_size(test_info) == 0);
+        status = line_info_append_byte_array(test_info, test_data, data_size);
+        check(status == 0);
+        check(line_info_byte_list_size(test_info) == 1);
+
+        byte_list_print(test_info->byte_list);
+        fprintf(stdout, "\n");
+
+        // We can add another single byte
+        status = line_info_append_byte_array(test_info, test_data, 1);
+        check(status == 0);
+        check(line_info_byte_list_size(test_info) == 2);
+
+        byte_list_print(test_info->byte_list);
+        fprintf(stdout, "\n");
+
+        // The sizes of each of the segments does not need to be equal
+        for(int i = 0; i < data_size; ++i)
+            test_data[i] = (i+2) % 256;
+
+        status = line_info_append_byte_array(test_info, test_data, data_size >> 1);
+        check(status == 0);
+        check(line_info_byte_list_size(test_info) == 3);
+
+        byte_list_print(test_info->byte_list);
+        fprintf(stdout, "\n");
+
+        // If we clear the list now the size will reduce to zero
+        line_info_clear_byte_list(test_info);
+        check(line_info_byte_list_size(test_info) == 0);
+
+        byte_list_print(test_info->byte_list);
+        fprintf(stdout, "\n");
+
+        line_info_destroy(test_info);
+        free(test_data);
     }
 }

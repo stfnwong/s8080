@@ -40,11 +40,10 @@ typedef struct
     Opcode*   opcode;
     char*     label_str;
     char*     symbol_str;
-    //uint8_t* byte_array;
-    ByteList* byte_array;
+    ByteList* byte_list;
     int       label_str_len;
     int       symbol_str_len;
-    int       byte_array_len;
+    //int       byte_array_len;
     // Position
     int       line_num;
     int       addr;
@@ -65,7 +64,10 @@ int       line_info_copy(LineInfo* dst, LineInfo* src);
 int       line_info_struct_size(LineInfo* info);
 int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
 int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
-int       line_info_set_byte_array(LineInfo* info, uint8_t* array, int len);
+int       line_info_append_byte_array(LineInfo* info, uint8_t* array, int len);
+//int       line_info_append_byte(LineInfo* info, uint8_t byte);
+int       line_info_byte_list_size(LineInfo* info);
+void      line_info_clear_byte_list(LineInfo* info);
 
 /*
  * reg_char_to_code()

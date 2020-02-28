@@ -853,7 +853,7 @@ int lex_parse_data_arg(Lexer* lexer, Token* tok)
     }
     else if(tok->type == SYM_STRING)
     {
-        status = line_info_set_byte_array(
+        status = line_info_append_byte_array(
                 lexer->text_seg,
                 tok->token_str,
                 strlen(tok->token_str)
@@ -908,7 +908,7 @@ int lex_parse_data(Lexer* lexer, Token* tok)
         // TODO : actually we need to to be able to extend this
         // since the current implementation only writes the 
         // last byte
-        status = line_info_set_byte_array(
+        status = line_info_append_byte_array(
                 lexer->text_seg,
                 tok->token_str,
                 strlen(tok->token_str)
@@ -938,7 +938,7 @@ int lex_parse_string(Lexer* lexer, Token* tok)
                );
         status = -1;
     }
-    status = line_info_set_byte_array(
+    status = line_info_append_byte_array(
             lexer->text_seg,
             tok->token_str,
             strlen(tok->token_str)
