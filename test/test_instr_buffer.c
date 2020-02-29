@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "assembler.h"
+#include "instr.h"
 // testing framework
 #include "bdd-for-c.h"
 

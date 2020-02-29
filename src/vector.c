@@ -144,3 +144,83 @@ void byte_vector_print(ByteVector* v)
     }
     fprintf(stdout, "\n");
 }
+
+
+
+// ======== INSTRVECTOR ========= //
+/*
+ * instr_vector_create()
+ */
+InstrVector* instr_vector_create(int capacity)
+{
+    InstrVector* vec;
+
+    vec = malloc(sizeof(*vec));
+    if(!vec)
+        return NULL;
+
+    vec->size = 0;
+    vec->capacity = capacity;
+    vec->buffer = malloc(sizeof(*vec->buffer) * vec->capacity);
+    if(!vec->buffer)
+    {
+        free(vec);
+        return NULL;
+    }
+
+    return vec;
+}
+
+
+/*
+ * instr_vector_destroy()
+ */
+void instr_vector_destroy(InstrVector* vec)
+{
+    free(vec->buffer);
+    free(vec);
+}
+
+/*
+ * instr_vector_get()
+ */
+Instr* instr_vector_get(InstrVector* vec, int idx)
+{
+    if(idx < 0 || idx >= vec->size)
+        return NULL;
+
+    return &vec->buffer[idx];
+}
+
+/*
+ * instr_vector_push_back()
+ */
+void instr_vector_push_back(InstrVector* vec, Instr* instr)
+{
+    if(vec->size >= vec->capacity)
+        instr_vector_extend(vec, vec->capacity);
+
+    memcpy(vec->buffer + vec->size, instr, sizeof(*instr));
+    //memcpy(vec->data + v->size, data, sizeof(*vec) * len);
+    vec->size++;
+}
+
+/*
+ * instr_vector_extend()
+ */
+void instr_vector_extend(InstrVector* vec, int ext_size)
+{
+    Instr* buf;
+
+    buf = malloc(sizeof(uint8_t) * vec->capacity + ext_size);
+    if(!buf)
+    {
+        fprintf(stdout, "[%s] failed to alloc %d bytes to extend vector\n", __func__, ext_size);
+        return;
+    }
+
+    memcpy(buf, vec->buffer, vec->size);
+    free(vec->buffer);
+    vec->buffer = buf;
+    vec->capacity = vec->capacity + ext_size;
+}

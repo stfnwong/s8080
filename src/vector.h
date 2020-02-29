@@ -9,6 +9,7 @@
 #define __S8080_VECTOR_H
 
 #include <stdint.h>
+#include "instr.h"
 
 typedef struct ByteVector ByteVector;
 
@@ -37,5 +38,26 @@ int         byte_vector_capacity(ByteVector* v);
 
 // display 
 void        byte_vector_print(ByteVector* v);
+
+
+// Instruction vector?
+typedef struct InstrVector InstrVector;
+
+struct InstrVector
+{
+    Instr* buffer;
+    int size;
+    int capacity;
+};
+
+InstrVector* instr_vector_create(int capacity);
+void         instr_vector_destroy(InstrVector* vec);
+Instr*       instr_vector_get(InstrVector* vec, int idx);
+void         instr_vector_push_back(InstrVector* vec, Instr* instr);
+void         instr_vector_extend(InstrVector* vec, int ext_size);
+
+
+
+
 
 #endif /*__S8080_VECTOR_H*/

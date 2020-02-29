@@ -11,157 +11,6 @@
 #include "opcode.h"
 
 
-/*
- * instr_create()
- */
-Instr* instr_create(void)
-{
-    Instr* ins;
-
-    ins = malloc(sizeof(*ins));
-    if(!ins)
-        return NULL;
-
-    ins->addr = 0;
-    ins->instr = 0;
-
-    return ins;
-}
-
-/*
- * instr_destroy()
- */
-void instr_destroy(Instr* ins)
-{
-    free(ins);
-}
-
-/*
- * instr_init()
- */
-void instr_init(Instr* instr)
-{
-    instr->instr = 0;
-    instr->addr  = 0;
-    instr->size  = 1;
-}
-
-/*
- * instr_copy()
- */
-void instr_copy(Instr* dst, Instr* src)
-{
-    if(dst == NULL || src == NULL)
-        return;
-
-    dst->addr  = src->addr;
-    dst->instr = src->instr;
-}
-
-/*
- * instr_print()
- */
-void instr_print(Instr* instr)
-{
-    fprintf(stdout, "[0x%04X] %02X", instr->addr, instr->instr);
-}
-
-
-// ======== INSTRUCTION BUFFER ======== //
-InstrBuffer* instr_buffer_create(int size)
-{
-    InstrBuffer* buffer;
-   
-    buffer = malloc(sizeof(*buffer) * size);
-    if(!buffer)
-        return NULL;
-
-    buffer->size = 0;
-    buffer->max_size = size;
-    buffer->instr_buf = malloc(sizeof(*buffer->instr_buf) * buffer->max_size);
-    if(!buffer->instr_buf)
-    {
-        return NULL;
-    }
-
-    for(int i = 0; i < buffer->max_size; ++i)
-    {
-        buffer->instr_buf[i] = malloc(sizeof(*buffer->instr_buf[i]));
-        if(!buffer->instr_buf[i])
-        {
-            free(buffer->instr_buf);
-            free(buffer);
-            return NULL;
-        }
-        buffer->instr_buf[i] = instr_create();
-        if(!buffer->instr_buf[i])
-        {
-            free(buffer->instr_buf);
-            free(buffer);
-            return NULL;
-        }
-    }
-
-    return buffer;
-}
-
-/*
- * instr_buffer_destroy()
- */
-void  instr_buffer_destroy(InstrBuffer* buf)
-{
-    if(buf == NULL)
-        free(buf);
-    else
-    {
-        for(int i = 0; i < buf->size; ++i)
-            instr_destroy(buf->instr_buf[i]);
-        free(buf->instr_buf);
-        free(buf);
-    }
-}
-
-/*
- * instr_buffer_insert()
- */
-int instr_buffer_insert(InstrBuffer* buf, Instr* ins)
-{
-    if(buf->size == buf->max_size-1)
-        return -1;
-    instr_copy(buf->instr_buf[buf->size], ins);
-    buf->size++;
-
-    return 0;
-}
-
-/*
- * instr_buffer_get()
- */
-Instr* instr_buffer_get(InstrBuffer* buf, int idx)
-{
-    if(idx < 0 || idx > buf->max_size)
-        return NULL;
-
-    return buf->instr_buf[idx];
-}
-
-/*
- * instr_buffer_full()
- */
-int instr_buffer_full(InstrBuffer* buf)
-{
-    return (buf->size == buf->max_size) ? 1 : 0;
-}
-
-/*
- * instr_buffer_empty()
- */
-int instr_buffer_empty(InstrBuffer* buf)
-{
-    return (buf->size == 0) ? 1 : 0;
-}
-
-
 // ROUTINES FOR EACH INSTRUCTION
 // TODO : Data segment
 
@@ -549,6 +398,39 @@ void asm_call(Instr* dst, LineInfo* line)
     dst->addr = line->addr;
 }
 
+/*
+ * asm_data()
+ */
+int asm_data(Assembler* assem, LineInfo* line)
+{
+    int status;
+    int cur_addr;
+
+    ByteNode* cur_node;
+    Instr cur_instr;
+
+    cur_addr = line->addr;
+    for(int i = 0; i < byte_list_len(line->byte_list); ++i)
+    {
+        cur_node = byte_list_get(line->byte_list, i);
+        for(int d = 0; d < cur_node->len; ++d)
+        {
+            cur_instr.instr = cur_node->data[d];
+            cur_instr.addr  = cur_addr;
+            cur_instr.size  = 1;
+            status = instr_buffer_insert(assem->instr_buf, &cur_instr);
+            if(status < 0)
+                goto ASM_DATA_END;
+
+            cur_addr++;
+        }
+    }
+
+ASM_DATA_END:
+    return status;
+}
+
+// ================ ASSEMBLER OBJECT ================ //
 
 /*
  * assembler_create()
@@ -585,7 +467,6 @@ ASSEM_END:
 void assembler_destroy(Assembler* assem)
 {
     instr_buffer_destroy(assem->instr_buf);
-    //source_info_destroy(assem->src_repr);
     free(assem);
 }
 
@@ -607,24 +488,6 @@ int assembler_set_repr(Assembler* assem, SourceInfo* repr)
 
     return 0;
 }
-
-/*
- * assembler_copy_repr()
- */
-//int assembler_copy_repr(Assembler* assem, SourceInfo* repr)
-//{
-//    assem->src_repr = source_info_clone(repr);
-//    if(assem->instr_buf != NULL)
-//        instr_buffer_destroy(assem->instr_buf);
-//
-//    assem->instr_buf = instr_buffer_create(repr->size+1);
-//    if(assem->instr_buf == NULL)
-//    {
-//        fprintf(stdout, "[%s] failed to create instruction buffer for assembler object\n", __func__);
-//        return -1;
-//    }
-//    return 0;
-//}
 
 /*
  * assembler_assem_line()
@@ -766,6 +629,7 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             case LEX_DB:
             case LEX_DS:
             case LEX_DW:
+                status = asm_data(assem, line);
                 break;
 
             default:
@@ -790,6 +654,7 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 __func__, line->opcode->instr, line->opcode->mnemonic);
     }
 
+ASSEM_LINE_END:
     return status;
 }
 

@@ -18,6 +18,7 @@ script:
     - make clean && make all
     - ./bin/test/test_assembler
     - ./bin/test/test_instr_buffer
+    - ./bin/test/test_instr_vector
     - ./bin/test/test_lexer
     - ./bin/test/test_line_info
     - ./bin/test/test_list

@@ -15,6 +15,7 @@
 
 static const char mov_test_filename[] = "asm/test_mov.asm";
 static const char arith_test_filename[] = "asm/test_arith.asm";
+static const char byte_list_filename[]  = "asm/test_byte_list.asm";
 
 spec("Assembler")
 {
@@ -210,9 +211,54 @@ spec("Assembler")
             fprintf(stdout, "\n");
         }
 
-        fprintf(stdout, "[%s] destroying assembler...\n", __func__);
         assembler_destroy(assembler);
-        fprintf(stdout, "[%s] destroying lexer...\n", __func__);
+        lexer_destroy(lexer); 
+    }
+
+    it("Should assemble the DB instruction correctly")
+    {
+        Lexer* lexer;
+        Assembler* assembler;
+        int status;
+
+        //// Get an assembler object
+        assembler = assembler_create();
+        check(assembler != NULL);
+
+        // Get a Lexer object
+        lexer = lexer_create();
+        check(lexer != NULL);
+        check(lexer->text_seg != NULL);
+
+        // Load the file 
+        status = lex_read_file(lexer, byte_list_filename);
+        check(status == 0);
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->label_str_len == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->immediate == 0);
+        check(lexer->text_seg->has_immediate == 0);
+        //check(lexer->sym_table->size == 0);
+        lexer->verbose = 1;
+
+        // Lex the file, then take the src_repr and give it 
+        // to the assembler
+        lex_all(lexer);
+
+        status = assembler_set_repr(assembler, lexer->source_repr);
+        check(status == 0);
+        check(assembler->instr_buf != NULL);
+        check(assembler->instr_buf->max_size == lexer->source_repr->size+1);
+        assembler->verbose = 1;
+
+        // Now assemble
+        status = assembler_assem(assembler);
+        fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
+        check(status == 0);
+
+
+        assembler_destroy(assembler);
         lexer_destroy(lexer); 
     }
 }

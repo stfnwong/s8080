@@ -1260,9 +1260,8 @@ int lex_line(Lexer* lexer)
                 break;
 
             case LEX_DS:
-                fprintf(stdout, "[%s] TODO : implement LEX_DS\n", __func__);
-                // Since this just reserves space, all the real 
-                // work is done in the assembler component
+                lex_next_token(lexer, &tok_a);
+                status = lex_parse_imm(lexer, &tok_a);
                 instr_size = 1;
                 break;
 
