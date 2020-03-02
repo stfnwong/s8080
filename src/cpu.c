@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "cpu.h"
 #include "disassem.h"
 
@@ -16,7 +17,21 @@ static uint8_t cpu_default_inport(void* cpu, uint8_t port)
 {
     CPUState* state = (CPUState*) cpu;
 
-    // Print characters stored in E
+    // Print characters in register E
+    if(state->e == 0x2)
+    {
+        fprintf(stdout, "%c", state->e);
+    }
+    // Print from memory at DE until 'S' char
+    else if(state->e == 0x9)
+    {
+        uint16_t addr = (state->d << 8) | state->e;
+        do
+        {
+            fprintf(stdout, "%c", cpu_read_mem(state, addr));
+            addr++;
+        }while(cpu_read_mem(state, addr) != '$');
+    }
 
     return 0xFF;
 }
@@ -25,7 +40,6 @@ static void cpu_default_outport(void* cpu, uint8_t port, uint8_t data)
 {
     CPUState* state = (CPUState*) cpu;
 
-    // TODO : the rest of the implementation...
 }
 
 
