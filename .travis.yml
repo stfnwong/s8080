@@ -3,7 +3,7 @@
 # Stefan Wong 8080
 
 language: c
-sudo: false
+sudo: true
 compiler: gcc
 
 before_install:
