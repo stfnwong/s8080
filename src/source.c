@@ -9,15 +9,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include "source.h"
+#include "vector.h"
 
 
 const char* TOKEN_TYPE_TO_STR[] = {
     "NONE",
     "LITERAL",
     "LABEL",
+    "DIRECTIVE",
     "INSTR",
     "REGISTER",
+    "STRING",
+    "COMMA",
     "EOF"
+};
+
+const char* REG_TYPE_TO_STR[] = {
+    "NONE", "A", "B", "C", "D", "H", "L", "M", "PSW"
 };
 
 // ================ LINE INFO ================ //
@@ -27,17 +35,22 @@ LineInfo* line_info_create(void)
 
     info = malloc(sizeof(*info));
     if(!info)
-        goto INFO_END;
+        goto LINE_INFO_CREATE_END;
 
     info->opcode = malloc(sizeof(*info->opcode));
     if(!info->opcode)
-        goto INFO_END;
+        goto LINE_INFO_CREATE_END;
 
-    info->label_str = NULL;
+    info->byte_list = byte_list_create();
+    if(!info->byte_list)
+        goto LINE_INFO_CREATE_END;
+
+    info->label_str  = NULL;
+    info->symbol_str = NULL;
     line_info_init(info);
 
-INFO_END:
-    if(!info || !info->opcode)
+LINE_INFO_CREATE_END:
+    if(!info || !info->opcode || !info->byte_list)
     {
         fprintf(stderr, "[%s] failed to allocate memory while creating LineInfo\n", __func__);
         return NULL;
@@ -51,12 +64,10 @@ INFO_END:
  */
 void line_info_destroy(LineInfo* info)
 {
-    //fprintf(stdout, "[%s] sizeof(*info) = %ld\n", __func__, sizeof(*info));
+    byte_list_destroy(info->byte_list);
     free(info->opcode);
     free(info->label_str);
     free(info);
-
-    //fprintf(stdout, "[%s] &info : %p\n", __func__, &info);
 }
 
 /*
@@ -72,7 +83,7 @@ void line_info_init(LineInfo* info)
     info->has_immediate = 0;
     info->immediate = 0;
     for(int a = 0; a < LINE_INFO_NUM_REG; ++a)
-        info->reg[a] = '\0';
+        info->reg[a] = REG_NONE;
 
     // Ensure that there is no string memory
     if(info->label_str != NULL)
@@ -81,6 +92,18 @@ void line_info_init(LineInfo* info)
         info->label_str = NULL;
     }
     info->label_str_len = 0;
+    if(info->symbol_str != NULL)
+    {
+        free(info->symbol_str);
+        info->symbol_str = NULL;
+    }
+    info->symbol_str_len = 0;
+    // This would be a good place to do some 
+    // optimization around not destroying and re-creating 
+    // the list 
+    byte_list_destroy(info->byte_list);
+    info->byte_list = byte_list_create();
+
     info->error = 0;
 }
 
@@ -94,19 +117,111 @@ void line_info_print(LineInfo* info)
     //fprintf(stdout, "LineInfo (line %d)\n", info->line_num);
     fprintf(stdout, "LineInfo :\n");
 
+    if((info->label_str_len > 0) && (info->label_str != NULL))
+        fprintf(stdout, "    label  : %s\n", info->label_str);
+
     fprintf(stdout, "    line %d : addr 0x%04X\n", info->line_num, info->addr);
     if(info->has_immediate)
         fprintf(stdout, "    imm    : %d (0x%X)\n", info->immediate, info->immediate);
     else
-        fprintf(stdout, "    no immediate\n");
-
-    if(info->label_str_len > 0 && (info->label_str != NULL))
-        fprintf(stdout, "    label  : %s\n", info->label_str);
+        fprintf(stdout, "    imm    : none\n");
 
     fprintf(stdout, "    error  : %s\n", (info->error) ? "YES" : "NO");
     fprintf(stdout, "    Opcode : ");
     opcode_print(info->opcode);
+    if(info->symbol_str_len > 0)
+        fprintf(stdout, " [%s] ", info->symbol_str);
     fprintf(stdout, "\n");
+}
+
+/*
+ * line_info_print_instr()
+ */
+void line_info_print_instr(LineInfo* info)
+{
+    if(info == NULL || info->opcode == NULL)
+        return;
+
+    // NOTE : valgrind gives invalid read of size 1 here
+    if(info->label_str_len > 0)
+        fprintf(stdout, "%s: ", info->label_str);
+
+    fprintf(stdout, "%s ", info->opcode->mnemonic);
+    switch(info->opcode->instr)
+    {
+        // One register argument
+        case LEX_ACI:
+        case LEX_ADD:
+        case LEX_ADC:
+        case LEX_ANA:
+        case LEX_CMP:
+        case LEX_DAA:
+        case LEX_INR:
+        case LEX_INX:
+        case LEX_LDAX:
+        case LEX_ORA:
+        case LEX_DAD:
+        case LEX_POP:
+        case LEX_PUSH:
+        case LEX_SBB:
+        case LEX_STAX:
+        case LEX_SUB:
+        case LEX_XRA:
+            fprintf(stdout, "%s ", REG_TYPE_TO_STR[info->reg[0]]);
+            break;
+
+        // Two register arguments 
+        case LEX_MOV:
+            fprintf(stdout, "%s, %s", REG_TYPE_TO_STR[info->reg[0]], REG_TYPE_TO_STR[info->reg[1]]);
+            break;
+
+        // One register and one 8bit immediate
+        case LEX_MVI:
+            fprintf(stdout, "%s 0x%02X ", REG_TYPE_TO_STR[info->reg[0]], info->immediate);
+            break;
+            
+        // One register and one 16bit immediate
+        case LEX_LXI:
+            fprintf(stdout, "%s 0x%04X ", REG_TYPE_TO_STR[info->reg[0]], info->immediate);
+            break;
+
+        // 8-bit immediate arguments 
+        case LEX_ADI:
+            fprintf(stdout, "0x%02X ", info->immediate);
+            break;
+
+        // 16-bit Immediate arguments
+        case LEX_LHLD:
+        case LEX_STA:
+            fprintf(stdout, "%04X", info->immediate);
+            break;
+
+        // Jump instructions 
+        case LEX_JC:
+        case LEX_JP:
+        case LEX_JMP:
+        case LEX_JNC:
+        case LEX_JZ:
+            if(info->symbol_str_len > 0)
+                fprintf(stdout, "<%s> [0x%04X] ", info->symbol_str, info->immediate);
+            else
+                fprintf(stdout, "[0x%04X] ", info->immediate);
+            break;
+
+        // Subroutine call instructions 
+        
+        // Subroutine return instructions 
+
+        // Data instructions
+        case LEX_DB:
+            if(byte_list_len(info->byte_list) > 0)
+                byte_list_print(info->byte_list);
+            break;
+
+        // If this instruction just has an opcode then do nothing
+        default:
+            break;
+    }
 }
 
 /*
@@ -135,6 +250,7 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
     opcode_copy(dst->opcode, src->opcode);
     dst->label_str_len = src->label_str_len;
     // we may need to allocate some memory here for label string
+    // NOTE : use realloc here?
     if(dst->label_str_len > 0)
     {
         if(dst->label_str != NULL)
@@ -144,12 +260,144 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
             return -1;
         strncpy(dst->label_str, src->label_str, dst->label_str_len);
     }
+    // Also copy the symbol string 
+    dst->symbol_str_len = src->symbol_str_len;
+    if(dst->symbol_str_len > 0)
+    {
+        if(dst->symbol_str != NULL)
+            free(dst->symbol_str);
+        dst->symbol_str = malloc(sizeof(char) * dst->symbol_str_len);
+        if(!dst->symbol_str)
+            return -1;
+        strncpy(dst->symbol_str, src->symbol_str, dst->symbol_str_len);
+    }
+    // Also copy the byte list
+    byte_list_copy(dst->byte_list, src->byte_list);
 
     dst->error = src->error;
 
     return 0;
 }
 
+/*
+ * line_info_struct_size()
+ */
+int line_info_struct_size(LineInfo* info)
+{
+    return sizeof(*info) + info->label_str_len + sizeof(*info->opcode);
+}
+
+/*
+ * line_info_set_label_str()
+ */
+int line_info_set_label_str(LineInfo* info, char* str, int len)
+{
+    if(info->label_str != NULL)
+        free(info->label_str);
+    info->label_str = malloc(sizeof(char) * len+1);
+    if(!info->label_str)
+        return -1;
+    info->label_str_len = len;
+    strncpy(info->label_str, str, info->label_str_len);
+    info->label_str[len] = '\0';
+
+    return 0;
+}
+
+/*
+ * line_info_set_symbol_str()
+ */
+int line_info_set_symbol_str(LineInfo* info, char* str, int len)
+{
+    if(info->symbol_str != NULL)
+        free(info->symbol_str);
+    info->symbol_str = malloc(sizeof(char) * len+1);
+    if(!info->symbol_str)
+        return -1;
+    info->symbol_str_len = len;
+    strncpy(info->symbol_str, str, info->symbol_str_len);
+    info->symbol_str[len] = '\0';
+
+    return 0;
+}
+
+/*
+ * line_info_append_byte_array()
+ */
+int line_info_append_byte_array(LineInfo* info, uint8_t* array, int len)
+{
+    int status;
+
+    status = byte_list_append_data(
+            info->byte_list,
+            array,
+            len
+    );
+
+    return status;
+}
+
+
+/*
+ * line_info_byte_list_size()
+ */
+int line_info_byte_list_size(LineInfo* info)
+{
+    return info->byte_list->len;
+}
+
+/*
+ * line_info_clear_byte_list()
+ */
+// Probably some optimizations can be done here later
+void line_info_clear_byte_list(LineInfo* info)
+{
+    byte_list_destroy(info->byte_list);
+    info->byte_list = byte_list_create();
+}
+
+
+/*
+ * reg_char_to_code()
+ */
+uint8_t reg_char_to_code(char r)
+{
+    switch(r)
+    {
+        case 'A':
+        case 'a':
+            return REG_A;
+        case 'B':
+        case 'b':
+            return REG_B;
+        case 'C':
+        case 'c':
+            return REG_C;
+        case 'D':
+        case 'd':
+            return REG_D;
+        case 'E':
+        case 'e':
+            return REG_E;
+        case 'H':
+        case 'h':
+            return REG_H;
+        case 'L':
+        case 'l':
+            return REG_L;
+        case 'M':
+        case 'm':
+            return REG_M;
+        case 'S':
+        case 's':
+            return REG_S;
+        case 'P':
+        case 'p':
+            return REG_PSW;
+    }
+
+    return REG_NONE;
+}
 
 // ================ SOURCE INFO ================ //
 /*
@@ -165,14 +413,12 @@ SourceInfo* source_info_create(int num_lines)
 
     info->max_size = num_lines;
     info->size     = 0;
-    info->cur_line = 0;
     info->buffer   = malloc(sizeof(*info->buffer) * info->max_size);
     if(!info->buffer)
         goto SOURCE_INFO_END;
 
     for(int b = 0; b < info->max_size; ++b)
     {
-        // TODO : Seem to be leaking these when we clean up SourceInfo
         info->buffer[b] = malloc(sizeof(*info->buffer[b]));
         if(!info->buffer[b])
         {
@@ -198,16 +444,18 @@ SOURCE_INFO_END:
  */
 void source_info_destroy(SourceInfo* info)
 {
+    // NOTE : not sure that all the memory is getting cleared here...
     if(info == NULL)
         free(info);
+    else if(info->size == 0)
+    {
+        //free(info->buffer);     // fails?
+        free(info);
+    }
     else
     {
         for(int b = 0; b < info->max_size; ++b)
-        {
-            fprintf(stdout, "[%s] freeing buffer %d / %d (%ld bytes)\n",
-                    __func__, b+1, info->max_size, sizeof(*info->buffer[b]));
             line_info_destroy(info->buffer[b]);
-        }
         free(info->buffer);
         free(info);
     }
@@ -219,13 +467,14 @@ void source_info_destroy(SourceInfo* info)
 int source_info_add_line(SourceInfo* info, LineInfo* line)
 {
     int status; 
+
+    // Bounds check the insert
+    if(info->size == info->max_size)
+        return -1;
       
     status = line_info_copy(info->buffer[info->size], line);
     if(status >= 0)
-    {
         info->size++;
-        info->cur_line++;
-    }
 
     return status;
 }
@@ -241,11 +490,8 @@ int source_info_edit_line(SourceInfo* info, LineInfo* line, int idx)
         return -1;
 
     status = line_info_copy(info->buffer[idx], line);
-
     if(status >= 0)
-    {
         info->size++;
-    }
 
     return status;
 }
@@ -261,44 +507,76 @@ LineInfo* source_info_get_idx(SourceInfo* info, int idx)
     return (LineInfo*) info->buffer[idx];
 }
 
-// ================ DATA SEGMENT ================ //
+
 /*
- * data_segment_create()
+ * source_info_clone()
  */
-DataSegment* data_segment_create(int size)
+SourceInfo* source_info_clone(SourceInfo* src)
 {
-    DataSegment* segment;
+    SourceInfo* dst;
 
-    segment = malloc(sizeof(*segment));
-    if(!segment)
-        goto SEGMENT_END;
+    dst = source_info_create(src->max_size);
+    if(!dst)
+        goto CLONE_END;
 
-    segment->data = malloc(size * sizeof(uint8_t));
-    if(!segment->data)
-        goto SEGMENT_END;
+    dst->size     = src->size;
+    dst->max_size = src->max_size;
 
-    segment->data_size = size;
-    segment->addr      = 0;
+    for(int e = 0; e < src->size; ++e)
+        dst->buffer[e] = src->buffer[e];
 
-SEGMENT_END:
-    if(!segment || ! segment->data)
+CLONE_END:
+    if(!dst)
     {
-        fprintf(stderr, "[%s] failed to allocate memory for DataSegment\n", __func__);
+        fprintf(stdout, "[%s] failed to allocate memory for clone\n", __func__);
         return NULL;
     }
 
-    return segment;
+    return dst;
 }
 
 /*
- * data_segment_destroy()
+ * source_info_full()
  */
-void data_segment_destroy(DataSegment* segment)
+int source_info_full(SourceInfo* info)
 {
-    free(segment->data);
-    free(segment);
+    return (info->size == info->max_size) ? 1 : 0;
 }
 
+/*
+ * source_info_empty()
+ */
+int source_info_empty(SourceInfo* info)
+{
+    return (info->size == 0) ? 1 : 0;
+}
+
+/*
+ * source_info_write()
+ */
+int source_info_write(SourceInfo* info, const char* filename)
+{
+    FILE* fp;
+
+    fp = fopen(filename, "wb");
+    if(!fp)
+    {
+        fprintf(stderr, "[%s] failed to open file %s for writing\n",
+               __func__, filename);
+        return -1;
+    }
+
+    // Write the number of records, and the max size
+    fwrite(&info->size, sizeof(int), 1, fp);        
+    fwrite(&info->max_size, sizeof(int), 1, fp);        
+
+    // Now write each of the Lineinfo structures
+
+
+    fclose(fp);
+
+    return 0;
+}
 
 // ================ TOKEN ================ //
 /*
@@ -315,8 +593,9 @@ Token* create_token(void)
                 __func__);
         return NULL;
     }
-    token->type         = SYM_NONE;
-    token->token_str[0] = '\0';     // or memset()?
+    token->type          = SYM_NONE;
+    token->token_str_len = 0;
+    token->token_str[0]  = '\0';     // or memset()?
 
     return token;
 }
@@ -327,7 +606,9 @@ Token* create_token(void)
 void token_init(Token* token)
 {
     token->type = SYM_NONE;
-    token->token_str[0] = '\0';
+    token->token_str_len = 0;
+    memset(token->token_str, 0, TOKEN_BUF_SIZE);
+    //token->token_str[0] = '\0';
 }
 
 /*
