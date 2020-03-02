@@ -55,14 +55,7 @@ int main(int argc, char *argv[])
         goto CLEANUP;
     }
 
-    status = assembler_set_repr(assem, lexer->source_repr);
-    if(status < 0)
-    {
-        fprintf(stderr, "Failed to set source repr\n");
-        status = -2;
-        goto CLEANUP;
-    }
-
+    assembler_set_repr(assem, lexer->source_repr);
     fprintf(stdout, "[%s] lexed %d lines from source file %s\n",
            __func__, lexer->source_repr->size, argv[1]
     );

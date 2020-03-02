@@ -25,8 +25,8 @@ spec("Assembler")
 
         assem = assembler_create();
         check(assem != NULL);
+        check(assem->instr_buf != NULL);
         check(assem->src_repr == NULL);
-        check(assem->instr_buf == NULL);
         check(assem->cur_line == 0);
         check(assem->verbose == 0);
         // Note that the src_repr and instr_buf won't be initailized 
@@ -51,8 +51,8 @@ spec("Assembler")
 
         assem = assembler_create();
         check(assem != NULL);
+        check(assem->instr_buf != NULL);
         check(assem->src_repr == NULL);
-        check(assem->instr_buf == NULL);
         check(assem->cur_line == 0);
         check(assem->verbose == 0);
 
@@ -77,11 +77,9 @@ spec("Assembler")
             test_line->immediate = (l % 2 == 0) ? l : 0;
             source_info_add_line(test_repr, test_line);
         }
-        status = assembler_set_repr(assem, test_repr);
-        check(status == 0);
+        assembler_set_repr(assem, test_repr);
         check(assem->src_repr != NULL);
         check(assem->instr_buf != NULL);
-        check(assem->instr_buf->max_size == test_repr->size+1);
 
         assembler_destroy(assem);
 
@@ -119,10 +117,8 @@ spec("Assembler")
         // to the assembler
         lex_all(lexer);
 
-        status = assembler_set_repr(assembler, lexer->source_repr);
-        check(status == 0);
+        assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
-        check(assembler->instr_buf->max_size == lexer->source_repr->size+1);
         assembler->verbose = 1;
 
         // Now assemble
@@ -136,7 +132,7 @@ spec("Assembler")
                __func__, assembler->instr_buf->size);
         for(int i = 0; i < assembler->instr_buf->size; ++i)
         {
-            Instr* cur_instr = instr_buffer_get(assembler->instr_buf, i);
+            Instr* cur_instr = instr_vector_get(assembler->instr_buf, i);
             fprintf(stdout, "Instr %02d : ", i+1);
             instr_print(cur_instr);
             fprintf(stdout, "\n");
@@ -187,11 +183,8 @@ spec("Assembler")
         // to the assembler
         lex_all(lexer);
 
-        status = assembler_set_repr(assembler, lexer->source_repr);
-        check(status == 0);
+        assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
-        // Note that the instruction buffer is one element larger
-        check(assembler->instr_buf->max_size == lexer->source_repr->size+1);
         assembler->verbose = 1;
 
         // Now assemble
@@ -200,12 +193,12 @@ spec("Assembler")
         check(status == 0);
 
         // For now, just print the contents of the instruction buffer here 
-        // TODO that this assembly output is technically wrong
+        // Note that this assembly output is technically wrong
         fprintf(stdout, "[%s] there are %d instructions in buffer\n",
                __func__, assembler->instr_buf->size);
         for(int i = 0; i < assembler->instr_buf->size; ++i)
         {
-            Instr* cur_instr = instr_buffer_get(assembler->instr_buf, i);
+            Instr* cur_instr = instr_vector_get(assembler->instr_buf, i);
             fprintf(stdout, "Instr %02d : ", i+1);
             instr_print(cur_instr);
             fprintf(stdout, "\n");
@@ -246,16 +239,24 @@ spec("Assembler")
         // to the assembler
         lex_all(lexer);
 
-        status = assembler_set_repr(assembler, lexer->source_repr);
-        check(status == 0);
+        assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
-        check(assembler->instr_buf->max_size == lexer->source_repr->size+1);
         assembler->verbose = 1;
 
         // Now assemble
         status = assembler_assem(assembler);
         fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
-        check(status == 0);
+        check(status == -1);        // last DB instruction is invalid
+
+        fprintf(stdout, "[%s] there are %d instructions in buffer\n",
+               __func__, assembler->instr_buf->size);
+        for(int i = 0; i < assembler->instr_buf->size; ++i)
+        {
+            Instr* cur_instr = instr_vector_get(assembler->instr_buf, i);
+            fprintf(stdout, "Instr %02d : ", i+1);
+            instr_print(cur_instr);
+            fprintf(stdout, "\n");
+        }
 
 
         assembler_destroy(assembler);

@@ -401,7 +401,8 @@ void asm_call(Instr* dst, LineInfo* line)
 /*
  * asm_data()
  */
-int asm_data(Assembler* assem, LineInfo* line)
+
+int asm_data(InstrVector* vec, LineInfo* line)
 {
     int status;
     int cur_addr;
@@ -413,16 +414,17 @@ int asm_data(Assembler* assem, LineInfo* line)
     for(int i = 0; i < byte_list_len(line->byte_list); ++i)
     {
         cur_node = byte_list_get(line->byte_list, i);
-        for(int d = 0; d < cur_node->len; ++d)
+        while(cur_node != NULL)
         {
-            cur_instr.instr = cur_node->data[d];
-            cur_instr.addr  = cur_addr;
-            cur_instr.size  = 1;
-            status = instr_buffer_insert(assem->instr_buf, &cur_instr);
-            if(status < 0)
-                goto ASM_DATA_END;
-
-            cur_addr++;
+            for(int d = 0; d < cur_node->len; ++d)
+            {
+                cur_instr.instr = cur_node->data[d];
+                cur_instr.addr  = cur_addr;
+                cur_instr.size  = 1;
+                instr_vector_push_back(vec, &cur_instr);
+                cur_addr++;
+            }
+            cur_node = cur_node->next;
         }
     }
 
@@ -441,17 +443,18 @@ Assembler* assembler_create(void)
 
     assem = malloc(sizeof(*assem));
     if(!assem)
-        goto ASSEM_END;
+        goto ASSEM_CREATE_END;
 
     assem->src_repr = NULL;
     assem->cur_line = 0;
     assem->verbose  = 0;
 
-    // Set the buffer empty until we have a src_repr
-    assem->instr_buf = NULL;
+    assem->instr_buf = instr_vector_create(8);
+    if(!assem->instr_buf)
+        goto ASSEM_CREATE_END;
 
-ASSEM_END:
-    if(!assem)
+ASSEM_CREATE_END:
+    if(!assem || !assem->instr_buf)
     {
         fprintf(stderr, "[%s] failed to create Assembler object\n", __func__);
         return NULL;
@@ -466,27 +469,16 @@ ASSEM_END:
  */
 void assembler_destroy(Assembler* assem)
 {
-    instr_buffer_destroy(assem->instr_buf);
+    instr_vector_destroy(assem->instr_buf);
     free(assem);
 }
 
 /*
  * assembler_set_repr()
  */
-int assembler_set_repr(Assembler* assem, SourceInfo* repr)
+void assembler_set_repr(Assembler* assem, SourceInfo* repr)
 {
     assem->src_repr = repr;
-    if(assem->instr_buf != NULL)
-        instr_buffer_destroy(assem->instr_buf);
-
-    assem->instr_buf = instr_buffer_create(repr->size+1);
-    if(assem->instr_buf == NULL)
-    {
-        fprintf(stdout, "[%s] failed to create instruction buffer for assembler object\n", __func__);
-        return -1;
-    }
-
-    return 0;
 }
 
 /*
@@ -629,7 +621,7 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             case LEX_DB:
             case LEX_DS:
             case LEX_DW:
-                status = asm_data(assem, line);
+                status = asm_data(assem->instr_buf, line);
                 break;
 
             default:
@@ -642,17 +634,18 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             }
         }
     }
-    status = instr_buffer_insert(assem->instr_buf, &cur_instr);
-    if(status == -1)
-    {
-        fprintf(stdout, "[%s] buffer full when inserting instruction %02X [%s]\n", 
-                __func__, line->opcode->instr, line->opcode->mnemonic);
-    }
-    else if(status < 0)
-    {
-        fprintf(stdout, "[%s] failed to insert instruction %02X [%s]\n", 
-                __func__, line->opcode->instr, line->opcode->mnemonic);
-    }
+
+    // TODO : debug, remove
+    fprintf(stdout, "[%s] about to insert instruction :", __func__);
+    instr_print(&cur_instr);
+    fprintf(stdout, "\n");
+
+    instr_vector_push_back(assem->instr_buf, &cur_instr);
+    //if(status < 0)
+    //{
+    //    fprintf(stdout, "[%s] failed to insert instruction %02X [%s]\n", 
+    //            __func__, line->opcode->instr, line->opcode->mnemonic);
+    //}
 
 ASSEM_LINE_END:
     return status;
@@ -672,10 +665,11 @@ int assembler_assem(Assembler* assem)
             fprintf(stdout, "[%s] no src_repr set in assembler\n", __func__);
         return -1;
     }
-
+    
+    LineInfo* cur_line;
     for(int l = 0; l < assem->src_repr->size; ++l)
     {
-        LineInfo* cur_line = assem->src_repr->buffer[l];
+        cur_line = assem->src_repr->buffer[l];
         status = assembler_assem_line(assem, cur_line);
         if(status < 0)
             break;

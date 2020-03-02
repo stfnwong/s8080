@@ -31,23 +31,21 @@ uint8_t*    byte_vector_get(ByteVector* v, int idx);
 uint8_t     byte_vector_get_val(ByteVector* v, int idx);
 void        byte_vector_extend(ByteVector* v, int ext_size);
 void        byte_vector_init(ByteVector* v);
-
 // info
 int         byte_vector_size(ByteVector* v);
 int         byte_vector_capacity(ByteVector* v);
-
 // display 
 void        byte_vector_print(ByteVector* v);
 
 
-// Instruction vector?
+// Instruction vector
 typedef struct InstrVector InstrVector;
 
 struct InstrVector
 {
     Instr* buffer;
-    int size;
-    int capacity;
+    int    size;
+    int    capacity;
 };
 
 InstrVector* instr_vector_create(int capacity);
@@ -55,9 +53,8 @@ void         instr_vector_destroy(InstrVector* vec);
 Instr*       instr_vector_get(InstrVector* vec, int idx);
 void         instr_vector_push_back(InstrVector* vec, Instr* instr);
 void         instr_vector_extend(InstrVector* vec, int ext_size);
-
-
-
-
+// info
+int          instr_vector_size(InstrVector* vec);
+int          instr_vector_capacity(InstrVector* vec);
 
 #endif /*__S8080_VECTOR_H*/

@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "instr.h"
 #include "source.h"
+#include "vector.h"
 
 
 /*
@@ -21,7 +22,8 @@
 typedef struct
 {
     // Instruction buffer   ( TODO : data segment buffer)
-    InstrBuffer* instr_buf;
+    InstrVector* instr_buf;
+    //InstrBuffer* instr_buf;
     // Lexer output representation
     SourceInfo* src_repr;
     int cur_line;
@@ -32,7 +34,7 @@ Assembler* assembler_create(void);
 void assembler_destroy(Assembler* assem);
 
 // Copy repr from memory
-int assembler_set_repr(Assembler* assem, SourceInfo* repr);
+void assembler_set_repr(Assembler* assem, SourceInfo* repr);
 
 // Assemble from current repr
 int assembler_assem_line(Assembler* assem, LineInfo* line);

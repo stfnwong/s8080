@@ -201,7 +201,6 @@ void instr_vector_push_back(InstrVector* vec, Instr* instr)
         instr_vector_extend(vec, vec->capacity);
 
     memcpy(vec->buffer + vec->size, instr, sizeof(*instr));
-    //memcpy(vec->data + v->size, data, sizeof(*vec) * len);
     vec->size++;
 }
 
@@ -212,7 +211,7 @@ void instr_vector_extend(InstrVector* vec, int ext_size)
 {
     Instr* buf;
 
-    buf = malloc(sizeof(uint8_t) * vec->capacity + ext_size);
+    buf = malloc(sizeof(*vec->buffer) * (vec->capacity + ext_size));
     if(!buf)
     {
         fprintf(stdout, "[%s] failed to alloc %d bytes to extend vector\n", __func__, ext_size);
@@ -223,4 +222,15 @@ void instr_vector_extend(InstrVector* vec, int ext_size)
     free(vec->buffer);
     vec->buffer = buf;
     vec->capacity = vec->capacity + ext_size;
+}
+
+// -------- INFO 
+int instr_vector_size(InstrVector* vec)
+{
+    return vec->size;
+}
+
+int instr_vector_capcaity(InstrVector* vec)
+{
+    return vec->capacity;
 }
