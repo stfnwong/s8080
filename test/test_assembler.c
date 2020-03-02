@@ -28,7 +28,7 @@ spec("Assembler")
         check(assem->instr_buf != NULL);
         check(assem->src_repr == NULL);
         check(assem->cur_line == 0);
-        check(assem->verbose == 0);
+        check(assembler_verbose(assem) == 0);
         // Note that the src_repr and instr_buf won't be initailized 
         // until a file is loaded
 
@@ -54,7 +54,7 @@ spec("Assembler")
         check(assem->instr_buf != NULL);
         check(assem->src_repr == NULL);
         check(assem->cur_line == 0);
-        check(assem->verbose == 0);
+        check(assembler_verbose(assem) == 0);
 
         // Create a SourceInfo to assemble
         test_repr = source_info_create(num_lines);
@@ -111,7 +111,7 @@ spec("Assembler")
         check(lexer->text_seg->immediate == 0);
         check(lexer->text_seg->has_immediate == 0);
         //check(lexer->sym_table->size == 0);
-        lexer->verbose = 1;
+        lex_set_verbose(lexer);
 
         // Lex the file, then take the src_repr and give it 
         // to the assembler
@@ -119,7 +119,7 @@ spec("Assembler")
 
         assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
-        assembler->verbose = 1;
+        assembler_set_verbose(assembler);
 
         // Now assemble
         status = assembler_assem(assembler);
@@ -132,6 +132,10 @@ spec("Assembler")
                __func__, assembler->instr_buf->size);
         for(int i = 0; i < assembler->instr_buf->size; ++i)
         {
+            // TODO : if the assembler is going to be hidden and forward 
+            // delcared then there needs to be a wrapper here to get instructions 
+            // from the assembler (or, we get a pointer to the buffer from the assembler
+            // and use that...)
             Instr* cur_instr = instr_vector_get(assembler->instr_buf, i);
             fprintf(stdout, "Instr %02d : ", i+1);
             instr_print(cur_instr);
@@ -139,6 +143,10 @@ spec("Assembler")
         }
 
         // TODO : create reference assembly to test against
+        Instr* cur_instr; 
+
+        // TODO : how big do we expect the buffer to be after assembly?
+
 
         fprintf(stdout, "[%s] destroying assembler...\n", __func__);
         assembler_destroy(assembler);
@@ -177,7 +185,7 @@ spec("Assembler")
         check(lexer->text_seg->immediate == 0);
         check(lexer->text_seg->has_immediate == 0);
         //check(lexer->sym_table->size == 0);
-        lexer->verbose = 1;
+        lex_set_verbose(lexer);
 
         // Lex the file, then take the src_repr and give it 
         // to the assembler
@@ -185,7 +193,7 @@ spec("Assembler")
 
         assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
-        assembler->verbose = 1;
+        assembler_set_verbose(assembler);
 
         // Now assemble
         status = assembler_assem(assembler);
@@ -233,7 +241,7 @@ spec("Assembler")
         check(lexer->text_seg->immediate == 0);
         check(lexer->text_seg->has_immediate == 0);
         //check(lexer->sym_table->size == 0);
-        lexer->verbose = 1;
+        lex_set_verbose(lexer);
 
         // Lex the file, then take the src_repr and give it 
         // to the assembler
@@ -241,7 +249,7 @@ spec("Assembler")
 
         assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
-        assembler->verbose = 1;
+        assembler_set_verbose(assembler);
 
         // Now assemble
         status = assembler_assem(assembler);
@@ -257,6 +265,9 @@ spec("Assembler")
             instr_print(cur_instr);
             fprintf(stdout, "\n");
         }
+
+        // DB instructio arguments appear 'inline' in the output 
+        // assembly.
 
 
         assembler_destroy(assembler);

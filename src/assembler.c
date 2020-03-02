@@ -677,3 +677,20 @@ int assembler_assem(Assembler* assem)
 
     return status;
 }
+
+
+// -------- MISC -------- //
+void assembler_set_verbose(Assembler* assem)
+{
+    assem->verbose = 1;
+}
+
+void assembler_clear_verbose(Assembler* assem)
+{
+    assem->verbose = 0;
+}
+
+int assembler_verbose(Assembler* assem)
+{
+    return assem->verbose;
+}

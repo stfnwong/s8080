@@ -9,6 +9,16 @@
 #include <stdlib.h>
 #include "display.h"
 
+// Display structure internals
+struct Display
+{
+    SDL_Window*  win;
+    SDL_Surface* surf;
+    SDL_Surface* winsurf;
+    int resize;
+    //void (*resize_func)(void*, SDL_Event*);
+};
+
 int disp_resize_func(void* user_data, SDL_Event* ev)
 {
     Display* disp = (Display*) user_data;

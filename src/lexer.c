@@ -1335,6 +1335,10 @@ int lex_all(Lexer* lexer)
     return 0;
 }
 
+/*
+ * lex_write_repr()
+ */
+// NOTE: when would this ever be used?
 int lex_write_repr(Lexer* lexer, const char* filename)
 {
     if(lexer->source_repr == NULL)
@@ -1349,7 +1353,24 @@ int lex_write_repr(Lexer* lexer, const char* filename)
                 __func__, filename);
         return -1;
     }
-
+    // TODO: here we take each LineInfo and write it to disk
 
     return 0;
+}
+
+
+// -------- MISC -------- //
+void lex_set_verbose(Lexer* lexer)
+{
+    lexer->verbose = 1;
+}
+
+void lex_clear_verbose(Lexer* lexer)
+{
+    lexer->verbose = 0;
+}
+
+int lex_verbose(Lexer* lexer)
+{
+    return lexer->verbose;
 }

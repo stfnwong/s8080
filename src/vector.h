@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "instr.h"
 
+// TODO : note that we don't use the ByteVector for anything now...
 typedef struct ByteVector ByteVector;
 
 struct ByteVector

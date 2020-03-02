@@ -146,7 +146,6 @@ void byte_vector_print(ByteVector* v)
 }
 
 
-
 // ======== INSTRVECTOR ========= //
 /*
  * instr_vector_create()

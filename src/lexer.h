@@ -51,7 +51,9 @@ Symbol*      symbol_table_get_str(SymbolTable* table, char* str, int len);
 /*
  * Lexer object
  */
-typedef struct
+typedef struct Lexer Lexer;
+
+struct Lexer
 {
     // Source info 
     char* src;
@@ -78,7 +80,7 @@ typedef struct
     SymbolTable* sym_table;
     // misc settings
     int verbose;
-} Lexer;
+};
 
 Lexer* lexer_create(void);
 void   lexer_destroy(Lexer* lexer);
@@ -122,5 +124,9 @@ int    lex_line(Lexer* lexer);
 int    lex_all(Lexer* lexer);
 int    lex_write_repr(Lexer* lexer, const char* filename);
 
+// Misc 
+void   lex_set_verbose(Lexer* lexer);
+void   lex_clear_verbose(Lexer* lexer);
+int    lex_verbose(Lexer* lexer);
 
 #endif /*__EMU_LEXER_H*/

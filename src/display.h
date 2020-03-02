@@ -20,15 +20,8 @@
 #define DISP_CYCLES_PER_MS 2000         // 8080 clock @2Mhz
 #define DISP_CYCLES_PER_TIC (DISP_CYCLES_PER_MS * DISP_TIC)
 
-
-typedef struct
-{
-    SDL_Window*  win;
-    SDL_Surface* surf;
-    SDL_Surface* winsurf;
-    int resize;
-    //void (*resize_func)(void*, SDL_Event*);
-} Display;
+// Display forward declaration
+typedef struct Display Display;
 
 int disp_resize_func(void* user_data, SDL_Event* ev);
 // NOTE: Maybe refactor this file to be something like IO.h (since
@@ -38,6 +31,5 @@ int disp_resize_func(void* user_data, SDL_Event* ev);
 Display* display_create(void);
 void     display_destroy(Display* disp);
 void     display_draw(Display* disp, uint8_t* mem);
-
 
 #endif /*__DISPLAY_H*/

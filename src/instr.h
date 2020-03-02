@@ -26,7 +26,7 @@ void   instr_init(Instr* instr);
 void   instr_copy(Instr* dst, Instr* src);
 void   instr_print(Instr* instr);
 
-// TODO: make a vector
+// NOTE: more or less deprecated - be sure to remove this before final merge
 /*
  * Instruction buffer
  */
