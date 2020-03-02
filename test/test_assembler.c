@@ -54,7 +54,7 @@ spec("Assembler")
         check(assem->instr_buf != NULL);
         check(assem->src_repr == NULL);
         check(assem->cur_line == 0);
-        check(assembler_verbose(assem) == 1);
+        check(assembler_verbose(assem) == 0);
 
         // Create a SourceInfo to assemble
         test_repr = source_info_create(num_lines);
