@@ -1358,6 +1358,18 @@ int lex_write_repr(Lexer* lexer, const char* filename)
     return 0;
 }
 
+// Getters 
+SourceInfo* lex_get_repr(Lexer* lexer)
+{
+    return lexer->source_repr;
+}
+
+SymbolTable* lex_get_symbol(Lexer* lexer)
+{
+    return lexer->sym_table;
+}
+    
+
 
 // -------- MISC -------- //
 void lex_set_verbose(Lexer* lexer)

@@ -75,7 +75,7 @@ uint8_t* byte_vector_get(ByteVector* v, int idx)
 uint8_t byte_vector_get_val(ByteVector* v, int idx)
 {
     if(idx < 0 || idx >= v->size)
-        return NULL;
+        return 0;       // TODO : what to do here?
 
     return v->data[idx];        // copy?
 }

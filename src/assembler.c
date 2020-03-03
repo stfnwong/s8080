@@ -402,9 +402,8 @@ void asm_call(Instr* dst, LineInfo* line)
  * asm_data()
  */
 
-int asm_data(InstrVector* vec, LineInfo* line)
+void asm_data(InstrVector* vec, LineInfo* line)
 {
-    int status;
     int cur_addr;
 
     ByteNode* cur_node;
@@ -427,9 +426,6 @@ int asm_data(InstrVector* vec, LineInfo* line)
             cur_node = cur_node->next;
         }
     }
-
-ASM_DATA_END:
-    return status;
 }
 
 // ================ ASSEMBLER OBJECT ================ //
@@ -621,7 +617,8 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             case LEX_DB:
             case LEX_DS:
             case LEX_DW:
-                status = asm_data(assem->instr_buf, line);
+                asm_data(assem->instr_buf, line);
+                status = 0;     // is there anything that can go wrong?
                 break;
 
             default:
@@ -647,7 +644,6 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
     //            __func__, line->opcode->instr, line->opcode->mnemonic);
     //}
 
-ASSEM_LINE_END:
     return status;
 }
 
@@ -676,6 +672,15 @@ int assembler_assem(Assembler* assem)
     }
 
     return status;
+}
+
+
+/*
+ * assembler_get_instr_vector()
+ */
+InstrVector* assembler_get_instr_vector(Assembler* assem)
+{
+    return assem->instr_buf;
 }
 
 

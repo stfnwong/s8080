@@ -184,8 +184,6 @@ spec("Lexer")
         while(lexer->cur_line < 7)
             lex_advance(lexer);
 
-        lex_set_verbose(lexer);
-        
         lex_line(lexer);
         line_info_print(lexer->text_seg);
         fprintf(stdout, "\n");
@@ -307,6 +305,7 @@ spec("Lexer")
         {
             cur_line = source_info_get_idx(lexer->source_repr, l);
             check(cur_line != NULL);
+            line_info_print(cur_line);
         }
 
         // MOVE_INSTR: MOV A, B
@@ -417,6 +416,7 @@ spec("Lexer")
         {
             cur_line = source_info_get_idx(lexer->source_repr, l);
             check(cur_line != NULL);
+            line_info_print(cur_line);
         }
 
         // get the first line
@@ -627,6 +627,7 @@ spec("Lexer")
         {
             cur_line = source_info_get_idx(lexer->source_repr, l);
             check(cur_line != NULL);
+            line_info_print(cur_line);
         }
 
         // SOME_LABEL: ANI 0
@@ -757,7 +758,6 @@ spec("Lexer")
         check(lexer->text_seg->addr == 0);
         check(lexer->text_seg->label_str == NULL);
         check(lexer->sym_table->size == 0);
-        lex_set_verbose(lexer);
         // Lex the file 
         lex_all(lexer);
         // Now check the internal SourceInfo
@@ -799,7 +799,6 @@ spec("Lexer")
         check(lexer->text_seg->addr == 0);
         check(lexer->text_seg->label_str == NULL);
         check(lexer->sym_table->size == 0);
-        lex_set_verbose(lexer);
         // Lex the file 
         status = lex_all(lexer);
         //check(status == -1);    // should be -1 here since final DB will fail

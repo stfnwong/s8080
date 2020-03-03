@@ -25,7 +25,7 @@ const char* TOKEN_TYPE_TO_STR[] = {
 };
 
 const char* REG_TYPE_TO_STR[] = {
-    "NONE", "A", "B", "C", "D", "H", "L", "M", "PSW"
+    "NONE", "A", "B", "C", "D", "E", "H", "L", "S", "M", "PSW"
 };
 
 // ================ LINE INFO ================ //
@@ -131,6 +131,16 @@ void line_info_print(LineInfo* info)
     opcode_print(info->opcode);
     if(info->symbol_str_len > 0)
         fprintf(stdout, " [%s] ", info->symbol_str);
+
+    if(byte_list_len(info->byte_list) > 0)
+    {
+        fprintf(stdout, "%d bytes in %d segments\n", 
+                byte_list_total_bytes(info->byte_list),
+                byte_list_len(info->byte_list)
+        );
+        byte_list_print(info->byte_list);
+    }
+
     fprintf(stdout, "\n");
 }
 

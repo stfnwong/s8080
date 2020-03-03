@@ -64,12 +64,12 @@ struct Lexer
     int   cur_col;
     char  cur_char;
     // Token buffers
-    char token_buf[TOKEN_BUF_SIZE];
-    int  token_buf_ptr;
+    char  token_buf[TOKEN_BUF_SIZE];
+    int   token_buf_ptr;
     // address bookkeeping
-    int text_addr;
-    int data_addr;
-    int text_start_addr;
+    int   text_addr;
+    int   data_addr;
+    int   text_start_addr;
     // current line information
     LineInfo*    text_seg;      
     SourceInfo*  source_repr;
@@ -123,6 +123,10 @@ void   lex_resolve_labels(Lexer* lexer);
 int    lex_line(Lexer* lexer);
 int    lex_all(Lexer* lexer);
 int    lex_write_repr(Lexer* lexer, const char* filename);
+
+// Getters 
+SourceInfo* lex_get_repr(Lexer* lexer);
+SymbolTable* lex_get_symbol_table(Lexer* lexer);
 
 // Misc 
 void   lex_set_verbose(Lexer* lexer);

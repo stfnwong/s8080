@@ -32,7 +32,7 @@ typedef enum
 
 // String conversion arrays
 extern const char* TOKEN_TYPE_TO_STR[9];
-extern const char* REG_TYPE_TO_STR[10];
+extern const char* REG_TYPE_TO_STR[11];
 
 // Text segment
 typedef struct 

@@ -31,7 +31,6 @@ spec("Assembler")
         check(assembler_verbose(assem) == 0);
         // Note that the src_repr and instr_buf won't be initailized 
         // until a file is loaded
-
         assembler_destroy(assem);
     }
 
@@ -111,11 +110,12 @@ spec("Assembler")
         check(lexer->text_seg->immediate == 0);
         check(lexer->text_seg->has_immediate == 0);
         //check(lexer->sym_table->size == 0);
-        lex_set_verbose(lexer);
+        //lex_set_verbose(lexer);
 
         // Lex the file, then take the src_repr and give it 
         // to the assembler
         lex_all(lexer);
+
 
         assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
@@ -126,28 +126,23 @@ spec("Assembler")
         fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
         check(status == 0);
 
-        // For now, just print the contents of the instruction buffer here 
-        // TODO that this assembly output is technically wrong
+        InstrVector* instr_vec = assembler_get_instr_vector(assembler);
+        check(instr_vec != NULL);
+
         fprintf(stdout, "[%s] there are %d instructions in buffer\n",
-               __func__, assembler->instr_buf->size);
-        for(int i = 0; i < assembler->instr_buf->size; ++i)
+               __func__, instr_vector_size(instr_vec));
+        for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
-            // TODO : if the assembler is going to be hidden and forward 
-            // delcared then there needs to be a wrapper here to get instructions 
-            // from the assembler (or, we get a pointer to the buffer from the assembler
-            // and use that...)
-            Instr* cur_instr = instr_vector_get(assembler->instr_buf, i);
+            Instr* cur_instr = instr_vector_get(instr_vec, i);
             fprintf(stdout, "Instr %02d : ", i+1);
             instr_print(cur_instr);
             fprintf(stdout, "\n");
         }
 
         // TODO : create reference assembly to test against
-        Instr* cur_instr; 
+        //Instr* cur_instr; 
 
         // TODO : how big do we expect the buffer to be after assembly?
-
-
         fprintf(stdout, "[%s] destroying assembler...\n", __func__);
         assembler_destroy(assembler);
         fprintf(stdout, "[%s] destroying lexer...\n", __func__);
@@ -185,11 +180,19 @@ spec("Assembler")
         check(lexer->text_seg->immediate == 0);
         check(lexer->text_seg->has_immediate == 0);
         //check(lexer->sym_table->size == 0);
-        lex_set_verbose(lexer);
+        //lex_set_verbose(lexer);
 
         // Lex the file, then take the src_repr and give it 
         // to the assembler
         lex_all(lexer);
+
+        // TODO ; debug only, remove 
+        for(int i = 0; i < lexer->source_repr->size; ++i)
+        {
+            LineInfo* l = source_info_get_idx(lexer->source_repr, i);
+            check(l != NULL);
+            line_info_print(l);
+        }
 
         assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
@@ -200,17 +203,44 @@ spec("Assembler")
         fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
         check(status == 0);
 
-        // For now, just print the contents of the instruction buffer here 
-        // Note that this assembly output is technically wrong
+        InstrVector* instr_vec = assembler_get_instr_vector(assembler);
+        check(instr_vec != NULL);
+        
         fprintf(stdout, "[%s] there are %d instructions in buffer\n",
-               __func__, assembler->instr_buf->size);
-        for(int i = 0; i < assembler->instr_buf->size; ++i)
+               __func__, instr_vector_size(instr_vec));
+        for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
-            Instr* cur_instr = instr_vector_get(assembler->instr_buf, i);
+            Instr* cur_instr = instr_vector_get(instr_vec, i);
             fprintf(stdout, "Instr %02d : ", i+1);
             instr_print(cur_instr);
             fprintf(stdout, "\n");
         }
+
+        Instr* cur_instr;
+
+        // ARITH_INSTR: ADD C
+        cur_instr = instr_vector_get(instr_vec, 0);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0004);
+
+        /// SUB A
+        cur_instr = instr_vector_get(instr_vec, 1);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0008);
+
+        /// ADI 7
+        cur_instr = instr_vector_get(instr_vec, 2);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x000B);
+
+        /// ORA B
+        cur_instr = instr_vector_get(instr_vec, 2);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0010);
 
         assembler_destroy(assembler);
         lexer_destroy(lexer); 
@@ -241,7 +271,7 @@ spec("Assembler")
         check(lexer->text_seg->immediate == 0);
         check(lexer->text_seg->has_immediate == 0);
         //check(lexer->sym_table->size == 0);
-        lex_set_verbose(lexer);
+        //lex_set_verbose(lexer);
 
         // Lex the file, then take the src_repr and give it 
         // to the assembler
@@ -256,17 +286,20 @@ spec("Assembler")
         fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
         check(status == -1);        // last DB instruction is invalid
 
+        InstrVector* instr_vec = assembler_get_instr_vector(assembler);
+        check(instr_vec != NULL);
+
         fprintf(stdout, "[%s] there are %d instructions in buffer\n",
-               __func__, assembler->instr_buf->size);
-        for(int i = 0; i < assembler->instr_buf->size; ++i)
+               __func__, instr_vector_size(instr_vec));
+        for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
-            Instr* cur_instr = instr_vector_get(assembler->instr_buf, i);
+            Instr* cur_instr = instr_vector_get(instr_vec, i);
             fprintf(stdout, "Instr %02d : ", i+1);
             instr_print(cur_instr);
             fprintf(stdout, "\n");
         }
 
-        // DB instructio arguments appear 'inline' in the output 
+        // DB instruction arguments appear 'inline' in the output 
         // assembly.
 
 
