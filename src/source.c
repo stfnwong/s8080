@@ -134,7 +134,7 @@ void line_info_print(LineInfo* info)
 
     if(byte_list_len(info->byte_list) > 0)
     {
-        fprintf(stdout, "%d bytes in %d segments\n", 
+        fprintf(stdout, " [%d byte(s) in %d segment(s)]\n", 
                 byte_list_total_bytes(info->byte_list),
                 byte_list_len(info->byte_list)
         );
@@ -354,6 +354,14 @@ int line_info_append_byte_array(LineInfo* info, uint8_t* array, int len)
 int line_info_byte_list_size(LineInfo* info)
 {
     return info->byte_list->len;
+}
+
+/*
+ * line_info_byte_list_num_bytes()
+ */
+int line_info_byte_list_num_bytes(LineInfo* info)
+{
+    return byte_list_total_bytes(info->byte_list);
 }
 
 /*

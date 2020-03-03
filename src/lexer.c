@@ -407,7 +407,7 @@ void lex_set_text_start_addr(Lexer* lexer, int addr)
  */
 void lex_text_addr_incr(Lexer* lexer, int instr_size)
 {
-    lexer->text_addr += 4 * instr_size;
+    lexer->text_addr += LEX_TEXT_INCR * instr_size;
 }
 
 /*
@@ -415,7 +415,7 @@ void lex_text_addr_incr(Lexer* lexer, int instr_size)
  */
 void lex_data_addr_incr(Lexer* lexer)
 {
-    lexer->data_addr += 4;
+    lexer->data_addr += LEX_DATA_INCR;
 }
 
 // ==== Token Handling ===== //
@@ -1256,7 +1256,9 @@ int lex_line(Lexer* lexer)
             case LEX_DB:
             case LEX_DW:        // Word size handled in assembler
                 status = lex_parse_data(lexer, &tok_a);
-                instr_size = 1;
+                instr_size = line_info_byte_list_num_bytes(lexer->text_seg) + 1;
+                // TODO : deubg, remove
+                fprintf(stdout, "[%s] assembled %d bytes for DB/DW instruction\n", __func__, instr_size);
                 break;
 
             case LEX_DS:
@@ -1284,8 +1286,8 @@ int lex_line(Lexer* lexer)
 
 LEX_LINE_END:
     lexer->text_seg->error = (status < 0) ? 1 : 0;
-    lex_text_addr_incr(lexer, instr_size);
     lexer->text_seg->addr = lexer->text_addr;
+    lex_text_addr_incr(lexer, instr_size);
 
     status = source_info_add_line(lexer->source_repr, lexer->text_seg);
     if(status < 0)

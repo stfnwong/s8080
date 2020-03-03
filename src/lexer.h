@@ -9,6 +9,8 @@
 #define __EMU_LEXER_H
 
 #define MAX_SYM_LEN 32
+#define LEX_TEXT_INCR 1
+#define LEX_DATA_INCR 1
 
 #include <stdint.h>
 #include "opcode.h"

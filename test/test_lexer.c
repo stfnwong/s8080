@@ -816,6 +816,14 @@ spec("Lexer")
             check(cur_line != NULL);
         }
 
+        // TODO: debugging output, remove in final merge
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            line_info_print(cur_line);
+        }
+        fprintf(stdout, "\n");
+
         // TEST_ARGS : DB "SOME CHARACTER STRING", 0dh, 0ah, 03h
         cur_line = source_info_get_idx(lexer->source_repr, 0);
         line_info_print_instr(cur_line);
@@ -827,6 +835,8 @@ spec("Lexer")
 
         check(cur_line->opcode->instr == LEX_DB);
         check(strncmp(cur_line->opcode->mnemonic, "DB", 2) == 0);
+        // address check 
+        check(cur_line->addr == 0);
 
         fprintf(stdout, "[%s] %d args in byte list (%d bytes total)\n", 
                 __func__, 
@@ -874,6 +884,7 @@ spec("Lexer")
         check(strncmp(cur_line->opcode->mnemonic, "DB", 2) == 0);
         check(cur_line->symbol_str == NULL);
         check(byte_list_len(cur_line->byte_list) == 1);
+        check(cur_line->addr == 25);
         // Check the arg c
         cur_node = byte_list_get(cur_line->byte_list, 0);
         check(cur_node != NULL);
@@ -884,6 +895,7 @@ spec("Lexer")
         cur_line = source_info_get_idx(lexer->source_repr, 2);
         line_info_print_instr(cur_line);
         check(cur_line->error == 1);
+        check(cur_line->addr = 27);     // 25 + DB + (one byte)
 
         // clean up
         lexer_destroy(lexer);
