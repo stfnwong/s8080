@@ -307,6 +307,8 @@ spec("Lexer")
             check(cur_line != NULL);
             line_info_print(cur_line);
         }
+        
+        check(lex_repr_size(lexer) == 7);
 
         // MOVE_INSTR: MOV A, B
         cur_line = source_info_get_idx(lexer->source_repr, 0);
@@ -316,6 +318,7 @@ spec("Lexer")
         check(cur_line->label_str != NULL);
         check(cur_line->label_str_len == 10);
         check(strncmp(cur_line->label_str, "MOVE_INSTR", 10) == 0);
+        check(cur_line->addr == 0x0);
         // MOV B, C
         cur_line = source_info_get_idx(lexer->source_repr, 1);
         line_info_print_instr(cur_line);
@@ -328,6 +331,7 @@ spec("Lexer")
         check(cur_line->reg[1] == REG_C);
         check(cur_line->has_immediate == 0);
         check(cur_line->immediate == 0);
+        check(cur_line->addr == 0x1);
 
         // MOV A, M
         cur_line = source_info_get_idx(lexer->source_repr, 2);
@@ -341,6 +345,7 @@ spec("Lexer")
         check(cur_line->reg[1] == REG_M);
         check(cur_line->has_immediate == 0);
         check(cur_line->immediate == 0);
+        check(cur_line->addr == 0x2);
 
         // PUSH D
         cur_line = source_info_get_idx(lexer->source_repr, 3);
@@ -354,6 +359,7 @@ spec("Lexer")
         check(cur_line->reg[1] == REG_NONE);
         check(cur_line->has_immediate == 0);
         check(cur_line->immediate == 0);
+        check(cur_line->addr == 0x3);
 
         // MOV E, A
         cur_line = source_info_get_idx(lexer->source_repr, 4);
@@ -367,6 +373,7 @@ spec("Lexer")
         check(cur_line->reg[1] == REG_A);
         check(cur_line->has_immediate == 0);
         check(cur_line->immediate == 0);
+        check(cur_line->addr == 0x4);
 
         // MVI C, 2
         cur_line = source_info_get_idx(lexer->source_repr, 5);
@@ -380,6 +387,7 @@ spec("Lexer")
         check(cur_line->reg[1] == REG_NONE);
         check(cur_line->has_immediate == 1);
         check(cur_line->immediate == 0x2);
+        check(cur_line->addr == 0x5);       // MVI is 2 bytes long
 
         // POP D
         cur_line = source_info_get_idx(lexer->source_repr, 6);
@@ -393,6 +401,7 @@ spec("Lexer")
         check(cur_line->reg[1] == REG_NONE);
         check(cur_line->has_immediate == 0);
         check(cur_line->immediate == 0);
+        check(cur_line->addr == 0x7);
         
         // clean up
         lexer_destroy(lexer);
@@ -732,7 +741,7 @@ spec("Lexer")
         check(cur_line->symbol_str_len == 11);
         check(strncmp(cur_line->symbol_str, "OTHER_LABEL", cur_line->symbol_str_len) == 0);
         check(cur_line->has_immediate == 1);
-        check(cur_line->immediate == 0x0 + 2);
+        check(cur_line->immediate == 0x0 + 2);      // ANI instruction is 2 bytes long
         check(cur_line->addr == 0xD);
 
         // JP SOME_LABEL
@@ -906,7 +915,7 @@ spec("Lexer")
         check(strncmp(cur_line->opcode->mnemonic, "DB", 2) == 0);
         check(cur_line->symbol_str == NULL);
         check(byte_list_len(cur_line->byte_list) == 1);
-        check(cur_line->addr == 25);
+        check(cur_line->addr == 25);            // 1 byte for DB + 24 bytes of argument data
         // Check the arg c
         cur_node = byte_list_get(cur_line->byte_list, 0);
         check(cur_node != NULL);

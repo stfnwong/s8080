@@ -570,31 +570,13 @@ int source_info_empty(SourceInfo* info)
 }
 
 /*
- * source_info_write()
+ * source_info_size()
  */
-int source_info_write(SourceInfo* info, const char* filename)
+int source_info_size(SourceInfo* info)
 {
-    FILE* fp;
-
-    fp = fopen(filename, "wb");
-    if(!fp)
-    {
-        fprintf(stderr, "[%s] failed to open file %s for writing\n",
-               __func__, filename);
-        return -1;
-    }
-
-    // Write the number of records, and the max size
-    fwrite(&info->size, sizeof(int), 1, fp);        
-    fwrite(&info->max_size, sizeof(int), 1, fp);        
-
-    // Now write each of the Lineinfo structures
-
-
-    fclose(fp);
-
-    return 0;
+    return info->size;
 }
+
 
 // ================ TOKEN ================ //
 /*

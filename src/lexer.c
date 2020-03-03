@@ -1206,6 +1206,7 @@ int lex_line(Lexer* lexer)
                 break;
 
             case LEX_PCHL:
+                fprintf(stdout, "[%s] yet to implement PCHL...\n", __func__);
                 instr_size = 1;
                 break;
 
@@ -1370,7 +1371,11 @@ SymbolTable* lex_get_symbol(Lexer* lexer)
 {
     return lexer->sym_table;
 }
-    
+
+int lex_repr_size(Lexer* lexer)
+{
+    return source_info_size(lexer->source_repr);
+}
 
 
 // -------- MISC -------- //

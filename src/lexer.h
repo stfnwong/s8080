@@ -127,8 +127,9 @@ int    lex_all(Lexer* lexer);
 int    lex_write_repr(Lexer* lexer, const char* filename);
 
 // Getters 
-SourceInfo* lex_get_repr(Lexer* lexer);
+SourceInfo*  lex_get_repr(Lexer* lexer);
 SymbolTable* lex_get_symbol_table(Lexer* lexer);
+int          lex_repr_size(Lexer* lexer);
 
 // Misc 
 void   lex_set_verbose(Lexer* lexer);
