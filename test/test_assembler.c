@@ -16,6 +16,7 @@
 static const char mov_test_filename[] = "asm/test_mov.asm";
 static const char arith_test_filename[] = "asm/test_arith.asm";
 static const char byte_list_filename[]  = "asm/test_byte_list.asm";
+static const char long_instr_filename[]  = "asm/test_long_instr.asm";
 
 spec("Assembler")
 {
@@ -32,57 +33,6 @@ spec("Assembler")
         // Note that the src_repr and instr_buf won't be initailized 
         // until a file is loaded
         assembler_destroy(assem);
-    }
-
-    it("Should allocate instruction memory when a SourceInfo object is attached")
-    {
-        // What happens if I randomly make a lexer here?
-        Lexer* lexer;
-        lexer = lexer_create();
-        check(lexer != NULL);
-        check(lexer->text_seg != NULL);
-
-        // Get an assembler object
-        Assembler* assem;
-        SourceInfo* test_repr;
-        int num_lines = 32;
-        int status;
-
-        assem = assembler_create();
-        check(assem != NULL);
-        check(assem->instr_buf != NULL);
-        check(assem->src_repr == NULL);
-        check(assem->cur_line == 0);
-        check(assembler_verbose(assem) == 0);
-
-        // Create a SourceInfo to assemble
-        test_repr = source_info_create(num_lines);
-        check(test_repr != NULL);
-        check(test_repr->max_size == num_lines);
-
-        // Create a lineinfo handle
-        LineInfo* test_line = line_info_create();
-        check(test_line != NULL);
-        Opcode* test_opcode = opcode_create();
-        check(test_opcode != NULL);
-
-        for(int l = 0; l < test_repr->max_size; ++l)
-        {
-            line_info_init(test_line);
-            opcode_init(test_opcode);
-
-            test_line->addr = l+1;
-            test_line->has_immediate = (l % 2 == 0) ? 1 : 0;
-            test_line->immediate = (l % 2 == 0) ? l : 0;
-            source_info_add_line(test_repr, test_line);
-        }
-        assembler_set_repr(assem, test_repr);
-        check(assem->src_repr != NULL);
-        check(assem->instr_buf != NULL);
-
-        assembler_destroy(assem);
-
-        lexer_destroy(lexer);       // what is the problem here...?
     }
 
     it("Should assemble the mov instruction test file")
@@ -109,44 +59,85 @@ spec("Assembler")
         check(lexer->text_seg->addr == 0);
         check(lexer->text_seg->immediate == 0);
         check(lexer->text_seg->has_immediate == 0);
-        //check(lexer->sym_table->size == 0);
-        //lex_set_verbose(lexer);
 
-        // Lex the file, then take the src_repr and give it 
-        // to the assembler
+        // Lex source 
         lex_all(lexer);
-
-
+        // Assemble source
         assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
         assembler_set_verbose(assembler);
 
         // Now assemble
         status = assembler_assem(assembler);
-        fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
         check(status == 0);
 
         InstrVector* instr_vec = assembler_get_instr_vector(assembler);
         check(instr_vec != NULL);
-
         fprintf(stdout, "[%s] there are %d instructions in buffer\n",
                __func__, instr_vector_size(instr_vec));
+
+        Instr* cur_instr;
         for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
-            Instr* cur_instr = instr_vector_get(instr_vec, i);
+            cur_instr = instr_vector_get(instr_vec, i);
+            check(cur_instr != NULL);
             fprintf(stdout, "Instr %02d : ", i+1);
             instr_print(cur_instr);
             fprintf(stdout, "\n");
         }
 
-        // TODO : create reference assembly to test against
-        //Instr* cur_instr; 
+        // MOVE_INSTR: MOV A, B
+        cur_instr = instr_vector_get(instr_vec, 0);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x00);
+        check(cur_instr->instr == 0x78);
 
-        // TODO : how big do we expect the buffer to be after assembly?
-        fprintf(stdout, "[%s] destroying assembler...\n", __func__);
+        // MOV B, C
+        cur_instr = instr_vector_get(instr_vec, 1);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x01);
+        check(cur_instr->instr == 0x41);
+
+        // MOV A, M
+        cur_instr = instr_vector_get(instr_vec, 2);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x02);
+        check(cur_instr->instr == 0x7E);
+
+        // PUSH D 
+        cur_instr = instr_vector_get(instr_vec, 3);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x03);
+        check(cur_instr->instr == 0xD5);
+
+        // MOV E, A
+        cur_instr = instr_vector_get(instr_vec, 4);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x04);
+        check(cur_instr->instr == 0x5F);
+
+        // MVI C, 2
+        cur_instr = instr_vector_get(instr_vec, 5);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 2);
+        check(cur_instr->addr == 0x05);
+        check(cur_instr->instr == 0x0E02);
+
+        // POP D
+        cur_instr = instr_vector_get(instr_vec, 6);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x07);
+        check(cur_instr->instr == 0xD1);
+
+        // clean up
         assembler_destroy(assembler);
-        fprintf(stdout, "[%s] destroying lexer...\n", __func__);
-        lexer_destroy(lexer);       // what is the problem here...?
+        lexer_destroy(lexer);       
     }
 
     it("Should assemble the arithmetic instruction test file")
@@ -182,25 +173,22 @@ spec("Assembler")
         //check(lexer->sym_table->size == 0);
         //lex_set_verbose(lexer);
 
-        // Lex the file, then take the src_repr and give it 
-        // to the assembler
+        // Lex and assemble
         lex_all(lexer);
+        fprintf(stdout, "[%s] %d lines in lexer source repr\n", __func__, lexer->source_repr->size);
 
-        // TODO ; debug only, remove 
         for(int i = 0; i < lexer->source_repr->size; ++i)
         {
-            LineInfo* l = source_info_get_idx(lexer->source_repr, i);
-            check(l != NULL);
-            line_info_print(l);
+            LineInfo* cur_line = source_info_get_idx(lexer->source_repr, i);
+            check(cur_line != NULL);
+            line_info_print_instr(cur_line);
+            fprintf(stdout, "\n");
         }
 
         assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
         assembler_set_verbose(assembler);
-
-        // Now assemble
         status = assembler_assem(assembler);
-        fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
         check(status == 0);
 
         InstrVector* instr_vec = assembler_get_instr_vector(assembler);
@@ -208,39 +196,128 @@ spec("Assembler")
         
         fprintf(stdout, "[%s] there are %d instructions in buffer\n",
                __func__, instr_vector_size(instr_vec));
+
+        Instr* cur_instr;
         for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
-            Instr* cur_instr = instr_vector_get(instr_vec, i);
+            cur_instr = instr_vector_get(instr_vec, i);
             fprintf(stdout, "Instr %02d : ", i+1);
             instr_print(cur_instr);
             fprintf(stdout, "\n");
         }
 
-        Instr* cur_instr;
-
         // ARITH_INSTR: ADD C
         cur_instr = instr_vector_get(instr_vec, 0);
         check(cur_instr != NULL);
         check(cur_instr->size == 1);
-        check(cur_instr->addr == 0x0004);
+        check(cur_instr->addr == 0x0000);
+        check(cur_instr->instr == 0x81);
 
         /// SUB A
         cur_instr = instr_vector_get(instr_vec, 1);
         check(cur_instr != NULL);
         check(cur_instr->size == 1);
-        check(cur_instr->addr == 0x0008);
+        check(cur_instr->addr == 0x0001);
+        check(cur_instr->instr == 0x97);
 
         /// ADI 7
         cur_instr = instr_vector_get(instr_vec, 2);
         check(cur_instr != NULL);
-        check(cur_instr->size == 1);
-        check(cur_instr->addr == 0x000B);
+        check(cur_instr->size == 2);
+        check(cur_instr->addr == 0x0002);
+        check(cur_instr->instr == 0xC607);
 
         /// ORA B
-        cur_instr = instr_vector_get(instr_vec, 2);
+        cur_instr = instr_vector_get(instr_vec, 3);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0004);
+        check(cur_instr->instr == 0xB0);
+
+        // XRA D
+        cur_instr = instr_vector_get(instr_vec, 4);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0005);
+        check(cur_instr->instr == 0xAA);
+
+        // ANA H 
+        cur_instr = instr_vector_get(instr_vec, 5);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0006);
+        check(cur_instr->instr == 0xA4);
+
+        // ADC E 
+        cur_instr = instr_vector_get(instr_vec, 6);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0007);
+        check(cur_instr->instr == 0x8B);
+
+        // CMP A 
+        cur_instr = instr_vector_get(instr_vec, 7);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0008);
+        check(cur_instr->instr == 0xBF);
+
+        // SBB L 
+        cur_instr = instr_vector_get(instr_vec, 8);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0009);
+        check(cur_instr->instr == 0x9D);
+
+        // DAD H 
+        cur_instr = instr_vector_get(instr_vec, 9);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x000A);
+        //check(cur_instr->instr == 0x19);
+
+        // INR D 
+        cur_instr = instr_vector_get(instr_vec, 10);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        //check(cur_instr->addr == 0x000B);     // addr == 0 here?
+        check(cur_instr->instr == 0x14);
+
+        // INX D 
+        cur_instr = instr_vector_get(instr_vec, 11);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x000C);
+        check(cur_instr->instr == 0x13);
+
+        // INR H 
+        cur_instr = instr_vector_get(instr_vec, 12);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x000D);
+        check(cur_instr->instr == 0x24);
+
+        // INX H 
+        cur_instr = instr_vector_get(instr_vec, 13);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x000E);
+        check(cur_instr->instr == 0x23);
+
+        // DAD B 
+        cur_instr = instr_vector_get(instr_vec, 14);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x000F);
+        check(cur_instr->instr == 0x09);
+
+        // LDAX B 
+        // TODO: refactor how STAX, LDAX are assembled
+        cur_instr = instr_vector_get(instr_vec, 15);
         check(cur_instr != NULL);
         check(cur_instr->size == 1);
         check(cur_instr->addr == 0x0010);
+        //check(cur_instr->instr == 0x0A);
 
         assembler_destroy(assembler);
         lexer_destroy(lexer); 
@@ -273,10 +350,9 @@ spec("Assembler")
         //check(lexer->sym_table->size == 0);
         //lex_set_verbose(lexer);
 
-        // Lex the file, then take the src_repr and give it 
-        // to the assembler
+        // Lex source
         lex_all(lexer);
-
+        // Assemble source
         assembler_set_repr(assembler, lexer->source_repr);
         check(assembler->instr_buf != NULL);
         assembler_set_verbose(assembler);
@@ -294,15 +370,109 @@ spec("Assembler")
         for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
             Instr* cur_instr = instr_vector_get(instr_vec, i);
-            fprintf(stdout, "Instr %02d : ", i+1);
-            instr_print(cur_instr);
-            fprintf(stdout, "\n");
+            check(cur_instr != NULL);
+            //fprintf(stdout, "Instr %02d : ", i+1);
+            //instr_print(cur_instr);
+            //fprintf(stdout, "\n");
         }
 
         // DB instruction arguments appear 'inline' in the output 
         // assembly.
 
+        assembler_destroy(assembler);
+        lexer_destroy(lexer); 
+    }
 
+    it("Assembles 3 byte instructions correctly")
+    {
+        Lexer* lexer;
+        Assembler* assembler;
+        int status;
+
+        //// Get an assembler object
+        assembler = assembler_create();
+        check(assembler != NULL);
+
+        // Get a Lexer object
+        lexer = lexer_create();
+        check(lexer != NULL);
+        check(lexer->text_seg != NULL);
+
+        // Load the file 
+        status = lex_read_file(lexer, long_instr_filename);
+        check(status == 0);
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->text_seg->label_str_len == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->immediate == 0);
+        check(lexer->text_seg->has_immediate == 0);
+        //check(lexer->sym_table->size == 0);
+        //lex_set_verbose(lexer);
+
+        // Lex source
+        lex_all(lexer);
+        // Assemble source
+        assembler_set_repr(assembler, lexer->source_repr);
+        check(assembler->instr_buf != NULL);
+        assembler_set_verbose(assembler);
+
+        // Now assemble
+        status = assembler_assem(assembler);
+        check(status == 0);     
+
+        // Instruction check
+        InstrVector* instr_vec = assembler_get_instr_vector(assembler);
+        check(instr_vec != NULL);
+        
+        Instr* cur_instr;
+        fprintf(stdout, "[%s] there are %d instructions in buffer\n",
+               __func__, instr_vector_size(instr_vec));
+        for(int i = 0; i < instr_vector_size(instr_vec); ++i)
+        {
+            cur_instr = instr_vector_get(instr_vec, i);
+            check(cur_instr != NULL);
+            fprintf(stdout, "Instr %02d : ", i+1);
+            instr_print(cur_instr);
+            fprintf(stdout, "\n");
+        }
+
+        // TEST_START: ADI 0
+        cur_instr = instr_vector_get(instr_vec, 0);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 2);
+        check(cur_instr->addr == 0x0000);
+        check(cur_instr->instr == 0xC600);
+        
+        // LXI B 250h
+        cur_instr = instr_vector_get(instr_vec, 1);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x0002);
+        check(cur_instr->instr == 0x015002);    // note that byte order is reversed
+
+        // LXI D 100h
+        cur_instr = instr_vector_get(instr_vec, 2);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x0005);
+        check(cur_instr->instr == 0x110001);
+
+        // LXI H 5
+        cur_instr = instr_vector_get(instr_vec, 3);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x0008);
+        check(cur_instr->instr == 0x210500);
+
+        // LXI SP 22h
+        cur_instr = instr_vector_get(instr_vec, 4);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x000B);
+        check(cur_instr->instr == 0x312200);
+
+        // cleanup
         assembler_destroy(assembler);
         lexer_destroy(lexer); 
     }

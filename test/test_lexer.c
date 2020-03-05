@@ -11,17 +11,24 @@
 // testing framework
 #include "bdd-for-c.h"
 
+// TODO : these unit tests mostly just prove that the component
+// works under mostly ideal conditions. There aren't any 
+// adversarial tests here, which should perhaps be changed. 
+// 
+// EG: create an *.asm file that is designed to wreck the lexer
+// and see how well it handles it. It should exit gracefully.
+
 char* src_buf;
 int src_file_size;
+static const char test_filename[]       = "asm/test_lexer.asm";
+static const char mov_test_filename[]   = "asm/test_mov.asm";
+static const char arith_test_filename[] = "asm/test_arith.asm";
+static const char jmp_test_filename[]   = "asm/test_jmp.asm";
+static const char byte_list_filename[]  = "asm/test_byte_list.asm";
+static const char long_instr_filename[]  = "asm/test_long_instr.asm";
 
 spec("Lexer")
 {
-    static const char test_filename[]       = "asm/test_lexer.asm";
-    static const char mov_test_filename[]   = "asm/test_mov.asm";
-    static const char arith_test_filename[] = "asm/test_arith.asm";
-    static const char jmp_test_filename[]   = "asm/test_jmp.asm";
-    static const char byte_list_filename[]  = "asm/test_byte_list.asm";
-
     it("Should initialize correctly")
     {
         Lexer* lexer = lexer_create();
@@ -847,14 +854,6 @@ spec("Lexer")
             check(cur_line != NULL);
         }
 
-        // TODO: debugging output, remove in final merge
-        for(int l = 0; l < lexer->source_repr->size; ++l)
-        {
-            cur_line = source_info_get_idx(lexer->source_repr, l);
-            line_info_print(cur_line);
-        }
-        fprintf(stdout, "\n");
-
         // TEST_ARGS : DB "SOME CHARACTER STRING", 0dh, 0ah, 03h
         cur_line = source_info_get_idx(lexer->source_repr, 0);
         line_info_print_instr(cur_line);
@@ -882,9 +881,11 @@ spec("Lexer")
         cur_node = byte_list_get(cur_line->byte_list, 0);
         check(cur_node != NULL);
         check(cur_node->len == 21);
-        uint8_t expected_str_data[] = {0x53, 0x4F, 0x4D, 0x45, 0x43, 0x48, 0x41, 
-                                       0x52, 0x41, 0x43, 0x54, 0x45, 0x52, 0x20,
-                                       0x53, 0x54, 0x52, 0x49, 0x4E, 0x47, 0x00};
+        uint8_t expected_str_data[] = {
+            0x53, 0x4F, 0x4D, 0x45, 0x43, 0x48, 0x41, 
+            0x52, 0x41, 0x43, 0x54, 0x45, 0x52, 0x20,
+            0x53, 0x54, 0x52, 0x49, 0x4E, 0x47, 0x00
+        };
         check(memcmp(cur_node->data, expected_str_data, 21) == 0);
 
         // 2nd arg
@@ -927,6 +928,114 @@ spec("Lexer")
         line_info_print_instr(cur_line);
         check(cur_line->error == 1);
         check(cur_line->addr = 27);     // 25 + DB + (one byte)
+
+        // clean up
+        lexer_destroy(lexer);
+    }
+
+    it("Should lex long instructions correctly")
+    {
+        Lexer* lexer = lexer_create();
+        Symbol* out_sym;
+
+        int status = lex_read_file(lexer, long_instr_filename);
+        check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+        check(lexer->text_seg->label_str == NULL);
+        check(lexer->sym_table->size == 0);
+        // Lex the file 
+        lex_set_verbose(lexer);
+        status = lex_all(lexer);
+        check(status == 0);
+
+        fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
+                __func__, 
+                byte_list_filename, 
+                lexer->source_repr->size
+        );
+
+        // Ensure there are no NULL elements in source repr
+        LineInfo* cur_line;
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            check(cur_line != NULL);
+        }
+
+        // TODO: debugging output, remove in final merge
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            line_info_print_instr(cur_line);
+            fprintf(stdout, "\n");
+        }
+        fprintf(stdout, "\n");
+
+
+        // TEST_START: ADI 0
+        cur_line = source_info_get_idx(lexer->source_repr, 0);
+        check(cur_line != NULL);
+        check(cur_line->label_str != NULL);
+        check(cur_line->label_str_len == 10);   
+        check(strncmp(cur_line->label_str, "TEST_START", 10) == 0);
+        check(cur_line->symbol_str == NULL);
+
+        check(cur_line->opcode->instr == LEX_ADI);
+        check(strncmp(cur_line->opcode->mnemonic, "ADI", 3) == 0);
+        check(cur_line->addr == 0);
+
+        // LXI B 250h
+        cur_line = source_info_get_idx(lexer->source_repr, 1);
+        check(cur_line != NULL);
+        check(cur_line->label_str == NULL);
+        check(cur_line->symbol_str == NULL);
+
+        check(cur_line->opcode->instr == LEX_LXI);
+        check(strncmp(cur_line->opcode->mnemonic, "LXI", 3) == 0);
+        check(cur_line->reg[0] == REG_B);
+        check(cur_line->immediate == 0x250);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->addr == 0x2);
+
+        // LXI D 100h
+        cur_line = source_info_get_idx(lexer->source_repr, 2);
+        check(cur_line != NULL);
+        check(cur_line->label_str == NULL);
+        check(cur_line->symbol_str == NULL);
+
+        check(cur_line->opcode->instr == LEX_LXI);
+        check(strncmp(cur_line->opcode->mnemonic, "LXI", 3) == 0);
+        check(cur_line->reg[0] == REG_D);
+        check(cur_line->immediate == 0x100);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->addr == 0x5);
+
+        // LXI H 5
+        cur_line = source_info_get_idx(lexer->source_repr, 3);
+        check(cur_line != NULL);
+        check(cur_line->label_str == NULL);
+        check(cur_line->symbol_str == NULL);
+
+        check(cur_line->opcode->instr == LEX_LXI);
+        check(strncmp(cur_line->opcode->mnemonic, "LXI", 3) == 0);
+        check(cur_line->reg[0] == REG_H);
+        check(cur_line->immediate == 0x5);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->addr == 0x8);
+
+        // LXI SP 22h
+        cur_line = source_info_get_idx(lexer->source_repr, 4);
+        check(cur_line != NULL);
+        check(cur_line->label_str == NULL);
+        check(cur_line->symbol_str == NULL);
+
+        check(cur_line->opcode->instr == LEX_LXI);
+        check(strncmp(cur_line->opcode->mnemonic, "LXI", 3) == 0);
+        check(cur_line->reg[0] == REG_S);
+        check(cur_line->immediate == 0x22);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->addr == 0xB);
 
         // clean up
         lexer_destroy(lexer);

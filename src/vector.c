@@ -217,7 +217,7 @@ void instr_vector_extend(InstrVector* vec, int ext_size)
         return;
     }
 
-    memcpy(buf, vec->buffer, vec->size);
+    memcpy(buf, vec->buffer, sizeof(*vec->buffer) * vec->size);
     free(vec->buffer);
     vec->buffer = buf;
     vec->capacity = vec->capacity + ext_size;

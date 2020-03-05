@@ -601,6 +601,12 @@ void lex_next_token(Lexer* lexer, Token* token)
             goto TOKEN_END;
         }
     }
+    else if(strlen(lexer->token_buf) == 2 && strncmp(lexer->token_buf, "SP", 2) == 0)
+    {
+        token->type = SYM_REG;
+        token->token_str_len = 1;
+        goto TOKEN_END;
+    }
     else if(strlen(lexer->token_buf) == 3)
     {
         if(strncmp(lexer->token_buf, "PSW", 3) == 0)
@@ -1211,8 +1217,10 @@ int lex_line(Lexer* lexer)
                 break;
 
             case LEX_LXI:
+                lex_next_token(lexer, &tok_a);
+                lex_next_token(lexer, &tok_b);
+                status = lex_parse_reg_imm(lexer, &tok_a, &tok_b);
                 instr_size = 3;
-                fprintf(stdout, "[%s] yet to implement LXI...\n", __func__);
                 break;
 
             // Control flow instructions
@@ -1288,6 +1296,7 @@ int lex_line(Lexer* lexer)
 LEX_LINE_END:
     lexer->text_seg->error = (status < 0) ? 1 : 0;
     lexer->text_seg->addr = lexer->text_addr;
+    lexer->text_seg->line_num = lexer->cur_line;
     lex_text_addr_incr(lexer, instr_size);
 
     status = source_info_add_line(lexer->source_repr, lexer->text_seg);
@@ -1334,29 +1343,6 @@ int lex_all(Lexer* lexer)
 
     // Resolve label addresses
     lex_resolve_labels(lexer);
-
-    return 0;
-}
-
-/*
- * lex_write_repr()
- */
-// NOTE: when would this ever be used?
-int lex_write_repr(Lexer* lexer, const char* filename)
-{
-    if(lexer->source_repr == NULL)
-        return -1;
-
-    FILE* fp;
-
-    fp = fopen(filename, "wb");
-    if(!fp)
-    {
-        fprintf(stderr, "[%s] failed to open file %s for writing\n",
-                __func__, filename);
-        return -1;
-    }
-    // TODO: here we take each LineInfo and write it to disk
 
     return 0;
 }

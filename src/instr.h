@@ -16,7 +16,7 @@
 typedef struct
 {
     uint16_t addr;
-    uint16_t instr;
+    uint32_t instr;
     uint8_t  size;
 }Instr;
 
@@ -25,6 +25,7 @@ void   instr_destroy(Instr* instr);
 void   instr_init(Instr* instr);
 void   instr_copy(Instr* dst, Instr* src);
 void   instr_print(Instr* instr);
+//void   instr_print_asm(Instr* instr);       // print instr as assembly (eg: disassemble to console)
 
 // NOTE: more or less deprecated - be sure to remove this before final merge
 /*
