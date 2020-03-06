@@ -199,7 +199,7 @@ void instr_vector_push_back(InstrVector* vec, Instr* instr)
     if(vec->size >= vec->capacity)
         instr_vector_extend(vec, vec->capacity);
 
-    memcpy(vec->buffer + vec->size, instr, sizeof(*instr));
+    memcpy(vec->buffer + vec->size, instr, sizeof(*vec->buffer));
     vec->size++;
 }
 
@@ -210,6 +210,8 @@ void instr_vector_extend(InstrVector* vec, int ext_size)
 {
     Instr* buf;
 
+    fprintf(stdout, "[%s] resizing vector to have %d elements\n", __func__, ext_size);
+
     buf = malloc(sizeof(*vec->buffer) * (vec->capacity + ext_size));
     if(!buf)
     {
@@ -217,19 +219,42 @@ void instr_vector_extend(InstrVector* vec, int ext_size)
         return;
     }
 
-    memcpy(buf, vec->buffer, sizeof(*vec->buffer) * vec->size);
+    fprintf(stdout, "[%s] copying %ld bytes to new buffer\n", __func__, sizeof(*vec->buffer) * vec->size);
+    vec->capacity = vec->capacity + ext_size;
+    memset(buf, 0, sizeof(*buf) * vec->capacity);
+    memcpy(buf, vec->buffer, sizeof(*buf) * vec->size);
     free(vec->buffer);
     vec->buffer = buf;
-    vec->capacity = vec->capacity + ext_size;
 }
 
 // -------- INFO 
+/*
+ * intr_vector_size()
+ */
 int instr_vector_size(InstrVector* vec)
 {
     return vec->size;
 }
 
+/*
+ * intr_vector_capacity()
+ */
 int instr_vector_capcaity(InstrVector* vec)
 {
     return vec->capacity;
+}
+
+/*
+ * instr_vector_print()
+ */
+void instr_vector_print(InstrVector* vec)
+{
+    fprintf(stdout, "size     : %d\n", vec->size);
+    fprintf(stdout, "capacity : %d\n", vec->capacity);
+    for(int v = 0; v < vec->size; ++v)
+    {
+        fprintf(stdout, "%5d : ", v);
+        instr_print(&vec->buffer[v]);
+        fprintf(stdout, "\n");
+    }
 }

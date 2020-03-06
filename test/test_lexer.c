@@ -837,6 +837,7 @@ spec("Lexer")
         check(lexer->text_seg->addr == 0);
         check(lexer->text_seg->label_str == NULL);
         check(lexer->sym_table->size == 0);
+        lex_set_verbose(lexer);
         // Lex the file 
         status = lex_all(lexer);
         //check(status == -1);    // should be -1 here since final DB will fail
@@ -861,7 +862,7 @@ spec("Lexer")
         check(cur_line->label_str != NULL);
         check(cur_line->label_str_len == 9);   // +1 for null character
         check(strncmp(cur_line->label_str, "TEST_ARGS", 8) == 0);
-        check(cur_line->symbol_str == NULL);
+        //check(cur_line->symbol_str == NULL);
 
         check(cur_line->opcode->instr == LEX_DB);
         check(strncmp(cur_line->opcode->mnemonic, "DB", 2) == 0);
@@ -880,13 +881,16 @@ spec("Lexer")
         // 1st arg
         cur_node = byte_list_get(cur_line->byte_list, 0);
         check(cur_node != NULL);
-        check(cur_node->len == 21);
         uint8_t expected_str_data[] = {
-            0x53, 0x4F, 0x4D, 0x45, 0x43, 0x48, 0x41, 
-            0x52, 0x41, 0x43, 0x54, 0x45, 0x52, 0x20,
-            0x53, 0x54, 0x52, 0x49, 0x4E, 0x47, 0x00
+            0x53, 0x4F, 0x4D, 0x45, 0x20, 0x43, 0x48, 
+            0x41, 0x52, 0x41, 0x43, 0x54, 0x45, 0x52, 
+            0x20, 0x53, 0x54, 0x52, 0x49, 0x4E, 0x47, 
+            0x00
         };
+        fprintf(stdout, "[%s] expected string data = %s\n", __func__, expected_str_data);
+        fprintf(stdout, "[%s] cur_node->data = %s\n", __func__, cur_node->data);
         check(memcmp(cur_node->data, expected_str_data, 21) == 0);
+        check(cur_node->len == 22);
 
         // 2nd arg
         cur_node = byte_list_get(cur_line->byte_list, 1);
@@ -916,7 +920,7 @@ spec("Lexer")
         check(strncmp(cur_line->opcode->mnemonic, "DB", 2) == 0);
         check(cur_line->symbol_str == NULL);
         check(byte_list_len(cur_line->byte_list) == 1);
-        check(cur_line->addr == 25);            // 1 byte for DB + 24 bytes of argument data
+        check(cur_line->addr == 26);            // 1 byte for DB + 25 bytes of argument data
         // Check the arg c
         cur_node = byte_list_get(cur_line->byte_list, 0);
         check(cur_node != NULL);
@@ -927,7 +931,7 @@ spec("Lexer")
         cur_line = source_info_get_idx(lexer->source_repr, 2);
         line_info_print_instr(cur_line);
         check(cur_line->error == 1);
-        check(cur_line->addr = 27);     // 25 + DB + (one byte)
+        check(cur_line->addr = 28);     // 26 + DB + (one byte)
 
         // clean up
         lexer_destroy(lexer);

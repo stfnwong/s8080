@@ -57,5 +57,6 @@ void         instr_vector_extend(InstrVector* vec, int ext_size);
 // info
 int          instr_vector_size(InstrVector* vec);
 int          instr_vector_capacity(InstrVector* vec);
+void         instr_vector_print(InstrVector* vec);
 
 #endif /*__S8080_VECTOR_H*/

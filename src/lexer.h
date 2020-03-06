@@ -104,7 +104,6 @@ void   lex_data_addr_incr(Lexer* lexer);
 
 //  extract tokens
 void   lex_scan_token(Lexer* lexer);
-void   lex_next_string(Lexer* lexer, Token* token);
 void   lex_next_token(Lexer* lexer, Token* token);  
 
 // Parse instructions 

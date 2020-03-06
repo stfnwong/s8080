@@ -427,6 +427,24 @@ void lex_scan_token(Lexer* lexer)
 {
     lexer->token_buf_ptr = 0;
     lex_skip_whitespace(lexer);
+
+    if(lexer->cur_char == '"')
+    {
+        lexer->token_buf[0] = lexer->cur_char;
+        lexer->token_buf_ptr = 1;
+        lex_advance(lexer); // skip the leading "
+        while(lexer->token_buf_ptr < TOKEN_BUF_SIZE-1)
+        {
+            if(lexer->cur_char == '"')
+                break;
+            lexer->token_buf[lexer->token_buf_ptr] = lexer->cur_char;
+            lex_advance(lexer);
+            lexer->token_buf_ptr++;
+        }
+        lex_advance(lexer);
+        goto LEX_SCAN_TOKEN_END;
+    }
+
     while(lexer->token_buf_ptr < TOKEN_BUF_SIZE-1)
     {
         if(lexer->cur_char == ' ')      // space
@@ -453,11 +471,13 @@ void lex_scan_token(Lexer* lexer)
         lexer->token_buf_ptr++;
     }
 
+LEX_SCAN_TOKEN_END:
     lexer->token_buf[lexer->token_buf_ptr] = '\0';
     // move the cursor forward by one if we landed on a seperator
     if(lexer->cur_char == ',' || lexer->cur_char == ':' || lexer->cur_char == ' ')
         lex_advance(lexer);
 }
+
 
 /*
  * lex_is_valid_literal_char()
@@ -498,8 +518,6 @@ int lex_extract_literal(Lexer* lexer, Token* token)
         return 0;
     }
 
-    // TODO : do we need to check for comments here?
-
     token->type = SYM_LITERAL;
     strncpy(token->token_str, lexer->token_buf, tok_ptr);
     token->token_str_len = tok_ptr;
@@ -523,34 +541,6 @@ int lex_extract_literal(Lexer* lexer, Token* token)
 }
 
 /*
- * lex_next_string()
- */
-void lex_next_string(Lexer* lexer, Token* token)
-{
-    while(lexer->token_buf_ptr < TOKEN_BUF_SIZE-1)
-    {
-        if(lexer->cur_char == '"')      // the end of this string
-        {
-            lex_advance(lexer);
-            break;                      
-        }
-        if(lexer->cur_char == EOF)      // got to the end of the file
-            break;
-        if(lexer->cur_char == '\0')     // got a null
-            break;
-
-        lexer->token_buf[lexer->token_buf_ptr] = lexer->cur_char;
-        lex_advance(lexer);
-        lexer->token_buf_ptr++;
-    }
-
-    lexer->token_buf[lexer->token_buf_ptr] = '\0';
-    // move the cursor forward by one if we landed on a seperator
-    if(lexer->cur_char == ',' || lexer->cur_char == ':' || lexer->cur_char == ' ')
-        lex_advance(lexer);
-}
-
-/*
  * lex_next_token()
  */
 void lex_next_token(Lexer* lexer, Token* token)
@@ -559,13 +549,21 @@ void lex_next_token(Lexer* lexer, Token* token)
     Opcode opcode;
     // lex the next token, this places a new string into lexer->token_buf
     lex_scan_token(lexer);
-
     token_init(token);
+
+    fprintf(stdout, "[%s] lexer->token_buf = %s\n", __func__, lexer->token_buf);
 
     // Token can't be of length 0
     if(strlen(lexer->token_buf) == 0)
     {
         token->type = SYM_NONE;
+        goto TOKEN_END;
+    }
+
+    // Check for strings
+    if(lexer->token_buf[0] == '"')
+    {
+        token->type = SYM_STRING;
         goto TOKEN_END;
     }
 
@@ -615,14 +613,6 @@ void lex_next_token(Lexer* lexer, Token* token)
             token->token_str_len = 1;
             goto TOKEN_END;
         }
-    }
-
-    // Check for strings
-    if(lexer->token_buf[0] == '"')
-    {
-        lex_next_string(lexer, token);
-        token->type = SYM_STRING;
-        goto TOKEN_END;
     }
 
     // Check for directives. In this implementation we don't have 
@@ -889,7 +879,7 @@ int lex_parse_data_arg(Lexer* lexer, Token* tok)
     int status;
     if(tok->type == SYM_LITERAL)
     {
-        fprintf(stdout, "[%s] got LITERAL \n", __func__);
+        fprintf(stdout, "[%s] got LITERAL <%s> \n", __func__, tok->token_str);
         uint8_t literal = lex_extract_literal(lexer, tok);
         status = line_info_append_byte_array(
                 lexer->text_seg,
@@ -899,7 +889,7 @@ int lex_parse_data_arg(Lexer* lexer, Token* tok)
     }
     else if(tok->type == SYM_STRING)
     {
-        fprintf(stdout, "[%s] got STRING of len %ld \n", __func__, strlen(tok->token_str));
+        fprintf(stdout, "[%s] got STRING <%s> of len %ld \n", __func__, tok->token_str, strlen(tok->token_str));
         status = line_info_append_byte_array(
                 lexer->text_seg,
                 (uint8_t*) tok->token_str+1,    // skip leading "
@@ -908,7 +898,7 @@ int lex_parse_data_arg(Lexer* lexer, Token* tok)
     }
     else if(tok->type == SYM_LABEL)
     {
-        fprintf(stdout, "[%s] got LABEL of len %ld \n", __func__, strlen(tok->token_str));
+        fprintf(stdout, "[%s] got LABEL <%s> of len %ld \n", __func__, tok->token_str, strlen(tok->token_str));
         status = line_info_set_symbol_str(
                 lexer->text_seg,
                 tok->token_str,
@@ -1266,8 +1256,6 @@ int lex_line(Lexer* lexer)
             case LEX_DW:        // Word size handled in assembler
                 status = lex_parse_data(lexer, &tok_a);
                 instr_size = line_info_byte_list_num_bytes(lexer->text_seg) + 1;
-                // TODO : deubg, remove
-                fprintf(stdout, "[%s] assembled %d bytes for DB/DW instruction\n", __func__, instr_size);
                 break;
 
             case LEX_DS:

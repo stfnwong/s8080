@@ -20,8 +20,8 @@ Instr* instr_create(void)
     if(!ins)
         return NULL;
 
-    ins->addr = 0;
     ins->instr = 0;
+    ins->addr = 0;
 
     return ins;
 }

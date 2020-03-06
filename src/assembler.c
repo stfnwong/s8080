@@ -438,7 +438,6 @@ void asm_call(Instr* dst, LineInfo* line)
 /*
  * asm_data()
  */
-
 void asm_data(InstrVector* vec, LineInfo* line)
 {
     int cur_addr;
@@ -458,11 +457,17 @@ void asm_data(InstrVector* vec, LineInfo* line)
                 cur_instr.addr  = cur_addr;
                 cur_instr.size  = 1;
                 instr_vector_push_back(vec, &cur_instr);
+                fprintf(stdout, "[%s] pushed back instr %02X with address %04X\n",
+                        __func__, cur_instr.instr, cur_instr.addr);
                 cur_addr++;
+                fprintf(stdout, "[%s] instruction vector :\n", __func__);
+                instr_vector_print(vec);
             }
             cur_node = cur_node->next;
         }
     }
+
+    // TODO: debug, remove
 }
 
 

@@ -15,8 +15,8 @@
  */
 typedef struct
 {
-    uint16_t addr;
     uint32_t instr;
+    uint16_t addr;
     uint8_t  size;
 }Instr;
 

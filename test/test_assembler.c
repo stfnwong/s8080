@@ -357,6 +357,16 @@ spec("Assembler")
         check(assembler->instr_buf != NULL);
         assembler_set_verbose(assembler);
 
+        LineInfo* cur_line;
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            check(cur_line != NULL);
+            // TODO : debug only, remove
+            line_info_print_instr(cur_line);
+            fprintf(stdout, "\n");
+        }
+
         // Now assemble
         status = assembler_assem(assembler);
         fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
@@ -367,17 +377,63 @@ spec("Assembler")
 
         fprintf(stdout, "[%s] there are %d instructions in buffer\n",
                __func__, instr_vector_size(instr_vec));
+
+        Instr* cur_instr;
         for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
-            Instr* cur_instr = instr_vector_get(instr_vec, i);
+            cur_instr = instr_vector_get(instr_vec, i);
             check(cur_instr != NULL);
-            //fprintf(stdout, "Instr %02d : ", i+1);
-            //instr_print(cur_instr);
-            //fprintf(stdout, "\n");
+            instr_print(cur_instr);
+            fprintf(stdout, "\n");
         }
 
         // DB instruction arguments appear 'inline' in the output 
-        // assembly.
+        // assembly. Note that there is no DB 'instruction', DB is 
+        // more like an assembler directive.
+        
+        // TEST_ARGS : DB "SOME_CHARACTER_STRING", 0dh, 0ah, 03h
+        const char expected_string[] = "SOME CHARACTER STRING\0";
+        for(int i = 0; i < 22; ++i)  
+        {
+            cur_instr = instr_vector_get(instr_vec, i);
+            check(cur_instr != NULL);
+            check(cur_instr->size == 1);
+            check(cur_instr->instr == (uint8_t) expected_string[i]);
+            check(cur_instr->addr == i);
+            fprintf(stdout, "%c", cur_instr->instr);
+        }
+        fprintf(stdout, "\n");
+
+        // 0dh
+        cur_instr = instr_vector_get(instr_vec, 22);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->instr == 0xD);
+        check(cur_instr->addr == 22);
+
+        // 0ah
+        cur_instr = instr_vector_get(instr_vec, 23);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->instr == 0xA);
+        check(cur_instr->addr == 23);
+
+        // 03h
+        cur_instr = instr_vector_get(instr_vec, 24);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->instr == 0x3);
+        check(cur_instr->addr == 24);
+
+        // TODO : something is being pushed back multiple times? 
+        // DB 65h
+        cur_instr = instr_vector_get(instr_vec, 25);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->instr == 0x65);
+        check(cur_instr->addr == 25);
+
+        // DB           (incomplete line)
 
         assembler_destroy(assembler);
         lexer_destroy(lexer); 
