@@ -210,8 +210,6 @@ void instr_vector_extend(InstrVector* vec, int ext_size)
 {
     Instr* buf;
 
-    fprintf(stdout, "[%s] resizing vector to have %d elements\n", __func__, ext_size);
-
     buf = malloc(sizeof(*vec->buffer) * (vec->capacity + ext_size));
     if(!buf)
     {
@@ -219,9 +217,7 @@ void instr_vector_extend(InstrVector* vec, int ext_size)
         return;
     }
 
-    fprintf(stdout, "[%s] copying %ld bytes to new buffer\n", __func__, sizeof(*vec->buffer) * vec->size);
     vec->capacity = vec->capacity + ext_size;
-    //memset(buf, 0, sizeof(*buf) * vec->capacity);
     memcpy(buf, vec->buffer, sizeof(*buf) * vec->size);
     free(vec->buffer);
     vec->buffer = buf;

@@ -933,11 +933,15 @@ int lex_parse_data(Lexer* lexer, Token* tok)
     while(lexer->cur_line <= data_line)
     {
         lex_next_token(lexer, tok);
-        fprintf(stdout, "[%s] lexing token %s on line %d:%d\n",
-                __func__, lexer->token_buf,
-                lexer->cur_line,
-                lexer->cur_col
-        );
+        if(lexer->verbose)
+        {
+            fprintf(stdout, "[%s] (line %d:%d) lexing token %s \n",
+                    __func__, 
+                    lexer->cur_line,
+                    lexer->cur_col,
+                    lexer->token_buf
+            );
+        }
         status = lex_parse_data_arg(lexer, tok);
         if(status < 0 || lex_src_end(lexer) || (lexer->cur_line > data_line))
             break;

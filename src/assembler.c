@@ -450,25 +450,16 @@ void asm_data(InstrVector* vec, LineInfo* line)
     byte_list_print(line->byte_list); 
     while(cur_node != NULL)
     {
-        if(cur_node->next == NULL)
-            fprintf(stdout, "[%s] last node\n", __func__);
-        fprintf(stdout, "[%s] cur_node->len = %d\n", __func__, cur_node->len);
-        for(int d = 0; d < cur_node->len; ++d)
+       for(int d = 0; d < cur_node->len; ++d)
         {
             cur_instr.instr = cur_node->data[d];
             cur_instr.addr  = cur_addr;
             cur_instr.size  = 1;
             instr_vector_push_back(vec, &cur_instr);
-            fprintf(stdout, "[%s] pushed back instr %02X with address 0x%04X\n",
-                    __func__, cur_instr.instr, cur_instr.addr);
             cur_addr++;
-            fprintf(stdout, "[%s] instruction vector :\n", __func__);
-            instr_vector_print(vec);
         }
         cur_node = cur_node->next;
     }
-
-    fprintf(stdout, "[%s] instruction vector contains %d instructions\n", __func__, instr_vector_size(vec));
 }
 
 
@@ -685,7 +676,6 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
     }
     // Add to instruction vector
     instr_vector_push_back(assem->instr_buf, &cur_instr);
-    fprintf(stdout, "[%s] instruction vector contains %d instructions\n", __func__, instr_vector_size(assem->instr_buf));
 
 ASM_LINE_END:
     return status;
@@ -714,8 +704,6 @@ int assembler_assem(Assembler* assem)
         if(status < 0)
             break;
     }
-
-    fprintf(stdout, "[%s] instruction vector contains %d instructions\n", __func__, instr_vector_size(assem->instr_buf));
 
     return status;
 }

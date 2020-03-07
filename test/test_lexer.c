@@ -887,8 +887,6 @@ spec("Lexer")
             0x20, 0x53, 0x54, 0x52, 0x49, 0x4E, 0x47, 
             0x00
         };
-        fprintf(stdout, "[%s] expected string data = %s\n", __func__, expected_str_data);
-        fprintf(stdout, "[%s] cur_node->data = %s\n", __func__, cur_node->data);
         check(memcmp(cur_node->data, expected_str_data, 21) == 0);
         check(cur_node->len == 22);
 

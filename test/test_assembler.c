@@ -362,16 +362,12 @@ spec("Assembler")
         {
             cur_line = source_info_get_idx(lexer->source_repr, l);
             check(cur_line != NULL);
-            // TODO : debug only, remove
-            line_info_print_instr(cur_line);
-            fprintf(stdout, "\n");
         }
 
         // Now assemble
         status = assembler_assem(assembler);
         fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
         check(status == 0);
-        //check(status == -1);        // last DB instruction is invalid
 
         InstrVector* instr_vec = assembler_get_instr_vector(assembler);
         check(instr_vec != NULL);
@@ -380,16 +376,11 @@ spec("Assembler")
                __func__, instr_vector_size(instr_vec));
         check(instr_vector_size(instr_vec) == 26);
 
-        instr_vector_print(instr_vec);
-        fprintf(stdout, "\n");
         Instr* cur_instr;
         for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
             cur_instr = instr_vector_get(instr_vec, i);
             check(cur_instr != NULL);
-            //fprintf(stdout, "instr %d :", i);
-            //instr_print(cur_instr);
-            //fprintf(stdout, "\n");
         }
 
         // DB instruction arguments appear 'inline' in the output 
@@ -430,7 +421,6 @@ spec("Assembler")
         check(cur_instr->instr == 0x3);
         check(cur_instr->addr == 24);
 
-        // TODO : something is being pushed back multiple times? 
         // DB 65h
         cur_instr = instr_vector_get(instr_vec, 25);
         check(cur_instr != NULL);
