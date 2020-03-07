@@ -20,6 +20,11 @@ typedef struct
     uint8_t  size;
 }Instr;
 
+// NOTE: This will be an 8 byte structure, probably due to packing. 
+// This means that we could re-pack here to save a byte (by putting the 
+// size in the upper region of instr), or add another byte with 
+// effectively no penalty
+
 Instr* instr_create(void);
 void   instr_destroy(Instr* instr);
 void   instr_init(Instr* instr);
@@ -44,6 +49,8 @@ int          instr_buffer_insert(InstrBuffer* buf, Instr* ins);
 Instr*       instr_buffer_get(InstrBuffer* buf, int idx);
 int          instr_buffer_full(InstrBuffer* buf);
 int          instr_buffer_empty(InstrBuffer* buf);
+
+// Display 
 
 
 #endif /*__S8080_INSTR_H*/

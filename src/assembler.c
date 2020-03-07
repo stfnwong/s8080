@@ -441,41 +441,41 @@ void asm_call(Instr* dst, LineInfo* line)
 void asm_data(InstrVector* vec, LineInfo* line)
 {
     int cur_addr;
-
     ByteNode* cur_node;
     Instr cur_instr;
 
     cur_addr = line->addr;
-    for(int i = 0; i < byte_list_len(line->byte_list); ++i)
+    cur_node = byte_list_get(line->byte_list, 0);
+
+    byte_list_print(line->byte_list); 
+    while(cur_node != NULL)
     {
-        cur_node = byte_list_get(line->byte_list, i);
-        while(cur_node != NULL)
+        if(cur_node->next == NULL)
+            fprintf(stdout, "[%s] last node\n", __func__);
+        fprintf(stdout, "[%s] cur_node->len = %d\n", __func__, cur_node->len);
+        for(int d = 0; d < cur_node->len; ++d)
         {
-            for(int d = 0; d < cur_node->len; ++d)
-            {
-                cur_instr.instr = cur_node->data[d];
-                cur_instr.addr  = cur_addr;
-                cur_instr.size  = 1;
-                instr_vector_push_back(vec, &cur_instr);
-                fprintf(stdout, "[%s] pushed back instr %02X with address %04X\n",
-                        __func__, cur_instr.instr, cur_instr.addr);
-                cur_addr++;
-                fprintf(stdout, "[%s] instruction vector :\n", __func__);
-                instr_vector_print(vec);
-            }
-            cur_node = cur_node->next;
+            cur_instr.instr = cur_node->data[d];
+            cur_instr.addr  = cur_addr;
+            cur_instr.size  = 1;
+            instr_vector_push_back(vec, &cur_instr);
+            fprintf(stdout, "[%s] pushed back instr %02X with address 0x%04X\n",
+                    __func__, cur_instr.instr, cur_instr.addr);
+            cur_addr++;
+            fprintf(stdout, "[%s] instruction vector :\n", __func__);
+            instr_vector_print(vec);
         }
+        cur_node = cur_node->next;
     }
 
-    // TODO: debug, remove
+    fprintf(stdout, "[%s] instruction vector contains %d instructions\n", __func__, instr_vector_size(vec));
 }
 
 
 // ================ ASSEMBLER OBJECT ================ //
-
 /*
- * assembler_create()
- */
+* assembler_create()
+*/
 Assembler* assembler_create(void)
 {
     Assembler* assem;
@@ -671,7 +671,7 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             case LEX_DW:
                 asm_data(assem->instr_buf, line);
                 status = 0;     // is there anything that can go wrong?
-                break;
+                goto ASM_LINE_END;
 
             default:
             {
@@ -685,7 +685,9 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
     }
     // Add to instruction vector
     instr_vector_push_back(assem->instr_buf, &cur_instr);
+    fprintf(stdout, "[%s] instruction vector contains %d instructions\n", __func__, instr_vector_size(assem->instr_buf));
 
+ASM_LINE_END:
     return status;
 }
 
@@ -712,6 +714,8 @@ int assembler_assem(Assembler* assem)
         if(status < 0)
             break;
     }
+
+    fprintf(stdout, "[%s] instruction vector contains %d instructions\n", __func__, instr_vector_size(assem->instr_buf));
 
     return status;
 }

@@ -930,13 +930,6 @@ int lex_parse_data(Lexer* lexer, Token* tok)
     // once we go to a  new line we don't need to lex anymore tokens 
     // into the buffer
     data_line = lexer->cur_line;
-
-    // deal with the current token
-    lex_next_token(lexer, tok);
-    status = lex_parse_data_arg(lexer, tok);
-    if(status < 0)
-        goto LEX_PARSE_DATA_END;
-    
     while(lexer->cur_line <= data_line)
     {
         lex_next_token(lexer, tok);
@@ -946,7 +939,7 @@ int lex_parse_data(Lexer* lexer, Token* tok)
                 lexer->cur_col
         );
         status = lex_parse_data_arg(lexer, tok);
-        if(status < 0 || lex_src_end(lexer) || lexer->cur_line > data_line)
+        if(status < 0 || lex_src_end(lexer) || (lexer->cur_line > data_line))
             break;
     }
 
@@ -1255,7 +1248,7 @@ int lex_line(Lexer* lexer)
             case LEX_DB:
             case LEX_DW:        // Word size handled in assembler
                 status = lex_parse_data(lexer, &tok_a);
-                instr_size = line_info_byte_list_num_bytes(lexer->text_seg) + 1;
+                instr_size = line_info_byte_list_num_bytes(lexer->text_seg) ;
                 break;
 
             case LEX_DS:

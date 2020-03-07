@@ -370,21 +370,26 @@ spec("Assembler")
         // Now assemble
         status = assembler_assem(assembler);
         fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
-        check(status == -1);        // last DB instruction is invalid
+        check(status == 0);
+        //check(status == -1);        // last DB instruction is invalid
 
         InstrVector* instr_vec = assembler_get_instr_vector(assembler);
         check(instr_vec != NULL);
 
         fprintf(stdout, "[%s] there are %d instructions in buffer\n",
                __func__, instr_vector_size(instr_vec));
+        check(instr_vector_size(instr_vec) == 26);
 
+        instr_vector_print(instr_vec);
+        fprintf(stdout, "\n");
         Instr* cur_instr;
         for(int i = 0; i < instr_vector_size(instr_vec); ++i)
         {
             cur_instr = instr_vector_get(instr_vec, i);
             check(cur_instr != NULL);
-            instr_print(cur_instr);
-            fprintf(stdout, "\n");
+            //fprintf(stdout, "instr %d :", i);
+            //instr_print(cur_instr);
+            //fprintf(stdout, "\n");
         }
 
         // DB instruction arguments appear 'inline' in the output 

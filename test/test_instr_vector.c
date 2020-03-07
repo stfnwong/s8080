@@ -167,6 +167,7 @@ spec("InstrVector")
         // set the initial addr and instr
         test_instr.addr  = exp_addrs[0];
         test_instr.instr = exp_instrs[0];
+        test_instr.size  = 1;
 
         // Since the initial capacity is just one, we will get an expansion
         // after the second insert, which will also invoke a copy
@@ -198,6 +199,9 @@ spec("InstrVector")
             check(out_instr->instr == exp_instrs[v]);
             check(out_instr->addr  == exp_addrs[v]);
         }
+        fprintf(stdout, "[%s] test_vec at size %d\n", __func__, test_vec->size);
+        instr_vector_print(test_vec);
+        fprintf(stdout, "\n");
 
         // Lets add some more vectors to the list up to 16
         for(int v = 2; v < 16; ++v)
@@ -207,6 +211,9 @@ spec("InstrVector")
             instr_vector_push_back(test_vec, &test_instr);
             check(test_vec->size == v+1);
         }
+        fprintf(stdout, "[%s] test_vec at size %d\n", __func__, test_vec->size);
+        instr_vector_print(test_vec);
+        fprintf(stdout, "\n");
 
         // These will also have been copied across to the 'new' buffer
         for(int v = 2; v < 16; ++v)
@@ -216,6 +223,9 @@ spec("InstrVector")
             check(out_instr->instr == exp_instrs[v]);
             check(out_instr->addr == exp_addrs[v]);
         }
+        fprintf(stdout, "[%s] test_vec at size %d\n", __func__, test_vec->size);
+        instr_vector_print(test_vec);
+        fprintf(stdout, "\n");
 
         for(int v = 16; v < total_test_size; ++v)
         {
@@ -233,6 +243,9 @@ spec("InstrVector")
             check(out_instr->instr == exp_instrs[v]);
             check(out_instr->addr == exp_addrs[v]);
         }
+        fprintf(stdout, "[%s] test_vec at size %d\n", __func__, test_vec->size);
+        instr_vector_print(test_vec);
+        fprintf(stdout, "\n");
 
         byte_vector_destroy(test_vec);
         free(exp_addrs);
