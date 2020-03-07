@@ -72,7 +72,6 @@ spec("InstrVector")
     it("Should expand when full")
     {
         int start_capacity = 2;
-        int total_test_size = 64;
         InstrVector* test_vec;
 
         test_vec = instr_vector_create(start_capacity);
@@ -139,11 +138,6 @@ spec("InstrVector")
         InstrVector* test_vec;
 
         test_vec = instr_vector_create(start_capacity);
-        check(test_vec != NULL);
-        check(test_vec->size == 0);
-        check(test_vec->capacity == start_capacity);
-
-        test_vec = byte_vector_create(start_capacity);
         check(test_vec != NULL);
         check(test_vec->size == 0);
         check(test_vec->capacity == start_capacity);

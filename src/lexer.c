@@ -947,7 +947,6 @@ int lex_parse_data(Lexer* lexer, Token* tok)
             break;
     }
 
-LEX_PARSE_DATA_END:
     return status;
 }
 
@@ -960,7 +959,7 @@ int lex_parse_string(Lexer* lexer, Token* tok)
 
     if(tok->type != SYM_STRING)
     {
-        fprintf(stdout, "[%s] line %d:%d ERROR: expected string, got %s\n",
+        fprintf(stdout, "[%s] (line %d:%d) ERROR: expected string, got %s\n",
                 __func__, 
                 lexer->cur_line, 
                 lexer->cur_col,
@@ -968,11 +967,14 @@ int lex_parse_string(Lexer* lexer, Token* tok)
                );
         status = -1;
     }
-    status = line_info_append_byte_array(
-            lexer->text_seg,
-            (uint8_t*) tok->token_str,
-            strlen(tok->token_str)
-    );
+    else
+    {
+        status = line_info_append_byte_array(
+                lexer->text_seg,
+                (uint8_t*) tok->token_str,
+                strlen(tok->token_str)
+        );
+    }
 
     return status;
 }
@@ -1199,7 +1201,6 @@ int lex_line(Lexer* lexer)
                 break;
 
             case LEX_PCHL:
-                fprintf(stdout, "[%s] yet to implement PCHL...\n", __func__);
                 instr_size = 1;
                 break;
 

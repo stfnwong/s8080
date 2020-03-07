@@ -312,12 +312,18 @@ spec("Assembler")
         check(cur_instr->instr == 0x09);
 
         // LDAX B 
-        // TODO: refactor how STAX, LDAX are assembled
         cur_instr = instr_vector_get(instr_vec, 15);
         check(cur_instr != NULL);
         check(cur_instr->size == 1);
         check(cur_instr->addr == 0x0010);
-        //check(cur_instr->instr == 0x0A);
+        check(cur_instr->instr == 0x08);
+
+        // STAX D 
+        cur_instr = instr_vector_get(instr_vec, 16);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x0011);
+        check(cur_instr->instr == 0x12);
 
         assembler_destroy(assembler);
         lexer_destroy(lexer); 

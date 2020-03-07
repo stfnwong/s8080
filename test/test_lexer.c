@@ -631,6 +631,18 @@ spec("Lexer")
         check(cur_line->reg[1] == REG_NONE);
         check(cur_line->addr == 0x10);
 
+        // STAX D
+        cur_line = source_info_get_idx(lexer->source_repr, 16);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_STAX);
+        check(strncmp(cur_line->opcode->mnemonic, "STAX", 4) == 0);
+        check(cur_line->reg[0] == REG_D);
+        check(cur_line->reg[1] == REG_NONE);
+        check(cur_line->addr == 0x11);
+
         // clean up
         lexer_destroy(lexer);
     }

@@ -246,25 +246,32 @@ void asm_mvi(Instr* dst, LineInfo* line)
 }
 
 /*
- * asm_ldax()
+ * asm_accum()
  */
-void asm_ldax(Instr* dst, LineInfo* line)
+void asm_accum(Instr* dst, LineInfo* line)
 {
-    dst->instr = 0x9;
-    if(line->reg[0] == REG_D)
-        dst->instr = dst->instr | (0x1 << 3);
+    if(line->opcode->instr == LEX_STAX)
+        dst->instr = 0x2;
+    else if(line->opcode->instr == LEX_LDAX)
+        dst->instr = 0x8;
+    else
+    {
+        fprintf(stderr, "[%s] only assembles STAX and LDAX instructions, got %s\n",
+                __func__, line->opcode->mnemonic);
+    }
+    fprintf(stdout, "[%s] asm pair code = %d\n", __func__, asm_pair_reg_to_code(line->reg[0]));
+    dst->instr = dst->instr | (asm_pair_reg_to_code(line->reg[0]) << 4);
     dst->size = 1;
     dst->addr = line->addr;
 }
 
+
 /*
- * asm_stax()
+ * asm_pchl()
  */
-void asm_stax(Instr* dst, LineInfo* line)
+void asm_pchl(Instr* dst, LineInfo* line)
 {
-    dst->instr = 0x1 << 1;
-    if(line->reg[0] == REG_D)
-        dst->instr = dst->instr | (0x1 << 3);
+    dst->instr = 0xE9;
     dst->size = 1;
     dst->addr = line->addr;
 }
@@ -612,11 +619,12 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 break;
 
             case LEX_LDAX:
-                asm_ldax(&cur_instr, line);
+            case LEX_STAX:
+                asm_accum(&cur_instr, line);
                 break;
 
-            case LEX_STAX:
-                asm_stax(&cur_instr, line);
+            case LEX_PCHL:
+                asm_pchl(&cur_instr, line);
                 break;
 
             // Move instructions 
