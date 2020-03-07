@@ -13,10 +13,11 @@
 // testing framework
 #include "bdd-for-c.h"
 
-static const char mov_test_filename[] = "asm/test_mov.asm";
+static const char mov_test_filename[]   = "asm/test_mov.asm";
 static const char arith_test_filename[] = "asm/test_arith.asm";
+static const char jump_test_filename[]  = "asm/test_jmp.asm";
 static const char byte_list_filename[]  = "asm/test_byte_list.asm";
-static const char long_instr_filename[]  = "asm/test_long_instr.asm";
+static const char long_instr_filename[] = "asm/test_long_instr.asm";
 
 spec("Assembler")
 {
@@ -324,6 +325,130 @@ spec("Assembler")
         check(cur_instr->size == 1);
         check(cur_instr->addr == 0x0011);
         check(cur_instr->instr == 0x12);
+
+        assembler_destroy(assembler);
+        lexer_destroy(lexer); 
+    }
+
+    it("Should assemble the jump instruction test file")
+    {
+        Lexer* lexer;
+        Assembler* assembler;
+        int status;
+
+        //// Get an assembler object
+        assembler = assembler_create();
+        check(assembler != NULL);
+
+        // Get a Lexer object
+        lexer = lexer_create();
+        check(lexer != NULL);
+        check(lexer->text_seg != NULL);
+
+        // Load the file 
+        status = lex_read_file(lexer, jump_test_filename);
+        check(status == 0);
+
+        // Lex source
+        lex_all(lexer);
+
+        LineInfo* cur_line;
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            check(cur_line != NULL);
+            // TODO : remove
+            line_info_print_instr(cur_line);
+            fprintf(stdout, "\n");
+        }
+
+        // Assemble source
+        assembler_set_repr(assembler, lexer->source_repr);
+        check(assembler->instr_buf != NULL);
+        assembler_set_verbose(assembler);
+
+        // Now assemble
+        status = assembler_assem(assembler);
+        fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
+        check(status == 0);
+
+        InstrVector* instr_vec = assembler_get_instr_vector(assembler);
+        check(instr_vec != NULL);
+
+        fprintf(stdout, "[%s] there are %d instructions in buffer\n",
+               __func__, instr_vector_size(instr_vec));
+
+        Instr* cur_instr;
+        for(int i = 0; i < instr_vector_size(instr_vec); ++i)
+        {
+            cur_instr = instr_vector_get(instr_vec, i);
+            check(cur_instr != NULL);
+            instr_print(cur_instr);
+            fprintf(stdout, "\n");
+        }
+
+        // SOME_LABEL: ANI 0
+        cur_instr = instr_vector_get(instr_vec, 0);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 2);
+        check(cur_instr->addr == 0);
+        check(cur_instr->instr == 0xE600);
+
+        // OTHER_LABEL: ADI 7
+        cur_instr = instr_vector_get(instr_vec, 1);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 2);
+        check(cur_instr->addr == 0x2);
+        check(cur_instr->instr == 0xC607);
+
+        // JMP_INSTR: JMP SOME_LABEL (0x00)
+        cur_instr = instr_vector_get(instr_vec, 2);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x4);
+        check(cur_instr->instr == 0xC30000);
+
+        // JMP OTHER_LABEL (0x2)
+        cur_instr = instr_vector_get(instr_vec, 3);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x7);
+        check(cur_instr->instr == 0xC30200);
+
+        // JZ SOME_LABEL (0x0)
+        cur_instr = instr_vector_get(instr_vec, 4);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0xA);
+        check(cur_instr->instr == 0xCA0000);
+
+        // JNC OTHER_LABEL (0x2)
+        cur_instr = instr_vector_get(instr_vec, 5);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0xD);
+        check(cur_instr->instr == 0xD20200);
+
+        // JP SOME_LABEL (0x0)
+        cur_instr = instr_vector_get(instr_vec, 6);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x10);
+        check(cur_instr->instr == 0xF20000);
+
+        // JC OTHER_LABEL (0x2)
+        cur_instr = instr_vector_get(instr_vec, 7);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x13);
+        check(cur_instr->instr == 0xDA0200);
+
+        // JM SOME_LABEL (0x0)
+        cur_instr = instr_vector_get(instr_vec, 8);
+        check(cur_instr != NULL);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x16);
+        check(cur_instr->instr == 0xFA0000);
 
         assembler_destroy(assembler);
         lexer_destroy(lexer); 

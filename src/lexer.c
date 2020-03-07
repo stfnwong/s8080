@@ -551,8 +551,6 @@ void lex_next_token(Lexer* lexer, Token* token)
     lex_scan_token(lexer);
     token_init(token);
 
-    fprintf(stdout, "[%s] lexer->token_buf = %s\n", __func__, lexer->token_buf);
-
     // Token can't be of length 0
     if(strlen(lexer->token_buf) == 0)
     {
@@ -659,11 +657,6 @@ void lex_next_token(Lexer* lexer, Token* token)
     }
 
     // Since we cant match anything, we treat as a label
-    // NOTE: I have considered that this is not the fastest way to do
-    // this, since labels come first and we first have to fail through
-    // all the other possibilities before declaring a label. 
-
-    // Must be a label
     token->type = SYM_LABEL;
 
 TOKEN_END:
@@ -1218,6 +1211,7 @@ int lex_line(Lexer* lexer)
             case LEX_JC:
             case LEX_JNC:
             case LEX_JZ:
+            case LEX_JM:
                 lex_next_token(lexer, &tok_a);  // should be literal or label
                 status = lex_parse_jmp(lexer, &tok_a);
                 instr_size = 3;

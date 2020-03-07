@@ -793,6 +793,22 @@ spec("Lexer")
         check(cur_line->immediate == 0x0 + 2);      // ANI instruction is 2 bytes long
         check(cur_line->addr == 0x13);
 
+        // JM SOME_LABEL
+        cur_line = source_info_get_idx(lexer->source_repr, 8);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line->label_str == NULL);
+        check(cur_line->opcode->instr == LEX_JM);
+        check(strncmp(cur_line->opcode->mnemonic, "JM", 3) == 0);
+        check(cur_line->symbol_str != NULL);
+        check(cur_line->symbol_str_len == 10);
+        check(strncmp(cur_line->symbol_str, "SOME_LABEL", cur_line->symbol_str_len) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0x0);
+        check(cur_line->addr == 0x16);
+
+
         // clean up
         lexer_destroy(lexer);
     }

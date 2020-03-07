@@ -299,13 +299,14 @@ void asm_mov(Instr* dst, LineInfo* line)
  */
 uint32_t asm_jp_to_code(uint8_t instr)
 {
-    uint32_t code = (0x3 << 22) | (0x1 << 18);
+    uint32_t code = (0x3 << 22) | (0x1 << 17);
 
     switch(instr)
     {
-        case LEX_JMP:
         case LEX_JNZ:
-            code = code | (0x1 << 17);
+            break;
+        case LEX_JMP:
+            code = code | (0x1 << 16);
             break;
         case LEX_JZ:
             code = code | (0x1 << 19);
@@ -643,6 +644,7 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             case LEX_JNC:
             case LEX_JZ:
             case LEX_JNZ:
+            case LEX_JM:
                 asm_jp(&cur_instr, line);
                 break;
 
