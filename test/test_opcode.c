@@ -14,19 +14,79 @@
 
 spec("Opcode")
 {
-
     it("Should init lexer instruction codes in OpcodeTable")
     {
         OpcodeTable* optable;
+        Opcode* op;
 
-        optable = opcode_table_create();       // At time of writing there are 4 instructions
+        op = opcode_create();
+        check(op != NULL);
+        optable = opcode_table_create();       
         check(optable != NULL);
         check(optable->num_opcodes == NUM_LEX_INSTR);
+        fprintf(stdout, "[%s] placed %d instructions into opcode table\n", __func__, NUM_LEX_INSTR);
 
         fprintf(stdout, "[%s] opcode table:\n\n", __func__);
-        opcode_print_table(optable);
+        opcode_table_print(optable);
+        fprintf(stdout, "[%s] NUM_LEX_INSTR = %d\n", __func__, NUM_LEX_INSTR);
+
+        // Check that all the instructions are actually in the table
+        fprintf(stdout, "[%s] checking instructions in table\n", __func__);
+        for(int i = 0; i < NUM_LEX_INSTR; ++i)
+        {
+            opcode_table_find_instr(
+                    optable,
+                    op,
+                    LEX_INSTRUCTIONS[i].instr
+                    );
+            fprintf(stdout, "[%d / %d] ", i+1, NUM_LEX_INSTR);
+            opcode_print(op);
+            fprintf(stdout, "\n");
+            check(op != NULL);
+            check(op->instr == LEX_INSTRUCTIONS[i].instr);
+            check(strcmp(op->mnemonic, LEX_INSTRUCTIONS[i].mnemonic) == 0);
+        }
 
         opcode_table_destroy(optable);
+        opcode_destroy(op);
+    }
+
+    it("Should init lexer directive codes in OpcodeTable when created with opcode_table_create_dir()")
+    {
+        OpcodeTable* dirtable;
+        Opcode* op;
+
+        op = opcode_create();
+        check(op != NULL);
+        dirtable = opcode_table_create_dir();       
+        check(dirtable != NULL);
+        check(dirtable->num_opcodes == NUM_LEX_DIR);
+        fprintf(stdout, "[%s] placed %d direcives into opcode table\n", __func__, NUM_LEX_DIR);
+
+        fprintf(stdout, "[%s] opcode table:\n\n", __func__);
+        opcode_table_print(dirtable);
+        fprintf(stdout, "[%s] NUM_LEX_DIR = %d\n", __func__, NUM_LEX_DIR);
+
+        // Check that all the instructions are actually in the table
+        fprintf(stdout, "[%s] checking instructions in table\n", __func__);
+        for(int i = 0; i < NUM_LEX_DIR; ++i)
+        {
+            opcode_table_find_instr(
+                    dirtable,
+                    op,
+                    LEX_DIRECTIVES[i].instr
+                    );
+            fprintf(stdout, "[%d / %d] ", i+1, NUM_LEX_DIR);
+            opcode_print(op);
+            fprintf(stdout, "\n");
+            check(op != NULL);
+            check(op->instr == LEX_DIRECTIVES[i].instr);
+            check(strcmp(op->mnemonic, LEX_DIRECTIVES[i].mnemonic) == 0);
+        }
+
+        opcode_table_destroy(dirtable);
+        opcode_destroy(op);
+
     }
 
     it("Should allow opcode lookup by instr")
@@ -35,7 +95,7 @@ spec("Opcode")
         OpcodeTable* optable;
 
         // Do the basic checks
-        optable = opcode_table_create();       // At time of writing there are 4 instructions
+        optable = opcode_table_create();       
         check(optable != NULL);
         check(optable->num_opcodes == NUM_LEX_INSTR);
 
@@ -58,7 +118,7 @@ spec("Opcode")
         OpcodeTable* optable;
 
         // Do the basic checks
-        optable = opcode_table_create();       // At time of writing there are 4 instructions
+        optable = opcode_table_create();       
         check(optable != NULL);
         check(optable->num_opcodes == NUM_LEX_INSTR);
 
@@ -69,7 +129,7 @@ spec("Opcode")
 
         opcode_table_find_mnemonic(optable, &test_op, "INVALID");
         check(test_op.instr == LEX_INVALID);
-        check(strncmp(test_op.mnemonic, "\0\0\0", 3) == 0);
+        check(strncmp(test_op.mnemonic, "INVALID", 7) == 0);
 
         opcode_table_destroy(optable);
     }

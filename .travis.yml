@@ -1,15 +1,32 @@
-# Travis config for s8080
+# Travis config for S8080
 # 
-# Stefan Wong 2020
+# Stefan Wong 8080
 
 language: c
-sudo: false
+sudo: true
 compiler: gcc
+dist: bionic
+
+before_install:
+    - travis_retry curl -L https://www.libsdl.org/release/SDL2-2.0.8.tar.gz | tar xz
+    - cd SDL2-2.0.8
+    - ./configure
+    - make
+    - sudo make install
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:SDL2-2.0.8/
+    - cd ..
 
 script: 
     - make clean && make all
+    - ./bin/test/test_assembler
+    - ./bin/test/test_instr_buffer
+    - ./bin/test/test_instr_vector
     - ./bin/test/test_lexer
     - ./bin/test/test_line_info
+    - ./bin/test/test_list
     - ./bin/test/test_opcode
     - ./bin/test/test_source_info
+    - ./bin/test/test_symbol_table
     - ./bin/test/test_token
+    - ./bin/test/test_vector
