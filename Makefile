@@ -31,7 +31,7 @@ $(DISASSEM_OBJ): $(OBJ_DIR)/%.o : $(DISASSEM_SRC_DIR)/%.c
 obj: $(OBJECTS) 
 
 # ======== TEST ======== #
-TESTS=test_lexer test_token test_opcode test_line_info test_source_info test_cpu test_display
+TESTS=test_lexer test_token test_opcode test_line_info test_source_info test_assembler test_symbol_table test_instr_buffer test_list test_vector test_instr_vector
 TEST_SOURCES=$(wildcard test/*.c)	
 TEST_OBJECTS  := $(TEST_SOURCES:test/%.c=$(OBJ_DIR)/%.o)
 
@@ -71,6 +71,7 @@ clean:
 	rm -f $(BIN_DIR)/asm8080
 	rm -f $(BIN_DIR)/dis8080
 	rm -f $(BIN_DIR)/emu8080
+	rm -f $(BIN_DIR)/test/test_*
 
 # Debug 
 print-%:
