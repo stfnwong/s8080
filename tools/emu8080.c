@@ -4,20 +4,15 @@
  *
  */
 
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL2/SDL.h>
 #include "cpu.h"
-#include "display.h"
-
+#include "emu_utils.h"
 
 #define TEST_CYCLE_LIMIT 200000
 
-
 int main(int argc, char *argv[])
 {
-    int cpu_verbose = 0;            // TODO : add command line option
     FILE *fp;
 
     fp = fopen(argv[1], "rb");
@@ -32,8 +27,8 @@ int main(int argc, char *argv[])
     int fsize = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
 
-    // Get a new state
     CPUState *emu_state;
+    
     emu_state = cpu_create();
     if(emu_state == NULL)
     {
@@ -41,45 +36,29 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    // Load the data into memory
     fread(emu_state->memory, fsize, 1, fp);
     fclose(fp);
 
-    // Setup the display
-    Display* disp;
-
-    disp = display_create();
-    if(disp == NULL)
-    {
-        fprintf(stderr, "Failed to create display\n");
-        exit(-1);
-    }
-
-    // Run emulator 
-    int status;
-    uint32_t last_tic = SDL_GetTicks();     // unit is milliseconds
-    uint32_t cur_tic;
-    unsigned long int step = 0;
-
-    while(1)
-    {
-        cur_tic = SDL_GetTicks();
-        if((cur_tic - last_tic) >= DISP_TIC)
+    int status = 0;
+    unsigned long int num_cycles = 0;
+    while(status == 0)
+    { 
+        status = cpu_exec(emu_state);
+        if(status < 0)          // trap an unimplmented instruction
+            break;
+        num_cycles++;
+        if(num_cycles > TEST_CYCLE_LIMIT)
         {
-            last_tic = SDL_GetTicks();
-            status   = cpu_run(emu_state, DISP_CYCLES_PER_TIC, cpu_verbose);
-            display_draw(disp, emu_state->memory);
-            step++;
-            if(step > TEST_CYCLE_LIMIT)
-                break;
+            fprintf(stdout, "Hit max cycles (%d)\n", TEST_CYCLE_LIMIT);
+            break;
         }
+        fprintf(stdout, "[I %04X]  ", emu_state->memory[emu_state->pc]);
+        PrintState(emu_state);
     }
-    // Print final state
     fprintf(stdout, "Emulator finishd with exit code %d\n", status);
-    cpu_print_state(emu_state); 
+    PrintState(emu_state); 
 
     cpu_destroy(emu_state);
-    display_destroy(disp);
 
     return 0;
 }

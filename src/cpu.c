@@ -7,40 +7,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "cpu.h"
 #include "disassem.h"
-
-
-// TODO : Put the default in/out functions here
-static uint8_t cpu_default_inport(void* cpu, uint8_t port)
-{
-    CPUState* state = (CPUState*) cpu;
-
-    // Print characters in register E
-    if(state->e == 0x2)
-    {
-        fprintf(stdout, "%c", state->e);
-    }
-    // Print from memory at DE until 'S' char
-    else if(state->e == 0x9)
-    {
-        uint16_t addr = (state->d << 8) | state->e;
-        do
-        {
-            fprintf(stdout, "%c", cpu_read_mem(state, addr));
-            addr++;
-        }while(cpu_read_mem(state, addr) != '$');
-    }
-
-    return 0xFF;
-}
-
-static void cpu_default_outport(void* cpu, uint8_t port, uint8_t data)
-{
-    CPUState* state = (CPUState*) cpu;
-
-}
+#include "emu_utils.h"
 
 
 // ==== Setup initial state
@@ -54,23 +23,10 @@ CPUState *cpu_create(void)
         return NULL;
     //state->mem_size = CPU_MEM_SIZE;
     state->memory       = malloc(CPU_MEM_SIZE);        // 16K
-    if(!state->memory)
-        return NULL;
-
-    state->sp           = 0;
-    state->pc           = 0;
     state->shift_reg    = 0;
     state->shift_amount = 0;
-    // Ensure that values for condition codes are set
-    state->cc.z   = 0;
-    state->cc.s   = 0;
-    state->cc.p   = 0;
-    state->cc.cy  = 0;
-    state->cc.ac  = 0;
-    state->cc.pad = 0;
-    // Set the in/out function pointers to defaults 
-    state->inport = cpu_default_inport;
-    state->outport = cpu_default_outport;
+    if(!state->memory)
+        return NULL;
 
     return state;
 }
@@ -84,169 +40,8 @@ void cpu_destroy(CPUState *state)
     free(state);
 }
 
-/*
- * cpu_jump()
- */
-void cpu_jump(CPUState* state, uint16_t addr)
-{
-    state->pc = addr;
-}
-
-/*
- * cpu_stack_push()
- */
-void cpu_stack_push(CPUState* state, uint16_t val)
-{
-    state->memory[state->sp-1] = (val >> 8) & 0xFF;
-    state->memory[state->sp-2] = (val & 0x00FF);
-    state->sp -= 2;
-}
-
-/*
- * cpu_stack_pop()
- */
-uint16_t cpu_stack_pop(CPUState* state)
-{
-    uint16_t s;
-
-    s = state->memory[state->sp];
-    s = s | (uint16_t) state->memory[state->sp+1] << 8;
-    state->sp += 2;
-
-    return s;
-}
-
-/*
- * cpu_read_hl()
- */
-uint16_t cpu_read_hl(CPUState* state)
-{
-    return (state->h << 8) | state->l;
-}
-
-/*
- * cpu_write_hl()
- */
-void cpu_write_hl(CPUState* state, uint16_t val)
-{
-    state->h = val >> 8;
-    state->l = (val & 0x00FF);
-}
-
-/*
- * cpu_read_mem()
- */
-uint8_t cpu_read_mem(CPUState* state, uint16_t addr)
-{
-    if(addr > CPU_MEM_SIZE)
-        return 0;
-    return state->memory[addr];
-}
-
-/*
- * cpu_write_mem()
- */
-void cpu_write_mem(CPUState* state, uint16_t addr, uint8_t data)
-{
-    if(addr > CPU_MEM_SIZE)
-        return;
-    state->memory[addr] = data;
-}
-
-/*
- * cpu_interrupt()
- */
-void cpu_interrupt(CPUState* state, uint8_t n)
-{
-    if(!state->int_enable)
-        return;
-
-    cpu_stack_push(state, state->pc);
-    state->pc = (uint16_t) n << 3;
-
-    state->int_enable = 0;
-}
-
-/*
- * cpu_print_state()
- */
-void cpu_print_state(CPUState *state)
-{
-    fprintf(stdout, "PC : %04X\t[", state->pc);
-    // print status flags in a row 
-    fprintf(stdout, "%c", state->cc.z  ? 'z' : '.');
-    fprintf(stdout, "%c", state->cc.s  ? 's' : '.');
-    fprintf(stdout, "%c", state->cc.p  ? 'p' : '.');
-    fprintf(stdout, "%c", state->cc.cy ? 'c' : '.');
-    fprintf(stdout, "%c", state->cc.ac ? 'a' : '.');
-    fprintf(stdout, "]\t");
-    // Print register contents + stack pointer 
-    fprintf(stdout, "A:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X SP:%04X\n", state->a,
-         state->b,
-         state->c,
-         state->d,
-         state->e,
-         state->h,
-         state->l, 
-         state->sp);
-}
-
-/*
- * cpu_load_memory()
- */
-int cpu_load_memory(CPUState *state, const char *filename, int offset)
-{
-    FILE *fp;
-    int num_bytes;
-    uint8_t *buffer;
-
-    fp = fopen(filename, "rb");
-    if(!fp)
-    {
-        fprintf(stderr, "[%s] Failed to read file %s, exiting\n", __func__, filename);
-        return -1;
-    }
-
-    fseek(fp, 0, SEEK_END);
-    num_bytes = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    
-    // Load file into memory 
-    buffer = &state->memory[offset];
-    fread(buffer, num_bytes, 1, fp);
-    fclose(fp);
-
-    return 0;
-}
-
-/*
- * cpu_print_memory()
- */
-void cpu_print_memory(CPUState* state, int n, int offset)
-{
-    fprintf(stdout, "[%s] dumping %d bytes of memory starting at addr 0x%04X\n\n", __func__, n, offset);
-    for(int i = offset; i < (n + offset); ++i)
-    {
-        if((i > 0) && (i % 8 == 0))
-            fprintf(stdout, "\n");
-        if(i % 8 == 0)
-            fprintf(stdout, "0x%04X : ", i);
-        fprintf(stdout, "%02X ", state->memory[i]);
-    }
-}
-
-/*
- * cpu_clear_memory()
- */
-void cpu_clear_memory(CPUState* state)
-{
-    memset(state->memory, 0, CPU_MEM_SIZE);
-}
-
-/*
- * cpu_unimplemented_instr()
- */
-void cpu_unimplemented_instr(CPUState *state, unsigned char opcode)
+// Trap unimplemented instructions 
+void UnimplementedInstruction(CPUState *state, unsigned char opcode)
 {
     // PC will have advanced by one, so undo that 
     state->pc--;
@@ -292,7 +87,7 @@ int cpu_run(CPUState* state, long cycles, int print_output)
         if(print_output)
         {
             fprintf(stdout, "[I %04X]  ", state->memory[state->pc]);
-            cpu_print_state(state);
+            PrintState(state);
         }
         if(status < 0)
             goto RUN_END;
@@ -351,7 +146,7 @@ int cpu_exec(CPUState *state)
         case 0x05:      // DCR B
             {
                 uint8_t res = state->b - 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->b = res;
             }
             exec_time = 5;
@@ -380,13 +175,13 @@ int cpu_exec(CPUState *state)
         case 0x09:      // DAD B
             {
                 // HL = HL + BC 
-                uint16_t hl, bc; 
-                uint32_t res;
-                hl = cpu_read_hl(state);
+                uint32_t hl, bc, res;
+                hl = (state->h << 8) | state->l;
                 bc = (state->b << 8) | state->c;
                 res = hl + bc;
+                state->h = (res & 0xFF00) >> 8;
+                state->l = res & 0xFF;
                 state->cc.cy = ((res & 0xFFFF0000) > 0);
-                cpu_write_hl(state, (uint16_t) res & 0x0000FFFF);
             }
             exec_time = 10;
             break;
@@ -403,7 +198,7 @@ int cpu_exec(CPUState *state)
         case 0x0C:      // INR C
             {
                 uint16_t res = state->c + 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->c = res;
             }
             exec_time = 5;
@@ -412,7 +207,7 @@ int cpu_exec(CPUState *state)
         case 0x0D:      // DCR C
             {
                 uint16_t res = state->c - 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->c = res;
             }
             exec_time = 5;
@@ -460,13 +255,13 @@ int cpu_exec(CPUState *state)
 
         case 0x19:      // DAD D
             {
-                uint32_t res; 
-                uint16_t de, hl;
-                hl = cpu_read_hl(state);
+                uint32_t hl, de, res;
+                hl = (state->h << 8) | state->l;
                 de = (state->d << 8) | state->e;
-                res = (uint32_t) hl + de;
+                res = hl + de;
+                state->h = (res & 0xFF00) >> 8;
+                state->l = res & 0xFF;
                 state->cc.cy = ((res & 0xFFFF0000) != 0);
-                cpu_write_hl(state, (uint16_t) res & 0x0000FFFF);
             }
             exec_time = 10;
             break;
@@ -494,7 +289,7 @@ int cpu_exec(CPUState *state)
         case 0x1D:      // DCR E 1
             {
                 uint8_t res = state->e - 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->e = res;
             }
             exec_time = 5;
@@ -506,7 +301,8 @@ int cpu_exec(CPUState *state)
 
         case 0x21:      // LXI H, word
             {
-                cpu_write_hl(state, (opcode[1] << 8) | opcode[2]);
+                state->l = opcode[1];
+                state->h = opcode[2];
                 state->pc += 2;
             }
             exec_time = 10;
@@ -526,7 +322,7 @@ int cpu_exec(CPUState *state)
                 uint16_t hl;
                 hl = (state->h << 8) | state->l;
                 hl += 1;
-                cpu_arith_set_flags(state, hl);
+                arith_set_flags(state, hl);
                 state->h = (hl & 0xFF00) >> 8;
                 state->l = hl & 0xFF;
             }
@@ -536,7 +332,7 @@ int cpu_exec(CPUState *state)
         case 0x25:      // DCR H
             {
                 uint16_t res = state->h - 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->h = res;
             }
             exec_time = 5;
@@ -556,17 +352,20 @@ int cpu_exec(CPUState *state)
 
         case 0x29:      // DAD H
             {
-                uint32_t hl = cpu_read_hl(state);
-                hl += hl;
-                cpu_write_hl(state, hl);
-                state->cc.cy = ((hl & 0xFFFF0000) != 0);
+                uint32_t hl, res;
+                hl = (state->h << 8) | state->l;
+                res = hl + hl;
+                state->h = (res & 0xFF00) >> 8;
+                state->l = res & 0xFF;
+                state->cc.cy = ((res & 0xFFFF0000) != 0);
             }
             exec_time = 10;
             break;
 
         case 0x2A:      // LHLD ADR
             {
-                cpu_write_hl(state, (opcode[1] << 8) | (opcode[1] + 1));
+                state->l = state->memory[opcode[1]];
+                state->h = state->memory[opcode[1] + 1];
                 state->pc++;
             }
             exec_time = 16;
@@ -586,7 +385,7 @@ int cpu_exec(CPUState *state)
         case 0x2C:      // INR L
             {
                 uint16_t res = state->l + 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->l = res;
             }
             exec_time = 5;      // TODO : double check the docs for this one
@@ -595,7 +394,7 @@ int cpu_exec(CPUState *state)
         case 0x2D:      // DCR L 
             {
                 uint16_t res = state->l - 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->l = res;
             }
             exec_time = 5;
@@ -648,20 +447,25 @@ int cpu_exec(CPUState *state)
         case 0x34:      // INR M
             {
                 // TODO  : the implementation of this may not be correct
-                uint16_t hl = cpu_read_hl(state);
+                uint16_t hl; 
+                hl = (state->h << 8) | state->l;
                 hl += 1;
-                cpu_arith_set_flags(state, hl);
-                cpu_write_hl(state, hl);
+                arith_set_flags(state, hl);
+                state->h = (hl >> 8) & 0xFF;
+                state->l = 0xFF;
             }
             exec_time = 10;
             break;
 
         case 0x35:      // DCR M
             {
-                uint16_t hl = cpu_read_hl(state);
+                uint16_t hl;
+
+                hl = (state->h << 8) | state->l;
                 hl -= 1;
-                cpu_arith_set_flags(state, hl);
-                cpu_write_hl(state, hl);
+                arith_set_flags(state, hl);
+                state->h = (hl >> 8) & 0xFF;
+                state->l = 0xFF;
             }
             exec_time = 10;
             break;
@@ -669,7 +473,8 @@ int cpu_exec(CPUState *state)
         case 0x36:      // MVI, M byte
             {
                 // AC set if lower half-byte was zero before decrement 
-                uint16_t offset = cpu_read_hl(state);
+                uint16_t offset;
+                offset = (state->h << 8) | state->l;
                 state->memory[offset] = opcode[1];
                 state->pc++;
             }
@@ -700,7 +505,7 @@ int cpu_exec(CPUState *state)
         case 0x3C:      // INR A
             {
                 uint16_t res = state->a + 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->a = res;
             }
             exec_time = 5;
@@ -709,7 +514,7 @@ int cpu_exec(CPUState *state)
         case 0x3D:      // DCR A
             {
                 uint16_t res = state->a - 1;
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->a = res;
             }
             exec_time = 5;
@@ -1037,7 +842,7 @@ int cpu_exec(CPUState *state)
         case 0x80:      // ADD B
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->b;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
             exec_time = 4;
@@ -1045,7 +850,7 @@ int cpu_exec(CPUState *state)
         case 0x81:  // ADD C 
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->c;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
             exec_time = 4;
@@ -1053,7 +858,7 @@ int cpu_exec(CPUState *state)
         case 0x82:  // ADD D
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->d;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
             exec_time = 4;
@@ -1061,7 +866,7 @@ int cpu_exec(CPUState *state)
         case 0x83:  // ADD E
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->e;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             exec_time = 4;
             break;
@@ -1069,7 +874,7 @@ int cpu_exec(CPUState *state)
         case 0x84:      // ADD H
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->h;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             exec_time = 4;
             }
@@ -1077,7 +882,7 @@ int cpu_exec(CPUState *state)
         case 0x85:      // ADD L
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->l;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1086,7 +891,7 @@ int cpu_exec(CPUState *state)
             {
                 uint16_t offset = (state->h << 8) | (state->l);
                 uint16_t ans = (uint16_t) state->a + state->memory[offset];
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
             exec_time = 7;
@@ -1094,7 +899,7 @@ int cpu_exec(CPUState *state)
         case 0x87:      // ADD A
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->a;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans & 0xFF;
             }
             exec_time = 4;
@@ -1102,7 +907,7 @@ int cpu_exec(CPUState *state)
         case 0x88:      // ADC B  (A <- A + B + CY)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->b;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1110,7 +915,7 @@ int cpu_exec(CPUState *state)
         case 0x8A:      // ADC D (A <- A + D + CY
             {
                     uint16_t ans = (uint16_t) state->a + (uint16_t) state->d;
-                    cpu_arith_set_flags(state, ans);
+                    arith_set_flags(state, ans);
                     state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1118,7 +923,7 @@ int cpu_exec(CPUState *state)
         case 0x8B:      // ADC E (A <- A + E + CY)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->e;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1126,7 +931,7 @@ int cpu_exec(CPUState *state)
         case 0x8C:      //ADC H (A <- A + H + CY)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->h;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1134,7 +939,7 @@ int cpu_exec(CPUState *state)
         case 0x8D:      // ADC L (A <- A + L + CY)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->l;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1145,7 +950,10 @@ int cpu_exec(CPUState *state)
                 uint32_t ans;
                 hl = (state->h << 8) | state->l;
                 ans = state->a + hl;
-                cpu_arith_set_borrow32(state, ans);
+                state->cc.z  = (ans == 0);
+                state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.p  = Parity(state->a);
+                state->cc.cy = ((ans & 0xFFFF0000) > 0);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
             }
             exec_time = 7;
@@ -1153,7 +961,7 @@ int cpu_exec(CPUState *state)
         case 0x8F:      // ADC A (A <- A _+ A + CY)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) state->a;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1161,7 +969,7 @@ int cpu_exec(CPUState *state)
         case 0x90:      // SUB B 
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->b;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1169,7 +977,7 @@ int cpu_exec(CPUState *state)
         case 0x91:      // SUB C
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->c;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1177,7 +985,7 @@ int cpu_exec(CPUState *state)
         case 0x92:       // SUB D
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->d;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1185,7 +993,7 @@ int cpu_exec(CPUState *state)
         case 0x93:      // SUB E
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->e;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1193,7 +1001,7 @@ int cpu_exec(CPUState *state)
         case 0x94:      // SUB H
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->h;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1201,7 +1009,7 @@ int cpu_exec(CPUState *state)
         case 0x95:      // SUB L
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->l;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1212,7 +1020,11 @@ int cpu_exec(CPUState *state)
                 uint16_t hl;
                 hl = (state->h << 8) | state->l;
                 ans = (uint32_t) state->a + hl;
-                cpu_arith_set_borrow32(state, ans);
+                state->cc.z  = (ans == 0);
+                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
+                //state->cc.s  = ((ans & 0x80000000) == 1);
+                state->cc.p  = Parity(state->a);
+                state->cc.cy = ((ans & 0xFFFF0000) > 0);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
             }
             exec_time = 7;
@@ -1220,7 +1032,7 @@ int cpu_exec(CPUState *state)
         case 0x97:      // SUB A
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->a;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1229,7 +1041,7 @@ int cpu_exec(CPUState *state)
         case 0x98:      // SBB B
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->b;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1237,7 +1049,7 @@ int cpu_exec(CPUState *state)
         case 0x99:      // SBB C 
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->c;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1245,7 +1057,7 @@ int cpu_exec(CPUState *state)
         case 0x9A:      // SBB D
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->d;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1253,7 +1065,7 @@ int cpu_exec(CPUState *state)
         case 0x9B:      // SBB E
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->e;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans + state->cc.cy) & 0xFF;
             }
             exec_time = 4;
@@ -1261,7 +1073,7 @@ int cpu_exec(CPUState *state)
         case 0x9C:      // SBB H
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->h;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1269,7 +1081,7 @@ int cpu_exec(CPUState *state)
         case 0x9D:      // SBB L
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->l;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1281,7 +1093,9 @@ int cpu_exec(CPUState *state)
                 uint16_t hl;
                 hl = (state->h << 8) | state->l;
                 ans = (uint32_t) state->a - (uint32_t) hl;
-                cpu_arith_set_borrow32(state, ans);
+                state->cc.s  = (ans & 0x80000000) ? 1 : 0;
+                state->cc.p  = Parity(state->a);
+                state->cc.cy = ((ans & 0xFFFF0000) > 0);
                 state->a = ((ans + state->cc.cy) >> 24) & 0xFF;       // TODO: review this 
             }
             exec_time = 4;
@@ -1289,7 +1103,7 @@ int cpu_exec(CPUState *state)
         case 0x9F:      // SBB A
             {
                 uint16_t ans = (uint16_t) state->a - (uint16_t) state->a;
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = ans;
             }
             exec_time = 4;
@@ -1299,42 +1113,42 @@ int cpu_exec(CPUState *state)
         case 0xA0:      // ANA B
             {
                 state->a = state->a & state->b;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xA1:      // ANA C 
             {
                 state->a = state->a & state->c;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xA2:      // ANA D
             {
                 state->a = state->a & state->d;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xA3:      // ANA E
             {
                 state->a = state->a & state->e;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xA4:      // ANA H
             {
                 state->a = state->a & state->h;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xA5:      // ANA L 
             {
                 state->a = state->a & state->l;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
@@ -1344,56 +1158,56 @@ int cpu_exec(CPUState *state)
                 hl = (state->h << 8) | state->l;
                 ans = (uint16_t) state->a & hl;
                 state->a = (ans >> 8) & 0xFF;
-                cpu_logic_set_flags(state);         // <- TODO : not sure if this is correct
+                logic_set_flags(state);         // <- TODO : not sure if this is correct
             }
             exec_time = 4;
             break;
         case 0xA7:      // ANA A
             {
                 state->a = state->a & state->a;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xA8:      // XRA B 
             {
                 state->a = state->a ^ state->b;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xA9:      // XRA C
             {
                 state->a = state->a ^ state->c;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xAA:      // XRA  D
             {
                 state->a = state->a ^ state->d;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xAB:      // XRA E 
             {
                 state->a = state->a ^ state->e;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xAC:      // XRA H
             {
                 state->a = state->a ^ state->h;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xAD:      // XRA L
             {
                 state->a = state->a ^ state->l;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
@@ -1403,7 +1217,7 @@ int cpu_exec(CPUState *state)
                 uint16_t ans, hl;
                 hl = (state->h << 8) | state->l;
                 ans = (uint16_t) state->a ^ hl;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
                 state->a = (ans >> 8) & 0xFF;
             }
             exec_time = 7;
@@ -1412,7 +1226,7 @@ int cpu_exec(CPUState *state)
         case 0xAF:      // XRA A
             {
                 state->a = state->a ^ state->a;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
@@ -1420,42 +1234,42 @@ int cpu_exec(CPUState *state)
         case 0xB0:      // ORA B 
             {
                 state->a = state->a | state->b;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xB1:      // ORA C
             {
                 state->a = state->a | state->c;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xB2:      // ORA D 
             {
                 state->a = state->a | state->d;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xB3:      // ORA E 
             {
                 state->a = state->a | state->e;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xB4:      // ORA H
             {
                 state->a = state->a | state->h;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xB5:      // ORA L 
             {
                 state->a = state->a | state->l;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
@@ -1464,7 +1278,7 @@ int cpu_exec(CPUState *state)
                 uint16_t ans, hl;
                 hl = (state->h << 8) | state->l;
                 ans = (uint16_t) state->a ^ hl;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
                 state->a = (ans >> 8) & 0xFF;
             }
             exec_time = 7;
@@ -1472,7 +1286,7 @@ int cpu_exec(CPUState *state)
         case 0xB7:      // ORA A 
             {
                 state->a = state->a ^ state->a;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
@@ -1480,60 +1294,59 @@ int cpu_exec(CPUState *state)
         case 0xB8:      // CMP B
             {
                 state->a = ~state->b;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xB9:      // CMP C
             {
                 state->a = ~state->c;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xBA:      // CMP D
             {
                 state->a = ~state->d;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             exec_time = 4;
             }
             break;
         case 0xBB:      // CMP E
             {
                 state->a = ~state->e;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xBC:      // CMP H 
             {
                 state->a = ~state->h;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
         case 0xBD:      // CMP L
             {
                 state->a = ~state->l;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
-
         case 0xBE:      // CMP M
             {
-                uint16_t hl;
-                hl = ~cpu_read_hl(state);
-                cpu_logic_set_flags(state);
-                state->a = (hl >> 8) & 0xFF;
+                uint16_t ans, hl;
+                hl = (state->h << 8) | state->l;
+                ans = ~hl;
+                logic_set_flags(state);
+                state->a = (ans >> 8) & 0xFF;
             }
             exec_time = 7;
             break;
-
         case 0xBF:      // CMP A
             {
                 state->a = ~state->a;
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
             }
             exec_time = 4;
             break;
@@ -1541,9 +1354,9 @@ int cpu_exec(CPUState *state)
 
         case 0xC1:      // POP B
             {
-                uint16_t ret = cpu_stack_pop(state);
-                state->c = (ret >> 8) & 0xFF;
-                state->b = ret & 0xFF;
+                state->c = state->memory[state->sp];
+                state->b = state->memory[state->sp+1];
+                state->sp += 2;
             }
             exec_time = 10;
             break;
@@ -1551,15 +1364,15 @@ int cpu_exec(CPUState *state)
         case 0xC2:      // JNZ ADR
             {
                 if(state->cc.z == 0)
-                    cpu_jump(state, (opcode[2] << 8) | opcode[1]);
+                    state->pc = (opcode[2] << 8) | opcode[1];
                 else
-                    cpu_jump(state, state->pc + 2);
+                    state->pc += 2;
             }
             exec_time = 10;
             break;
 
         case 0xC3:      // JMP ADR
-            cpu_jump(state, (opcode[2] << 8) | opcode[1]);
+            state->pc = (opcode[2] << 8) | opcode[1];
             exec_time = 10;
             break;
 
@@ -1570,18 +1383,21 @@ int cpu_exec(CPUState *state)
                     // TODO : I've implemented the call instruciton here, 
                     // but I'm not sure if that is completely correct.
                     uint16_t ret = state->pc + 2;
-                    cpu_stack_push(state, ret);
-                    cpu_jump(state, (opcode[2] << 8) | opcode[1]);
+                    state->memory[state->sp-1] = (ret >> 8) & 0xFF;
+                    state->memory[state->sp-2] = ret & 0xFF;
+                    state->sp -= 2;
+                    state->pc = (opcode[2] << 8) | opcode[1];
                 }
                 else
                     state->pc += 2;
             }
             exec_time = (state->cc.z == 0) ? 17 : 11;
             break;
-
         case 0xC5:     // PUSH B
             {
-                cpu_stack_push(state, (state->b << 8) | state->c);
+                state->memory[state->sp-1] = state->b;
+                state->memory[state->sp]   = state->c;
+                state->sp -= 2;
             }
             exec_time = 11;
             break;
@@ -1589,7 +1405,7 @@ int cpu_exec(CPUState *state)
         case 0xC6:      // ADD ADI (immediate form)
             {
                 uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
-                cpu_arith_set_flags(state, ans);
+                arith_set_flags(state, ans);
                 state->a = (ans >> 8) & 0xFF;
                 state->pc++;
             }
@@ -1624,8 +1440,10 @@ int cpu_exec(CPUState *state)
                 if(state->cc.z == 1)
                 {
                     uint16_t ret = state->pc + 2;
-                    cpu_stack_push(state, ret);
-                    cpu_jump(state, (opcode[2] << 8) | opcode[1]);
+                    state->memory[state->sp-1] = (ret >> 8) & 0xFF;
+                    state->memory[state->sp-2] = ret & 0xFF;
+                    state->sp -= 2;
+                    state->pc = (opcode[2] << 8) | opcode[1];
                 }
             }
             exec_time = 10;
@@ -1673,8 +1491,10 @@ int cpu_exec(CPUState *state)
 #else
                 // save reutrn address
                 uint16_t ret = state->pc + 2;
-                cpu_stack_push(state, ret);
-                cpu_jump(state, (opcode[2] << 8) | opcode[1]);
+                state->memory[state->sp-1] = (ret >> 8) & 0xFF;
+                state->memory[state->sp-2] = ret & 0xFF;
+                state->sp -= 2;
+                state->pc = (opcode[2] << 8) | opcode[1];
 #endif /*CPU_DIAG*/
             }
             exec_time = 17;
@@ -1684,7 +1504,7 @@ int cpu_exec(CPUState *state)
             {
                 uint16_t res;
                 res = state->a + opcode[1];
-                cpu_arith_set_flags(state, res);
+                arith_set_flags(state, res);
                 state->a = res + state->cc.cy;
                 state->pc++;
             }
@@ -1717,18 +1537,13 @@ int cpu_exec(CPUState *state)
             break;
 
         case 0xD3:      // OUT 
-            state->outport(
-                    state,
-                    state->memory[state->pc+1],
-                    state->a
-            );
             state->pc++;            // TODO implement actual logic 
             exec_time = 10;
             break;
 
         case 0xD4:      // CNC (if NCY, CALL adr)
             {
-                cpu_unimplemented_instr(state, opcode[0]);
+                UnimplementedInstruction(state, opcode[0]);
                 return -1;
             }
             exec_time = 0;      // TODO
@@ -1744,8 +1559,7 @@ int cpu_exec(CPUState *state)
             break;
 
         case 0xDB:      // IN 
-            state->a  = state->inport(state, state->memory[state->pc+1]);
-            state->pc += 2; 
+            state->pc += 2;         // TODO : implement actual logic 
             exec_time = 10;
             break;
 
@@ -1780,7 +1594,7 @@ int cpu_exec(CPUState *state)
         case 0xE6:      // ANI D8
             {
                 uint8_t ans = state->a & opcode[1];
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
                 state->a = ans;
                 state->pc++;
             }
@@ -1841,7 +1655,7 @@ int cpu_exec(CPUState *state)
         case 0xF6:      // ORI D8
             {
                 uint16_t ans = state->a | opcode[1];
-                cpu_logic_set_flags(state);
+                logic_set_flags(state);
                 state->a = ans;
                 state->pc++;
             }
@@ -1864,7 +1678,7 @@ int cpu_exec(CPUState *state)
 
         case 0xFE:      // CPI D8
             {
-                cpu_unimplemented_instr(state, opcode[0]);
+                UnimplementedInstruction(state, opcode[0]);
                 // TODO : This instruction
                 //uint16_t ans = (uint16_t) state->a + (uint16_t) opcode[1];
             }
@@ -1872,10 +1686,10 @@ int cpu_exec(CPUState *state)
             break;
 
         default:
-            cpu_unimplemented_instr(state, opcode[0]);
+            UnimplementedInstruction(state, opcode[0]);
             return -1;
     }
     state->pc += 1;     
 
-    return exec_time;       
+    return exec_time;       // TODO : what is the correct thing to return here?
 }

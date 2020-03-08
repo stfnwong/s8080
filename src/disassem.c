@@ -7,7 +7,11 @@
  * returns the number of bytes of the op
  */
 
-// TODO : The rest of the instructions 
+
+// TODO : rather than just print things, make this
+// create some binary intermediate representation that
+// we can reuse (and create strings out of later)
+
 int disassemble_8080_op(unsigned char *codebuffer, int pc)
 {
     unsigned char *code = &codebuffer[pc];
