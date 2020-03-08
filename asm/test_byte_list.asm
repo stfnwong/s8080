@@ -7,4 +7,4 @@ TEST_ARGS: DB, "SOME CHARACTER STRING", 0dh, 0ah, 03h
            DB 65h
 
 ; Also throw in an incorrect DB 
-           DB           ; missing arguments
+           ;DB           ; missing arguments

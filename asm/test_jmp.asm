@@ -13,3 +13,4 @@ JMP_INSTR: JMP SOME_LABEL
            JNC OTHER_LABEL
            JP  SOME_LABEL
            JC  OTHER_LABEL
+           JM  SOME_LABEL

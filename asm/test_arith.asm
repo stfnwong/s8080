@@ -19,3 +19,4 @@ ARITH_INSTR: ADD C
              INX H
              DAD B
              LDAX B
+             STAX D
