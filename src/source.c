@@ -25,7 +25,7 @@ const char* TOKEN_TYPE_TO_STR[] = {
 };
 
 const char* REG_TYPE_TO_STR[] = {
-    "NONE", "A", "B", "C", "D", "H", "L", "M", "PSW"
+    "NONE", "A", "B", "C", "D", "E", "H", "L", "S", "M", "PSW"
 };
 
 // ================ LINE INFO ================ //
@@ -131,6 +131,16 @@ void line_info_print(LineInfo* info)
     opcode_print(info->opcode);
     if(info->symbol_str_len > 0)
         fprintf(stdout, " [%s] ", info->symbol_str);
+
+    if(byte_list_len(info->byte_list) > 0)
+    {
+        fprintf(stdout, " [%d byte(s) in %d segment(s)]\n", 
+                byte_list_total_bytes(info->byte_list),
+                byte_list_len(info->byte_list)
+        );
+        byte_list_print(info->byte_list);
+    }
+
     fprintf(stdout, "\n");
 }
 
@@ -347,6 +357,14 @@ int line_info_byte_list_size(LineInfo* info)
 }
 
 /*
+ * line_info_byte_list_num_bytes()
+ */
+int line_info_byte_list_num_bytes(LineInfo* info)
+{
+    return byte_list_total_bytes(info->byte_list);
+}
+
+/*
  * line_info_clear_byte_list()
  */
 // Probably some optimizations can be done here later
@@ -552,31 +570,13 @@ int source_info_empty(SourceInfo* info)
 }
 
 /*
- * source_info_write()
+ * source_info_size()
  */
-int source_info_write(SourceInfo* info, const char* filename)
+int source_info_size(SourceInfo* info)
 {
-    FILE* fp;
-
-    fp = fopen(filename, "wb");
-    if(!fp)
-    {
-        fprintf(stderr, "[%s] failed to open file %s for writing\n",
-               __func__, filename);
-        return -1;
-    }
-
-    // Write the number of records, and the max size
-    fwrite(&info->size, sizeof(int), 1, fp);        
-    fwrite(&info->max_size, sizeof(int), 1, fp);        
-
-    // Now write each of the Lineinfo structures
-
-
-    fclose(fp);
-
-    return 0;
+    return info->size;
 }
+
 
 // ================ TOKEN ================ //
 /*

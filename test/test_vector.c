@@ -122,7 +122,6 @@ spec("ByteVector")
 
         // So far we have just pushed one element on at a 
         // time. We can actually push multiple elements at once.
-
         // before this call the capacity of the vector is 8
         // since 32 > (8 * 2) we grow the vector to (2 * capacity) + len = 16 + 32 = 48
         byte_vector_push_back(test_vec, test_data + 4, 32);

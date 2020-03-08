@@ -20,8 +20,8 @@ Instr* instr_create(void)
     if(!ins)
         return NULL;
 
-    ins->addr = 0;
     ins->instr = 0;
+    ins->addr = 0;
 
     return ins;
 }
@@ -61,7 +61,14 @@ void instr_copy(Instr* dst, Instr* src)
  */
 void instr_print(Instr* instr)
 {
-    fprintf(stdout, "[0x%04X] %02X", instr->addr, instr->instr);
+    if(instr->size == 1)
+        fprintf(stdout, "[0x%04X] %02X", instr->addr, instr->instr);
+    else if(instr->size == 2)
+        fprintf(stdout, "[0x%04X] %04X", instr->addr, instr->instr);
+    else if(instr->size == 3)
+        fprintf(stdout, "[0x%04X] %06X", instr->addr, instr->instr);
+    else
+        fprintf(stdout, "[%s] invalid instruction size %d\n", __func__, instr->size);
 }
 
 

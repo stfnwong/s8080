@@ -20,15 +20,12 @@
 // TODO : maybe its simpler to compute the addresses here since we 
 // can hard-code the instruction sizes. 
 
-
 typedef struct Assembler Assembler;
 
 // Assembler structure internals
 struct Assembler
 {
-    // Instruction buffer   ( TODO : data segment buffer)
     InstrVector* instr_buf;
-    //InstrBuffer* instr_buf;
     // Lexer output representation
     SourceInfo* src_repr;
     int cur_line;
@@ -44,6 +41,9 @@ void assembler_set_repr(Assembler* assem, SourceInfo* repr);
 // Assemble from current repr
 int assembler_assem_line(Assembler* assem, LineInfo* line);
 int assembler_assem(Assembler* assem);
+
+// Getters 
+InstrVector* assembler_get_instr_vector(Assembler* assem);
 
 // Misc
 void assembler_set_verbose(Assembler* assem);

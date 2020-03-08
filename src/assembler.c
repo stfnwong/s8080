@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include "assembler.h"
 #include "opcode.h"
+// for REG_TYPE_TO_STR
+#include "source.h"
 
 
 // ROUTINES FOR EACH INSTRUCTION
@@ -146,6 +148,9 @@ uint8_t asm_mov_instr_to_code(uint8_t instr)
         case LEX_SPHL:
             code_out = 0xF9;
             break;
+        case LEX_MOV:
+            code_out = 0x1 << 6;
+            break;
     }
 
     return code_out;
@@ -158,14 +163,26 @@ void asm_8bit_arith(Instr* dst, LineInfo* line)
 {
     dst->instr = asm_arith_instr_to_code(line->opcode->instr);
     dst->instr = dst->instr | asm_reg_to_code[line->reg[0]];
+    dst->size  = 1;
     dst->addr  = line->addr;
 }
 
 /*
- * asm_16bit_arith()
+ * asm_reg_single()
  */
-void asm_16bit_arith(Instr* dst, LineInfo* line)
+void asm_reg_single(Instr* dst, LineInfo* line, uint8_t op)
 {
+    if(line->opcode->instr == LEX_CMA)
+        dst->instr = 0x2F;
+    else if(line->opcode->instr == LEX_DAA)
+        dst->instr = 0x27;
+    else
+    {
+        dst->instr = op;
+        dst->instr = dst->instr | (asm_reg_to_code[line->reg[0]] << 3);
+    }
+    dst->size  = 1;
+    dst->addr  = line->addr;
 }
 
 /*
@@ -174,8 +191,11 @@ void asm_16bit_arith(Instr* dst, LineInfo* line)
 void asm_reg_pair(Instr* dst, LineInfo* line, uint8_t op)
 {
     dst->instr = op;
-    dst->instr = asm_pair_reg_to_code(line->reg[0]) << 4;
-    dst->addr  = dst->addr;
+    fprintf(stdout, "[%s] dst->instr = %02X\n", __func__, dst->instr);
+    dst->instr = dst->instr | (asm_pair_reg_to_code(line->reg[0]) << 4);
+    fprintf(stdout, "[%s] dst->instr = %02X\n", __func__, dst->instr);
+    dst->size  = 1;
+    dst->addr  = line->addr;
 }
 
 /*
@@ -185,8 +205,8 @@ void asm_imm_2byte(Instr* dst, LineInfo* line, uint8_t op)
 {
     dst->instr = (0x3 << 14) | (op << 11) | (0x6 << 8);
     dst->instr = dst->instr | line->immediate;
-    dst->size = 2;
-    dst->addr = line->addr;
+    dst->size  = 2;
+    dst->addr  = line->addr;
 }
 
 /*
@@ -195,13 +215,22 @@ void asm_imm_2byte(Instr* dst, LineInfo* line, uint8_t op)
 void asm_imm_3byte(Instr* dst, LineInfo* line)
 {
     dst->instr = 0x1 << 9;
-    dst->size = 3;
-    dst->addr = line->addr;
+    dst->size  = 3;
+    dst->addr  = line->addr;
 }
 
+/*
+ * asm_lxi()
+ */
 void asm_lxi(Instr* dst, LineInfo* line)
 {
-
+    dst->instr = 0x1 << 16;
+    dst->instr = dst->instr | (asm_pair_reg_to_code(line->reg[0]) << 20);
+    // immediate part 
+    dst->instr = dst->instr | ((line->immediate & 0x00FF) << 8);
+    dst->instr = dst->instr | ((line->immediate & 0xFF00) >> 8);
+    dst->size  = 3;
+    dst->addr  = line->addr;
 }
 
 /*
@@ -217,24 +246,33 @@ void asm_mvi(Instr* dst, LineInfo* line)
 }
 
 /*
- * asm_ldax()
+ * asm_accum()
  */
-void asm_ldax(Instr* dst, LineInfo* line)
+void asm_accum(Instr* dst, LineInfo* line)
 {
-    dst->instr = 0x9;
-    if(line->reg[0] == REG_D)
-        dst->instr = dst->instr | (0x1 << 4);
+    if(line->opcode->instr == LEX_STAX)
+        dst->instr = 0x2;
+    else if(line->opcode->instr == LEX_LDAX)
+        dst->instr = 0x8;
+    else
+    {
+        fprintf(stderr, "[%s] only assembles STAX and LDAX instructions, got %s\n",
+                __func__, line->opcode->mnemonic);
+    }
+    fprintf(stdout, "[%s] asm pair code = %d\n", __func__, asm_pair_reg_to_code(line->reg[0]));
+    dst->instr = dst->instr | (asm_pair_reg_to_code(line->reg[0]) << 4);
+    dst->size = 1;
     dst->addr = line->addr;
 }
 
+
 /*
- * asm_stax()
+ * asm_pchl()
  */
-void asm_stax(Instr* dst, LineInfo* line)
+void asm_pchl(Instr* dst, LineInfo* line)
 {
-    dst->instr = 0x1 << 1;
-    if(line->reg[0] == REG_D)
-        dst->instr = dst->instr | (0x1 << 4);
+    dst->instr = 0xE9;
+    dst->size = 1;
     dst->addr = line->addr;
 }
 
@@ -243,9 +281,15 @@ void asm_stax(Instr* dst, LineInfo* line)
  */
 void asm_mov(Instr* dst, LineInfo* line)
 {
+    fprintf(stdout, "[%s] reg (%s) = %02X\n", __func__, REG_TYPE_TO_STR[line->reg[0]], asm_reg_to_code[line->reg[0]]);
+    fprintf(stdout, "[%s] reg (%s) = %02X\n", __func__, REG_TYPE_TO_STR[line->reg[1]], asm_reg_to_code[line->reg[1]]);
     dst->instr = asm_mov_instr_to_code(line->opcode->instr);
+    fprintf(stdout, "[%s] MOV instr %02X\n", __func__, dst->instr);
     dst->instr = dst->instr | (asm_reg_to_code[line->reg[0]] << 3);
+    fprintf(stdout, "[%s] MOV instr %02X\n", __func__, dst->instr);
     dst->instr = dst->instr |  asm_reg_to_code[line->reg[1]];
+    fprintf(stdout, "[%s] MOV instr %02X\n", __func__, dst->instr);
+    dst->size = 1;
     dst->addr = line->addr;
 }
 
@@ -255,13 +299,14 @@ void asm_mov(Instr* dst, LineInfo* line)
  */
 uint32_t asm_jp_to_code(uint8_t instr)
 {
-    uint32_t code = (0x3 << 22) | (0x1 << 18);
+    uint32_t code = (0x3 << 22) | (0x1 << 17);
 
     switch(instr)
     {
-        case LEX_JMP:
         case LEX_JNZ:
-            code = code | (0x1 << 17);
+            break;
+        case LEX_JMP:
+            code = code | (0x1 << 16);
             break;
         case LEX_JZ:
             code = code | (0x1 << 19);
@@ -354,34 +399,37 @@ void asm_ret(Instr* dst, LineInfo* line)
 /*
  * asm_call_to_code()
  */
-uint16_t asm_call_to_code(uint8_t instr)
+uint8_t asm_call_to_code(uint8_t instr)
 {
-    uint16_t code = (0x3 << 14) | (0x1 << 10);
+    uint8_t code = (0x3 << 6) | (0x1 << 2);
+
+    fprintf(stdout, "[%s] code is %04X before instr switch\n", __func__, code);
 
     switch(instr)
     {
         case LEX_CALL:
-            code = code | (0x1 << 11) | (0x1 << 9);
+            code = code | (0x1 << 3) | 0x1;
             break;
         case LEX_CZ:
-            code = code | (0x1 << 11);
+            code = code | (0x1 << 3);
             break;
         case LEX_CC:
-            code = code | (0x3 << 11);
+            code = code | (0x3 << 3);
             break;
         case LEX_CPO:
-            code = code | (0x4 << 11);
+            code = code | (0x4 << 3);
             break;
         case LEX_CPE:
-            code = code | (0x5 << 11);
+            code = code | (0x5 << 3);
             break;
         case LEX_CP:
-            code = code | (0x6 << 11);
+            code = code | (0x6 << 3);
             break;
         case LEX_CM:
-            code = code | (0x7 << 11);
+            code = code | (0x7 << 3);
             break;
     }
+    fprintf(stdout, "[%s] code is %04X after instr switch\n", __func__, code);
 
     return code;
 }
@@ -391,52 +439,45 @@ uint16_t asm_call_to_code(uint8_t instr)
  */
 void asm_call(Instr* dst, LineInfo* line)
 {
-    dst->instr = asm_call_to_code(line->opcode->instr);
+    dst->instr = asm_call_to_code(line->opcode->instr) << 16;
     dst->instr = dst->instr | ((line->immediate & 0x00FF) << 8);
-    dst->instr = dst->instr | (line->immediate & 0xFF00);
-    dst->size = 2;
+    dst->instr = dst->instr | ((line->immediate & 0xFF00) >> 8);
+    dst->size = 3;
     dst->addr = line->addr;
 }
 
 /*
  * asm_data()
  */
-
-int asm_data(InstrVector* vec, LineInfo* line)
+void asm_data(InstrVector* vec, LineInfo* line)
 {
-    int status;
     int cur_addr;
-
     ByteNode* cur_node;
     Instr cur_instr;
 
     cur_addr = line->addr;
-    for(int i = 0; i < byte_list_len(line->byte_list); ++i)
-    {
-        cur_node = byte_list_get(line->byte_list, i);
-        while(cur_node != NULL)
-        {
-            for(int d = 0; d < cur_node->len; ++d)
-            {
-                cur_instr.instr = cur_node->data[d];
-                cur_instr.addr  = cur_addr;
-                cur_instr.size  = 1;
-                instr_vector_push_back(vec, &cur_instr);
-                cur_addr++;
-            }
-            cur_node = cur_node->next;
-        }
-    }
+    cur_node = byte_list_get(line->byte_list, 0);
 
-ASM_DATA_END:
-    return status;
+    byte_list_print(line->byte_list); 
+    while(cur_node != NULL)
+    {
+       for(int d = 0; d < cur_node->len; ++d)
+        {
+            cur_instr.instr = cur_node->data[d];
+            cur_instr.addr  = cur_addr;
+            cur_instr.size  = 1;
+            instr_vector_push_back(vec, &cur_instr);
+            cur_addr++;
+        }
+        cur_node = cur_node->next;
+    }
 }
 
-// ================ ASSEMBLER OBJECT ================ //
 
+// ================ ASSEMBLER OBJECT ================ //
 /*
- * assembler_create()
- */
+* assembler_create()
+*/
 Assembler* assembler_create(void)
 {
     Assembler* assem;
@@ -569,15 +610,25 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 break;
 
             case LEX_INR:
-                //asm_inr(&cur_instr, line);
+                asm_reg_single(&cur_instr, line, 0x4);
+                break;
+
+            case LEX_DCR:
+                asm_reg_single(&cur_instr, line, 0x5);
+                break;
+
+            case LEX_CMA:
+            case LEX_DAA:
+                asm_reg_single(&cur_instr, line, 0x0);
                 break;
 
             case LEX_LDAX:
-                asm_ldax(&cur_instr, line);
+            case LEX_STAX:
+                asm_accum(&cur_instr, line);
                 break;
 
-            case LEX_STAX:
-                asm_stax(&cur_instr, line);
+            case LEX_PCHL:
+                asm_pchl(&cur_instr, line);
                 break;
 
             // Move instructions 
@@ -596,12 +647,20 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             case LEX_JNC:
             case LEX_JZ:
             case LEX_JNZ:
+            case LEX_JM:
                 asm_jp(&cur_instr, line);
                 break;
 
             // subroutine call instructions 
             case LEX_CALL:
             case LEX_CC:
+            case LEX_CNZ:
+            case LEX_CM:
+            case LEX_CP:
+            case LEX_CPE:
+            case LEX_CPO:
+            case LEX_CZ:
+                asm_call(&cur_instr, line);
                 break;
 
             // subroutine return instructions 
@@ -621,8 +680,9 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             case LEX_DB:
             case LEX_DS:
             case LEX_DW:
-                status = asm_data(assem->instr_buf, line);
-                break;
+                asm_data(assem->instr_buf, line);
+                status = 0;     // is there anything that can go wrong?
+                goto ASM_LINE_END;
 
             default:
             {
@@ -634,20 +694,10 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             }
         }
     }
-
-    // TODO : debug, remove
-    fprintf(stdout, "[%s] about to insert instruction :", __func__);
-    instr_print(&cur_instr);
-    fprintf(stdout, "\n");
-
+    // Add to instruction vector
     instr_vector_push_back(assem->instr_buf, &cur_instr);
-    //if(status < 0)
-    //{
-    //    fprintf(stdout, "[%s] failed to insert instruction %02X [%s]\n", 
-    //            __func__, line->opcode->instr, line->opcode->mnemonic);
-    //}
 
-ASSEM_LINE_END:
+ASM_LINE_END:
     return status;
 }
 
@@ -676,6 +726,15 @@ int assembler_assem(Assembler* assem)
     }
 
     return status;
+}
+
+
+/*
+ * assembler_get_instr_vector()
+ */
+InstrVector* assembler_get_instr_vector(Assembler* assem)
+{
+    return assem->instr_buf;
 }
 
 

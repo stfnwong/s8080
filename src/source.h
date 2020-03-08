@@ -32,7 +32,7 @@ typedef enum
 
 // String conversion arrays
 extern const char* TOKEN_TYPE_TO_STR[9];
-extern const char* REG_TYPE_TO_STR[10];
+extern const char* REG_TYPE_TO_STR[11];
 
 // Text segment
 typedef struct 
@@ -64,8 +64,8 @@ int       line_info_struct_size(LineInfo* info);
 int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
 int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
 int       line_info_append_byte_array(LineInfo* info, uint8_t* array, int len);
-//int       line_info_append_byte(LineInfo* info, uint8_t byte);
 int       line_info_byte_list_size(LineInfo* info);
+int       line_info_byte_list_num_bytes(LineInfo* info);
 void      line_info_clear_byte_list(LineInfo* info);
 
 /*
@@ -91,7 +91,8 @@ LineInfo*   source_info_get_idx(SourceInfo* info, int idx);
 SourceInfo* source_info_clone(SourceInfo* src);
 int         source_info_full(SourceInfo* info);
 int         source_info_empty(SourceInfo* info);
-int         source_info_write(SourceInfo* info, const char* filename);
+// For structure hiding (TODO : not yet implemented)
+int         source_info_size(SourceInfo* info);
 
 
 // ======== TOKEN ======== //
