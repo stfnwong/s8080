@@ -24,8 +24,9 @@ static const char test_filename[]       = "asm/test_lexer.asm";
 static const char mov_test_filename[]   = "asm/test_mov.asm";
 static const char arith_test_filename[] = "asm/test_arith.asm";
 static const char jmp_test_filename[]   = "asm/test_jmp.asm";
+static const char call_ret_filename[]   = "asm/test_call_ret.asm";
 static const char byte_list_filename[]  = "asm/test_byte_list.asm";
-static const char long_instr_filename[]  = "asm/test_long_instr.asm";
+static const char long_instr_filename[] = "asm/test_long_instr.asm";
 
 spec("Lexer")
 {
@@ -808,6 +809,221 @@ spec("Lexer")
         check(cur_line->immediate == 0x0);
         check(cur_line->addr == 0x16);
 
+        // clean up
+        lexer_destroy(lexer);
+    }
+
+    it("Should lex all the call and ret instructions correctly")
+    {
+        int status;
+        Lexer* lexer = lexer_create();
+
+        status = lex_read_file(lexer, call_ret_filename);
+        check(status == 0);
+        check(lexer->text_seg->line_num == 0);
+        check(lexer->text_seg->addr == 0);
+
+        status = lex_all(lexer);
+        check(status == 0);
+        fprintf(stdout, "[%s] source info for file [%s] contains %d lines\n", 
+                __func__, 
+                jmp_test_filename, 
+                lexer->source_repr->size
+        );
+
+        // Ensure there are no NULL elements in source repr
+        LineInfo* cur_line;
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            check(cur_line != NULL);
+            line_info_print_instr(cur_line);
+            fprintf(stdout, "\n");
+        }
+
+        // CNZ BEEFh
+        cur_line = source_info_get_idx(lexer->source_repr, 0);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_CNZ);
+        check(strncmp(cur_line->opcode->mnemonic, "CNZ", 3) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+        check(cur_line->addr == 0x00);
+
+        // CZ BEEFh
+        cur_line = source_info_get_idx(lexer->source_repr, 1);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_CZ);
+        check(strncmp(cur_line->opcode->mnemonic, "CZ", 2) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+        check(cur_line->addr == 0x03);
+
+        // CALL BEEFh
+        cur_line = source_info_get_idx(lexer->source_repr, 2);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_CALL);
+        check(strncmp(cur_line->opcode->mnemonic, "CALL", 4) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+        check(cur_line->addr == 0x06);
+
+        // CC BEEFh
+        cur_line = source_info_get_idx(lexer->source_repr, 3);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_CC);
+        check(strncmp(cur_line->opcode->mnemonic, "CC", 2) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+        check(cur_line->addr == 0x09);
+
+        // CPO BEEFh
+        cur_line = source_info_get_idx(lexer->source_repr, 4);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_CPO);
+        check(strncmp(cur_line->opcode->mnemonic, "CPO", 3) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+        check(cur_line->addr == 0x0C);
+
+        // CPE BEEFh
+        cur_line = source_info_get_idx(lexer->source_repr, 5);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_CPE)
+        check(strncmp(cur_line->opcode->mnemonic, "CPE", 3) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+        check(cur_line->addr == 0x0F);
+
+        // CP BEEFh
+        cur_line = source_info_get_idx(lexer->source_repr, 6);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_CP)
+        check(strncmp(cur_line->opcode->mnemonic, "CP", 2) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+        check(cur_line->addr == 0x12);
+
+        // CM BEEFh
+        cur_line = source_info_get_idx(lexer->source_repr, 7);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_CM)
+        check(strncmp(cur_line->opcode->mnemonic, "CM", 2) == 0);
+        check(cur_line->has_immediate == 1);
+        check(cur_line->immediate == 0xBEEF);
+        check(cur_line->addr == 0x15);
+
+        // RNZ
+        cur_line = source_info_get_idx(lexer->source_repr, 8);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_RNZ)
+        check(strncmp(cur_line->opcode->mnemonic, "RNZ", 3) == 0);
+        check(cur_line->has_immediate == 0);
+        check(cur_line->addr == 0x18);
+
+        // RZ
+        cur_line = source_info_get_idx(lexer->source_repr, 9);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_RZ)
+        check(strncmp(cur_line->opcode->mnemonic, "RZ", 2) == 0);
+        check(cur_line->has_immediate == 0);
+        check(cur_line->addr == 0x19);
+
+        // RET
+        cur_line = source_info_get_idx(lexer->source_repr, 10);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_RET)
+        check(strncmp(cur_line->opcode->mnemonic, "RET", 3) == 0);
+        check(cur_line->has_immediate == 0);
+        check(cur_line->addr == 0x1A);
+
+        // RNC
+        cur_line = source_info_get_idx(lexer->source_repr, 11);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_RNC)
+        check(strncmp(cur_line->opcode->mnemonic, "RNC", 3) == 0);
+        check(cur_line->has_immediate == 0);
+        check(cur_line->addr == 0x1B);
+
+        // RPO
+        cur_line = source_info_get_idx(lexer->source_repr, 12);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_RPO)
+        check(strncmp(cur_line->opcode->mnemonic, "RPO", 3) == 0);
+        check(cur_line->has_immediate == 0);
+        check(cur_line->addr == 0x1C);
+
+        // RPE
+        cur_line = source_info_get_idx(lexer->source_repr, 13);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_RPE)
+        check(strncmp(cur_line->opcode->mnemonic, "RPE", 3) == 0);
+        check(cur_line->has_immediate == 0);
+        check(cur_line->addr == 0x1D);
+
+        // RP
+        cur_line = source_info_get_idx(lexer->source_repr, 14);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_RP)
+        check(strncmp(cur_line->opcode->mnemonic, "RP", 2) == 0);
+        check(cur_line->has_immediate == 0);
+        check(cur_line->addr == 0x1E);
+
+        // RM
+        cur_line = source_info_get_idx(lexer->source_repr, 15);
+        line_info_print_instr(cur_line);
+        fprintf(stdout, "\n");
+
+        check(cur_line != NULL);
+        check(cur_line->opcode->instr == LEX_RM)
+        check(strncmp(cur_line->opcode->mnemonic, "RM", 2) == 0);
+        check(cur_line->has_immediate == 0);
+        check(cur_line->addr == 0x1F);
 
         // clean up
         lexer_destroy(lexer);
@@ -857,7 +1073,6 @@ spec("Lexer")
     it("Should lex DB instruction correctly")
     {
         Lexer* lexer = lexer_create();
-        Symbol* out_sym;
 
         int status = lex_read_file(lexer, byte_list_filename);
         check(status == 0);
@@ -967,7 +1182,6 @@ spec("Lexer")
     it("Should lex long instructions correctly")
     {
         Lexer* lexer = lexer_create();
-        Symbol* out_sym;
 
         int status = lex_read_file(lexer, long_instr_filename);
         check(status == 0);

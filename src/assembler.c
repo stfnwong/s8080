@@ -399,34 +399,37 @@ void asm_ret(Instr* dst, LineInfo* line)
 /*
  * asm_call_to_code()
  */
-uint16_t asm_call_to_code(uint8_t instr)
+uint8_t asm_call_to_code(uint8_t instr)
 {
-    uint16_t code = (0x3 << 14) | (0x1 << 10);
+    uint8_t code = (0x3 << 6) | (0x1 << 2);
+
+    fprintf(stdout, "[%s] code is %04X before instr switch\n", __func__, code);
 
     switch(instr)
     {
         case LEX_CALL:
-            code = code | (0x1 << 11) | (0x1 << 9);
+            code = code | (0x1 << 3) | 0x1;
             break;
         case LEX_CZ:
-            code = code | (0x1 << 11);
+            code = code | (0x1 << 3);
             break;
         case LEX_CC:
-            code = code | (0x3 << 11);
+            code = code | (0x3 << 3);
             break;
         case LEX_CPO:
-            code = code | (0x4 << 11);
+            code = code | (0x4 << 3);
             break;
         case LEX_CPE:
-            code = code | (0x5 << 11);
+            code = code | (0x5 << 3);
             break;
         case LEX_CP:
-            code = code | (0x6 << 11);
+            code = code | (0x6 << 3);
             break;
         case LEX_CM:
-            code = code | (0x7 << 11);
+            code = code | (0x7 << 3);
             break;
     }
+    fprintf(stdout, "[%s] code is %04X after instr switch\n", __func__, code);
 
     return code;
 }
@@ -436,10 +439,10 @@ uint16_t asm_call_to_code(uint8_t instr)
  */
 void asm_call(Instr* dst, LineInfo* line)
 {
-    dst->instr = asm_call_to_code(line->opcode->instr);
+    dst->instr = asm_call_to_code(line->opcode->instr) << 16;
     dst->instr = dst->instr | ((line->immediate & 0x00FF) << 8);
-    dst->instr = dst->instr | (line->immediate & 0xFF00);
-    dst->size = 2;
+    dst->instr = dst->instr | ((line->immediate & 0xFF00) >> 8);
+    dst->size = 3;
     dst->addr = line->addr;
 }
 
@@ -651,6 +654,13 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
             // subroutine call instructions 
             case LEX_CALL:
             case LEX_CC:
+            case LEX_CNZ:
+            case LEX_CM:
+            case LEX_CP:
+            case LEX_CPE:
+            case LEX_CPO:
+            case LEX_CZ:
+                asm_call(&cur_instr, line);
                 break;
 
             // subroutine return instructions 

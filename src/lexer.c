@@ -571,6 +571,14 @@ void lex_next_token(Lexer* lexer, Token* token)
         token->type = SYM_LITERAL;
         goto TOKEN_END;
     }
+    // Note that a literal might have alpha characters because
+    // it could be a hex literal
+    if((strlen(lexer->token_buf) > 1) && 
+       (lexer->token_buf[0] == '0' && lexer->token_buf[1] == 'x'))
+    {
+        token->type = SYM_LITERAL;
+        goto TOKEN_END;
+    }
 
     // Check for registers 
     if(strlen(lexer->token_buf) == 1)
@@ -972,7 +980,6 @@ int lex_parse_string(Lexer* lexer, Token* tok)
     return status;
 }
 
-
 /*
  * lex_resolve_labels()
  */
@@ -1219,6 +1226,7 @@ int lex_line(Lexer* lexer)
 
             // subroutine call instructions 
             case LEX_CALL:
+            case LEX_CC:
             case LEX_CNZ:
             case LEX_CM:
             case LEX_CP:
@@ -1226,9 +1234,8 @@ int lex_line(Lexer* lexer)
             case LEX_CPO:
             case LEX_CZ:
                 lex_next_token(lexer, &tok_a);
-                status = lex_parse_data_arg(lexer, &tok_a);
-                fprintf(stdout, "[%s] status for lex_parse_data_arg() for call-type instruction = %d\n", __func__, status);
-                instr_size = 2;
+                status = lex_parse_imm(lexer, &tok_a);
+                instr_size = 3;
                 break;
 
             // subroutine return instructions
@@ -1240,6 +1247,7 @@ int lex_line(Lexer* lexer)
             case LEX_RP:
             case LEX_RPE:
             case LEX_RPO:
+            case LEX_RNZ:
                 instr_size = 1;
                 break;
 

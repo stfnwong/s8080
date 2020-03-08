@@ -13,11 +13,12 @@
 // testing framework
 #include "bdd-for-c.h"
 
-static const char mov_test_filename[]   = "asm/test_mov.asm";
-static const char arith_test_filename[] = "asm/test_arith.asm";
-static const char jump_test_filename[]  = "asm/test_jmp.asm";
-static const char byte_list_filename[]  = "asm/test_byte_list.asm";
-static const char long_instr_filename[] = "asm/test_long_instr.asm";
+static const char mov_test_filename[]      = "asm/test_mov.asm";
+static const char arith_test_filename[]    = "asm/test_arith.asm";
+static const char jump_test_filename[]     = "asm/test_jmp.asm";
+static const char call_ret_test_filename[] = "asm/test_call_ret.asm";
+static const char byte_list_filename[]     = "asm/test_byte_list.asm";
+static const char long_instr_filename[]    = "asm/test_long_instr.asm";
 
 spec("Assembler")
 {
@@ -357,9 +358,6 @@ spec("Assembler")
         {
             cur_line = source_info_get_idx(lexer->source_repr, l);
             check(cur_line != NULL);
-            // TODO : remove
-            line_info_print_instr(cur_line);
-            fprintf(stdout, "\n");
         }
 
         // Assemble source
@@ -449,6 +447,159 @@ spec("Assembler")
         check(cur_instr->size == 3);
         check(cur_instr->addr == 0x16);
         check(cur_instr->instr == 0xFA0000);
+
+        assembler_destroy(assembler);
+        lexer_destroy(lexer); 
+    }
+
+    it("Should assemble the call/return instructions correctly")
+    {
+        Lexer* lexer;
+        Assembler* assembler;
+        int status;
+
+        //// Get an assembler object
+        assembler = assembler_create();
+        check(assembler != NULL);
+
+        // Get a Lexer object
+        lexer = lexer_create();
+        check(lexer != NULL);
+        check(lexer->text_seg != NULL);
+
+        // Load the file 
+        status = lex_read_file(lexer, call_ret_test_filename);
+        check(status == 0);
+
+        // Lex source
+        lex_all(lexer);
+        // Assemble source
+        assembler_set_repr(assembler, lexer->source_repr);
+        check(assembler->instr_buf != NULL);
+        assembler_set_verbose(assembler);
+        status = assembler_assem(assembler);
+        fprintf(stdout, "[%s] assembly status = %d\n", __func__, status);
+        check(status == 0);
+
+        LineInfo* cur_line;
+        for(int l = 0; l < lexer->source_repr->size; ++l)
+        {
+            cur_line = source_info_get_idx(lexer->source_repr, l);
+            check(cur_line != NULL);
+        }
+
+        // Get instruction vector
+        Instr* cur_instr;
+        InstrVector* instr_vec = assembler_get_instr_vector(assembler);
+        check(instr_vec != NULL);
+
+        fprintf(stdout, "[%s] there are %d instructions in buffer\n",
+               __func__, instr_vector_size(instr_vec));
+
+        for(int i = 0; i < instr_vector_size(instr_vec); ++i)
+        {
+            cur_instr = instr_vector_get(instr_vec, i);
+            check(cur_instr != NULL);
+            instr_print(cur_instr);
+            fprintf(stdout, "\n");
+        }
+
+        // CNZ BEEFh
+        cur_instr = instr_vector_get(instr_vec, 0);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x00);
+        check(cur_instr->instr == 0xC4EFBE);
+
+        // CZ BEEFh
+        cur_instr = instr_vector_get(instr_vec, 1);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x03);
+        check(cur_instr->instr == 0xCCEFBE);
+
+        // CALL BEEFh
+        cur_instr = instr_vector_get(instr_vec, 2);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x06);
+        check(cur_instr->instr == 0xCDEFBE);
+
+        // CC BEEFh
+        cur_instr = instr_vector_get(instr_vec, 3);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x09);
+        check(cur_instr->instr == 0xDCEFBE);
+
+        // CPO BEEFh
+        cur_instr = instr_vector_get(instr_vec, 4);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x0C);
+        check(cur_instr->instr == 0xE4EFBE);
+
+        // CPE BEEFh
+        cur_instr = instr_vector_get(instr_vec, 5);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x0F);
+        check(cur_instr->instr == 0xECEFBE);
+
+        // CP BEEFh
+        cur_instr = instr_vector_get(instr_vec, 6);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x12);
+        check(cur_instr->instr == 0xF4EFBE);
+
+        // CM BEEFh
+        cur_instr = instr_vector_get(instr_vec, 7);
+        check(cur_instr->size == 3);
+        check(cur_instr->addr == 0x15);
+        check(cur_instr->instr == 0xFCEFBE);
+
+        // RNZ 
+        cur_instr = instr_vector_get(instr_vec, 8);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x18);
+        check(cur_instr->instr == 0xC0);
+
+        // RZ 
+        cur_instr = instr_vector_get(instr_vec, 9);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x19);
+        check(cur_instr->instr == 0xC8);
+
+        // RET
+        cur_instr = instr_vector_get(instr_vec, 10);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x1A);
+        check(cur_instr->instr == 0xC9);
+
+        // RNC
+        cur_instr = instr_vector_get(instr_vec, 11);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x1B);
+        check(cur_instr->instr == 0xD0);
+
+        // RPO
+        cur_instr = instr_vector_get(instr_vec, 12);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x1C);
+        check(cur_instr->instr == 0xE0);
+
+        // RPE
+        cur_instr = instr_vector_get(instr_vec, 13);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x1D);
+        check(cur_instr->instr == 0xE8);
+
+        // RP
+        cur_instr = instr_vector_get(instr_vec, 14);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x1E);
+        check(cur_instr->instr == 0xF0);
+
+        // RM
+        cur_instr = instr_vector_get(instr_vec, 15);
+        check(cur_instr->size == 1);
+        check(cur_instr->addr == 0x1F);
+        check(cur_instr->instr == 0xF8);
+        
 
         assembler_destroy(assembler);
         lexer_destroy(lexer); 

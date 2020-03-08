@@ -115,7 +115,6 @@ int    lex_parse_jmp(Lexer* lexer, Token* tok);
 int    lex_parse_data_arg(Lexer* lexer, Token* tok);
 int    lex_parse_data(Lexer* lexer, Token* tok);
 int    lex_parse_string(Lexer* lexer, Token* tok);
-//int    lex_parse_call(Lexer* lexer, Token* tok);
 
 // Label resolution
 void   lex_resolve_labels(Lexer* lexer);
