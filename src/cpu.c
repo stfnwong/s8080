@@ -7,10 +7,28 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "cpu.h"
 #include "disassem.h"
-#include "emu_utils.h"
 
+
+// Default in and out ports for CPU
+static uint8_t cpu_default_inport(void* cpu, uint8_t port)
+{
+    CPUState* state = (CPUState*) cpu;
+
+    // Print characters stored in E
+
+    return 0xFF;
+}
+
+static void cpu_default_outport(void* cpu, uint8_t port, uint8_t data)
+{
+    CPUState* state = (CPUState*) cpu;
+
+    // TODO : the rest of the implementation...
+    // Where do the rest of the characters go?
+}
 
 // ==== Setup initial state
 /*
@@ -28,6 +46,10 @@ CPUState *cpu_create(void)
     if(!state->memory)
         return NULL;
 
+    // Set the IO
+    state->inport  = cpu_default_inport;
+    state->outport = cpu_default_outport;
+
     return state;
 }
 
@@ -39,6 +61,102 @@ void cpu_destroy(CPUState *state)
     free(state->memory);
     free(state);
 }
+
+/*
+ * cpu_print_state()
+ */
+void cpu_print_state(CPUState *state)
+{
+    fprintf(stdout, "PC : %04X\t[", state->pc);
+    // print status flags in a row
+    fprintf(stdout, "%c", state->cc.z  ? 'z' : '.');
+    fprintf(stdout, "%c", state->cc.s  ? 's' : '.');
+    fprintf(stdout, "%c", state->cc.p  ? 'p' : '.');
+    fprintf(stdout, "%c", state->cc.cy ? 'c' : '.');
+    fprintf(stdout, "%c", state->cc.ac ? 'a' : '.');
+    fprintf(stdout, "]\t");
+    // Print register contents + stack pointer
+    fprintf(stdout, "A:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X SP:%04X\n", state->a,
+         state->b,
+         state->c,
+         state->d,
+         state->e,
+         state->h,
+         state->l,
+         state->sp);
+}
+
+/*
+ * cpu_print_memory()
+ */
+void cpu_print_memory(CPUState* state, int n, int offset)
+{
+    fprintf(stdout, "[%s] dumping %d bytes of memory starting at addr 0x%04X\n\n", __func__, n, offset);
+    for(int i = offset; i < (n + offset); ++i)
+    {
+        if((i > 0) && (i % 8 == 0))
+            fprintf(stdout, "\n");
+        if(i % 8 == 0)
+            fprintf(stdout, "0x%04X : ", i);
+        fprintf(stdout, "%02X ", state->memory[i]);
+    }
+}
+
+/*
+ * cpu_clear_memory()
+ */
+void cpu_clear_memory(CPUState* state)
+{
+    memset(state->memory, 0, CPU_MEM_SIZE);
+}
+
+/*
+ * cpu_read_mem()
+ */
+uint8_t cpu_read_mem(CPUState* state, uint16_t addr)
+{
+    if(addr > CPU_MEM_SIZE)
+        return 0;
+    return state->memory[addr];
+}
+
+/*
+ * cpu_write_mem()
+ */
+void cpu_write_mem(CPUState* state, uint16_t addr, uint8_t data)
+{
+    if(addr > CPU_MEM_SIZE)
+        return;
+    state->memory[addr] = data;
+}
+/*
+ * cpu_load_memory()
+ */
+int cpu_load_memory(CPUState *state, const char *filename, int offset)
+{
+    FILE *fp;
+    int num_bytes;
+    uint8_t *buffer;
+
+    fp = fopen(filename, "rb");
+    if(!fp)
+    {
+        fprintf(stderr, "[%s] Failed to read file %s, exiting\n", __func__, filename);
+        return -1;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    num_bytes = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    // Load file into memory
+    buffer = &state->memory[offset];
+    fread(buffer, num_bytes, 1, fp);
+    fclose(fp);
+
+    return 0;
+}
+
 
 // Trap unimplemented instructions 
 void UnimplementedInstruction(CPUState *state, unsigned char opcode)
@@ -87,7 +205,7 @@ int cpu_run(CPUState* state, long cycles, int print_output)
         if(print_output)
         {
             fprintf(stdout, "[I %04X]  ", state->memory[state->pc]);
-            PrintState(state);
+            cpu_print_state(state);
         }
         if(status < 0)
             goto RUN_END;

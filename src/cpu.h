@@ -41,11 +41,28 @@ typedef struct CPUState
     uint16_t       shift_reg;
     uint16_t       shift_amount;
     //int            mem_size;
+    // function pointers for I/O
+    uint8_t (*inport)(void* cpu, uint8_t port);
+    void    (*outport)(void* cpu, uint8_t port, uint8_t data);
 } CPUState;
 
 // Get a new emulator state
 CPUState *cpu_create(void);
-void cpu_destroy(CPUState *state);
+void      cpu_destroy(CPUState *state);
+void      cpu_print_state(CPUState* state);
+
+// Memory 
+void    cpu_print_memory(CPUState* state, int n, int offset);
+void    cpu_clear_memory(CPUState* state);
+void    cpu_write_mem(CPUState* state, uint16_t addr, uint8_t data);
+uint8_t cpu_read_mem(CPUState* state, uint16_t addr);
+int     cpu_load_memory(CPUState* state, const char* filename, int offset);
+
+
+// default I/O ports
+static uint8_t cpu_default_inport(void* cpu, uint8_t port);
+static void    cpu_default_outport(void* cpu, uint8_t port, uint8_t data);
+
 
 // Operation
 void cpu_shift_register(CPUState* state);

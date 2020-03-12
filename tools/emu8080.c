@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cpu.h"
-#include "emu_utils.h"
 
 #define TEST_CYCLE_LIMIT 200000
 
@@ -53,10 +52,10 @@ int main(int argc, char *argv[])
             break;
         }
         fprintf(stdout, "[I %04X]  ", emu_state->memory[emu_state->pc]);
-        PrintState(emu_state);
+        cpu_print_state(emu_state);
     }
     fprintf(stdout, "Emulator finishd with exit code %d\n", status);
-    PrintState(emu_state); 
+    cpu_print_state(emu_state); 
 
     cpu_destroy(emu_state);
 

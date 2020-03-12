@@ -95,7 +95,7 @@ spec("CPU")
         check(test_cpu->outport != NULL);
 
         // use the I/O functions in this file for the test
-        test_cpu->inport = test_port_in;
+        test_cpu->inport  = test_port_in;
         test_cpu->outport = test_port_out;
 
         status = cpu_load_memory(test_cpu, test_file, test_offset);
