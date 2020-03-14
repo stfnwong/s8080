@@ -41,6 +41,8 @@ void assembler_set_repr(Assembler* assem, SourceInfo* repr);
 // Assemble from current repr
 int assembler_assem_line(Assembler* assem, LineInfo* line);
 int assembler_assem(Assembler* assem);
+// Write assembly to disk
+int assembler_write(Assembler* assem, const char* filename);
 
 // Getters 
 InstrVector* assembler_get_instr_vector(Assembler* assem);

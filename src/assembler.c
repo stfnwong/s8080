@@ -728,6 +728,67 @@ int assembler_assem(Assembler* assem)
     return status;
 }
 
+/*
+ * assembler_write()
+ */
+int assembler_write(Assembler* assem, const char* filename)
+{
+    int status = 0;
+    const int MEM_SIZE = 0x10000;
+    FILE* fp;
+
+    // Don't bother opening the file if there are no instructions 
+    if(instr_vector_size(assem->instr_buf) == 0)
+        goto ASSEMBLER_WRITE_END;
+
+    fp = fopen(filename, "wb");
+    if(!fp)
+    {
+        fprintf(stderr, "[%s] failed to open file [%s] for writing\n",
+                __func__, filename);
+        status = -1;
+        goto ASSEMBLER_WRITE_END;
+    }
+
+    // TODO : this is not great, but lets see if it works. 
+    // Allocate some destination RAM 
+    uint8_t* out_mem = calloc(MEM_SIZE, sizeof(uint8_t));
+    if(!out_mem)
+    {
+        fprintf(stderr, "[%s] failed to allocate assembler output memory\n", __func__);
+        status = -1;
+        goto ASSEMBLER_WRITE_END;
+    }
+
+    // We only need the start address to begin with
+    Instr* cur_instr;
+
+    cur_instr = instr_vector_get(assem->instr_buf, 0);
+    for(int i = 0; i < instr_vector_size(assem->instr_buf); ++i)
+    {
+        cur_instr = instr_vector_get(assem->instr_buf, i);
+        for(int b = 0; b < cur_instr->size; ++b)
+        {
+            uint32_t instr_mask = (0xFF << b);
+            uint8_t mem_val = (uint8_t)(cur_instr->instr & instr_mask) >> b;
+            out_mem[b + cur_instr->addr] = mem_val;
+            fprintf(stdout, "[%s] writing %02X -> [%04X]\n", 
+                    __func__, mem_val, b + cur_instr->addr);
+        }
+    }
+
+    // Write all of the resulting memory, including all zeros, to disk
+    // Obviously this is hugely wasteful, but lets just see how it looks
+    int num_bytes = fwrite(out_mem, sizeof(uint8_t), MEM_SIZE, fp);
+    if(num_bytes <= 0)
+        status = -1;
+
+ASSEMBLER_WRITE_END:
+    if(fp)
+        fclose(fp);
+    return status;
+}
+
 
 /*
  * assembler_get_instr_vector()

@@ -809,4 +809,42 @@ spec("Assembler")
         assembler_destroy(assembler);
         lexer_destroy(lexer); 
     }
+
+    it("Should write valid binaries to disk")
+    {
+        Lexer* lexer;
+        Assembler* assembler;
+        int status;
+
+        //// Get an assembler object
+        assembler = assembler_create();
+        check(assembler != NULL);
+
+        // Get a Lexer object
+        lexer = lexer_create();
+        check(lexer != NULL);
+        check(lexer->text_seg != NULL);
+
+        // Load the file 
+        status = lex_read_file(lexer, byte_list_filenam);  // NOTE: I guess its not super important which file this is for now...
+        check(status == 0);
+
+        // Lex source
+        lex_all(lexer);
+        // Assemble source
+        assembler_set_repr(assembler, lexer->source_repr);
+        check(assembler->instr_buf != NULL);
+        assembler_set_verbose(assembler);
+
+        // Now assemble
+        status = assembler_assem(assembler);
+        check(status == 0);     
+
+        status = assembler_write(assembler, "test_asm_out.asm"); 
+        check(status != -1);
+
+        // cleanup
+        assembler_destroy(assembler);
+        lexer_destroy(lexer); 
+    }
 }
