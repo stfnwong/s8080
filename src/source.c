@@ -128,7 +128,7 @@ void line_info_print(LineInfo* info)
 
     fprintf(stdout, "    error  : %s\n", (info->error) ? "YES" : "NO");
     fprintf(stdout, "    Opcode : ");
-    opcode_print(info->opcode);
+    opcode_print(info->opcode);  // <- TODO : memory issues with this call...
     if(info->symbol_str_len > 0)
         fprintf(stdout, " [%s] ", info->symbol_str);
 
@@ -187,23 +187,23 @@ void line_info_print_instr(LineInfo* info)
 
         // One register and one 8bit immediate
         case LEX_MVI:
-            fprintf(stdout, "%s 0x%02X ", REG_TYPE_TO_STR[info->reg[0]], info->immediate);
+            fprintf(stdout, "%s #$%02X ", REG_TYPE_TO_STR[info->reg[0]], info->immediate);
             break;
             
         // One register and one 16bit immediate
         case LEX_LXI:
-            fprintf(stdout, "%s 0x%04X ", REG_TYPE_TO_STR[info->reg[0]], info->immediate);
+            fprintf(stdout, "%s #$%04X ", REG_TYPE_TO_STR[info->reg[0]], info->immediate);
             break;
 
         // 8-bit immediate arguments 
         case LEX_ADI:
-            fprintf(stdout, "0x%02X ", info->immediate);
+            fprintf(stdout, "#$%02X ", info->immediate);
             break;
 
         // 16-bit Immediate arguments
         case LEX_LHLD:
         case LEX_STA:
-            fprintf(stdout, "%04X", info->immediate);
+            fprintf(stdout, "#$%04X", info->immediate);
             break;
 
         // Jump instructions 
@@ -227,6 +227,11 @@ void line_info_print_instr(LineInfo* info)
             if(byte_list_len(info->byte_list) > 0)
                 byte_list_print(info->byte_list);
             break;
+
+        // System instructions 
+        //case LEX_RST:
+        //    fprintf(stdout, "%d ", info->immediate);
+        //    break;
 
         // If this instruction just has an opcode then do nothing
         default:
@@ -421,7 +426,7 @@ uint8_t reg_char_to_code(char r)
 /*
  * source_info_create()
  */
-SourceInfo* source_info_create(int num_lines)
+SourceInfo* source_info_create(int start_capacity)
 {
     SourceInfo* info;
 
@@ -429,13 +434,16 @@ SourceInfo* source_info_create(int num_lines)
     if(!info)
         goto SOURCE_INFO_END;
 
-    info->max_size = num_lines;
+
+    info->capacity = start_capacity;
     info->size     = 0;
-    info->buffer   = malloc(sizeof(*info->buffer) * info->max_size);
+    info->buffer   = malloc(sizeof(*info->buffer) * info->capacity);
     if(!info->buffer)
         goto SOURCE_INFO_END;
 
-    for(int b = 0; b < info->max_size; ++b)
+    // TODO : I think that not only do we have to do this here, but also 
+    // we need to do this in the code to extend the vector
+    for(int b = 0; b < info->capacity; ++b)
     {
         info->buffer[b] = malloc(sizeof(*info->buffer[b]));
         if(!info->buffer[b])
@@ -462,39 +470,72 @@ SOURCE_INFO_END:
  */
 void source_info_destroy(SourceInfo* info)
 {
-    // NOTE : not sure that all the memory is getting cleared here...
-    if(info == NULL)
-        free(info);
-    else if(info->size == 0)
-    {
-        //free(info->buffer);     // fails?
-        free(info);
-    }
-    else
-    {
-        for(int b = 0; b < info->max_size; ++b)
-            line_info_destroy(info->buffer[b]);
-        free(info->buffer);
-        free(info);
-    }
+    for(int l = 0; l < info->size; ++l)
+        line_info_destroy(info->buffer[l]);
+
+    free(info);
+
+    //if(info == NULL)
+    //    free(info);
+    //else if(info->size == 0)
+    //{
+    //    //free(info->buffer);     // fails?
+    //    free(info);
+    //}
+    //else
+    //{
+    //    for(int b = 0; b < info->capacity; ++b)
+    //        line_info_destroy(info->buffer[b]);
+    //    free(info->buffer);
+    //    free(info);
+    //}
 }
 
 /*
  * source_info_add_line()
  */
-int source_info_add_line(SourceInfo* info, LineInfo* line)
+void source_info_add_line(SourceInfo* info, LineInfo* line)
 {
     int status; 
 
-    // Bounds check the insert
-    if(info->size == info->max_size)
-        return -1;
-      
-    status = line_info_copy(info->buffer[info->size], line);
-    if(status >= 0)
-        info->size++;
+    if(info->size >= info->capacity)
+        source_info_extend(info, info->capacity);
 
-    return status;
+    memcpy(info->buffer + info->size, line, sizeof(*info->buffer));
+    info->size++;
+
+    // Bounds check the insert
+    //if(info->size == info->capacity)
+    //    return -1;
+    //  
+    //status = line_info_copy(info->buffer[info->size], line);
+    //if(status >= 0)
+    //    info->size++;
+
+    //return status;
+}
+
+/*
+ * source_info_extend()
+ */
+void source_info_extend(SourceInfo* info, int ext_size)
+{
+    LineInfo** buf;
+
+    //buf = malloc(sizeof(*buf) * info->capacity * ext_size);
+    // TODO : actually not sure if sizeof(*buf->[0] is correct... since this is the size of 
+    // a single LineInfo pointer (and not the size of a LineInfo)
+    buf = realloc(info->buffer, sizeof(*buf[0]) * ext_size);  // this copies the previous data over 
+    if(!buf)
+    {
+        fprintf(stdout, "[%s] failed to alloc %d bytes to extend vector\n", __func__, info->capacity * ext_size);
+        return;
+    }
+
+    info->capacity = info->capacity + ext_size;
+    memcpy(buf, info->buffer, sizeof(*buf) * info->size);
+    free(info->buffer);
+    info->buffer = buf;
 }
 
 /*
@@ -507,6 +548,7 @@ int source_info_edit_line(SourceInfo* info, LineInfo* line, int idx)
     if(idx < 0 || idx > info->size)
         return -1;
 
+    // TODO : how does the copy work in the vector implementation?
     status = line_info_copy(info->buffer[idx], line);
     if(status >= 0)
         info->size++;
@@ -519,12 +561,11 @@ int source_info_edit_line(SourceInfo* info, LineInfo* line, int idx)
  */
 LineInfo* source_info_get_idx(SourceInfo* info, int idx)
 {
-    if(idx < 0 || idx > info->max_size)
+    if(idx < 0 || idx > info->capacity)
         return NULL;
 
     return (LineInfo*) info->buffer[idx];
 }
-
 
 /*
  * source_info_clone()
@@ -533,13 +574,14 @@ SourceInfo* source_info_clone(SourceInfo* src)
 {
     SourceInfo* dst;
 
-    dst = source_info_create(src->max_size);
+    dst = source_info_create(src->capacity);
     if(!dst)
         goto CLONE_END;
 
     dst->size     = src->size;
-    dst->max_size = src->max_size;
+    dst->capacity = src->capacity;
 
+    // TODO : update this to reflec the new pointer structure
     for(int e = 0; e < src->size; ++e)
         dst->buffer[e] = src->buffer[e];
 
@@ -553,13 +595,6 @@ CLONE_END:
     return dst;
 }
 
-/*
- * source_info_full()
- */
-int source_info_full(SourceInfo* info)
-{
-    return (info->size == info->max_size) ? 1 : 0;
-}
 
 /*
  * source_info_empty()
@@ -575,6 +610,14 @@ int source_info_empty(SourceInfo* info)
 int source_info_size(SourceInfo* info)
 {
     return info->size;
+}
+
+/*
+ * source_info_capacity()
+ */
+int source_info_capacity(SourceInfo* info)
+{
+    return info->capacity;
 }
 
 

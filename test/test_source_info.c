@@ -20,35 +20,35 @@ spec("SourceInfo")
         SourceInfo* test_info;
 
         num_elems = 64;
-
         test_info = source_info_create(num_elems);
-        check(test_info->max_size == num_elems);
+        check(test_info != NULL);
+        check(test_info->capacity == num_elems);
         check(test_info->size == 0);
 
-        // Are all the elements initialized?
-        for(int i = 0; i < test_info->max_size; ++i)
-        {
-            // we expect the memory to be allocated (since 
-            // elements are copied into the buffer)
-            check(test_info->buffer[i] != NULL);
-            // But each element with have the default/init
-            // values
-            check(test_info->buffer[i]->line_num == 0);
-            check(test_info->buffer[i]->addr == 0);
-            check(test_info->buffer[i]->immediate == 0);
-            check(test_info->buffer[i]->has_immediate == 0);
-            check(test_info->buffer[i]->label_str_len == 0);
-            check(test_info->buffer[i]->error == 0);
-            check(test_info->buffer[i]->label_str == NULL);
-            for(int r = 0; r < LINE_INFO_NUM_REG; ++r)
-                check(test_info->buffer[i]->reg[r] == REG_NONE);
+        //// Are all the elements initialized?
+        //for(int i = 0; i < test_info->capacity; ++i)
+        //{
+        //    // we expect the memory to be allocated (since 
+        //    // elements are copied into the buffer)
+        //    check(test_info->buffer[i] != NULL);
+        //    // But each element with have the default/init
+        //    // values
+        //    check(test_info->buffer[i]->line_num == 0);
+        //    check(test_info->buffer[i]->addr == 0);
+        //    check(test_info->buffer[i]->immediate == 0);
+        //    check(test_info->buffer[i]->has_immediate == 0);
+        //    check(test_info->buffer[i]->label_str_len == 0);
+        //    check(test_info->buffer[i]->error == 0);
+        //    check(test_info->buffer[i]->label_str == NULL);
+        //    for(int r = 0; r < LINE_INFO_NUM_REG; ++r)
+        //        check(test_info->buffer[i]->reg[r] == REG_NONE);
 
-            // Opcode is initnalized 
-            check(test_info->buffer[i]->opcode->instr == 0);
-            for(int r = 0; r < OPCODE_MNEMONIC_SIZE; ++r)
-                check(test_info->buffer[i]->opcode->mnemonic[r] == 0);
-            check(test_info->buffer[i]->byte_list != NULL);
-        }
+        //    // Opcode is initnalized 
+        //    check(test_info->buffer[i]->opcode->instr == 0);
+        //    for(int r = 0; r < OPCODE_MNEMONIC_SIZE; ++r)
+        //        check(test_info->buffer[i]->opcode->mnemonic[r] == 0);
+        //    check(test_info->buffer[i]->byte_list != NULL);
+        //}
 
         source_info_destroy(test_info);
     }
@@ -63,7 +63,7 @@ spec("SourceInfo")
 
         src_info = source_info_create(num_elems);
         check(src_info != NULL)
-        check(src_info->max_size == num_elems);
+        check(src_info->capacity == num_elems);
         check(src_info->size == 0);
 
         LineInfo* dummy_line = line_info_create();
@@ -82,7 +82,7 @@ spec("SourceInfo")
         // Make the clone
         dst_info = source_info_clone(src_info);
         check(dst_info->size == src_info->size);
-        check(dst_info->max_size == src_info->max_size);
+        check(dst_info->capacity == src_info->capacity);
 
         // Check all elements
         for(int e = 0; e < src_info->size; ++e)
@@ -117,7 +117,7 @@ spec("SourceInfo")
         num_elems = 64;
 
         test_info = source_info_create(num_elems);
-        check(test_info->max_size == num_elems);
+        check(test_info->capacity == num_elems);
         check(test_info->size == 0);
 
         // Create a LineInfo
@@ -142,8 +142,7 @@ spec("SourceInfo")
         line_info_print(test_line);
 
         // Insert that LineInfo
-        status = source_info_add_line(test_info, test_line);
-        check(status == 0);
+        source_info_add_line(test_info, test_line);
 
         // Check the line we just inserted.
         check(test_info->size == 1);
@@ -163,8 +162,7 @@ spec("SourceInfo")
         test_line->label_str = NULL;
         test_line->label_str_len = 0;
 
-        status = source_info_add_line(test_info, test_line);
-        check(status == 0);
+        source_info_add_line(test_info, test_line);
 
         // Check the line we just inserted.
         check(test_info->size == 2);
@@ -189,7 +187,7 @@ spec("SourceInfo")
         num_elems = 2;
 
         test_info = source_info_create(num_elems);
-        check(test_info->max_size == num_elems);
+        check(test_info->capacity == num_elems);
         check(test_info->size == 0);
 
         // Add some stuff 
@@ -198,7 +196,7 @@ spec("SourceInfo")
         test_op = opcode_create();
         check(test_op != NULL);
 
-        for(int l = 0; l < test_info->max_size; ++l)
+        for(int l = 0; l < test_info->capacity; ++l)
         {
             line_info_init(test_line);
             opcode_init(test_op);
@@ -211,18 +209,15 @@ spec("SourceInfo")
             test_line->opcode = test_op;
             test_line->reg[0] = REG_E;
             // add the line
-            status = source_info_add_line(test_info, test_line);
-            check(status == 0);
+            source_info_add_line(test_info, test_line);
         }
 
         // The object should now be full
         check(test_info->size == num_elems);
-        check(source_info_full(test_info) == 1);
         check(source_info_empty(test_info) == 0);
 
         // If we add another item we should get the status code -1
-        status = source_info_add_line(test_info, test_line);
-        check(status == -1);
+        source_info_add_line(test_info, test_line);
 
         source_info_destroy(test_info);
         line_info_destroy(test_line);
@@ -238,7 +233,7 @@ spec("SourceInfo")
     //    num_elems = 64;
 
     //    test_info = source_info_create(num_elems);
-    //    check(test_info->max_size == num_elems);
+    //    check(test_info->capacity == num_elems);
     //    check(test_info->size == 0);
 
     //    // Creata a new LineInfo structure and place it in the buffer

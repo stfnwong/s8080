@@ -76,23 +76,28 @@ uint8_t   reg_char_to_code(char r);
 
 
 // ==== Buffer for LineInfo Structures
-typedef struct
-{
-    LineInfo** buffer;
-    int size;
-    int max_size;
-} SourceInfo;
+// TODO : move into *.c file, add forward declaration
+typedef struct SourceInfo SourceInfo;
 
+struct SourceInfo
+{
+    LineInfo** buffer;      // Need pointers here, alloc and copy each time?
+    int size;
+    int capacity;
+};
+
+// TODO : this might not work as well as I hoped, as the size of each LineInfo is not the same....
+// But wait a minute, if that's the case then how does the current implementation work?
 SourceInfo* source_info_create(int num_lines);
 void        source_info_destroy(SourceInfo* info);
-int         source_info_add_line(SourceInfo* info, LineInfo* line);
+void        source_info_extend(SourceInfo* info, int ext_size);
+void        source_info_add_line(SourceInfo* info, LineInfo* line); 
 int         source_info_edit_line(SourceInfo* info, LineInfo* line, int idx);
 LineInfo*   source_info_get_idx(SourceInfo* info, int idx);
 SourceInfo* source_info_clone(SourceInfo* src);
-int         source_info_full(SourceInfo* info);
 int         source_info_empty(SourceInfo* info);
-// For structure hiding (TODO : not yet implemented)
 int         source_info_size(SourceInfo* info);
+int         source_info_capacity(SourceInfo* info);
 
 
 // ======== TOKEN ======== //

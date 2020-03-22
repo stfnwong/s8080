@@ -47,7 +47,7 @@ void UnimplementedInstruction(CPUState *state, unsigned char opcode)
     state->pc--;
     fprintf(stderr, "Unimplemented instruction 0x%02X\n", opcode);
     fprintf(stderr, "PC   INSTR\n");
-    disassemble_8080_op(state->memory, state->pc);
+    disassemble_8080_op_to_console(state->memory, state->pc);
 }
 
 /*

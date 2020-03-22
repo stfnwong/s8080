@@ -1287,12 +1287,7 @@ LEX_LINE_END:
     lexer->text_seg->line_num = lexer->cur_line;
     lex_text_addr_incr(lexer, instr_size);
 
-    status = source_info_add_line(lexer->source_repr, lexer->text_seg);
-    if(status < 0)
-    {
-        fprintf(stderr, "[%s] (line %d:%d) failed to update source info\n",
-                __func__, lexer->cur_line, lexer->cur_col);
-    }
+    source_info_add_line(lexer->source_repr, lexer->text_seg);
 
     return status;
 }

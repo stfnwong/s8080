@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "disassem.h"
 
+// TODO : change this over to use the new disassembler
 
 int main(int argc, char *argv[])
 {
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
     int pc = 0;
     while(pc < fsize)
     {
-        pc += disassemble_8080_op(buffer, pc);
+        pc += disassemble_8080_op_to_console(buffer, pc);
     }
 
     free(buffer);

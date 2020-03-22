@@ -1,4 +1,42 @@
+/*
+ * DISASSEM
+ * Disassembly routines
+ *
+ * Stefan Wong 2020
+ */
+
 #include <stdio.h>
+#include <stdlib.h>
+#include "disassem.h"
+#include "instr.h"
+#include "source.h"
+
+
+/*
+ * disassembler_create()
+ */
+Disassembler* disassembler_create(void)
+{
+    Disassembler* dis;
+
+    dis = malloc(sizeof(*dis));
+    if(!dis)
+        return NULL;
+
+    dis->pc = 0;
+    dis->codebuffer = NULL;
+
+    return dis;
+}
+
+/*
+ * disassembler_destroy()
+ */
+void disassembler_destroy(Disassembler* dis)
+{
+    free(dis);
+}
+
 
 
 /* Codebuffer is a valid pointer to 8080 assembly code.
@@ -7,14 +45,17 @@
  * returns the number of bytes of the op
  */
 
-
-// TODO : rather than just print things, make this
-// create some binary intermediate representation that
-// we can reuse (and create strings out of later)
-
-int disassemble_8080_op(unsigned char *codebuffer, int pc)
+int disasemble_op(uint8_t* codebuffer, int pc)
 {
-    unsigned char *code = &codebuffer[pc];
+
+}
+
+/*
+disassemble_8080_op_to_console()
+*/
+int disassemble_8080_op_to_console(uint8_t *codebuffer, int pc)
+{
+    uint8_t *code = &codebuffer[pc];
     int opbytes = 1;
 
     fprintf(stdout, "%04X ", pc);

@@ -74,7 +74,7 @@ spec("Lexer")
         check(lexer->source_repr != NULL);
         check(lexer->sym_table != NULL);
         check(lexer->source_repr->size == 0);
-        check(lexer->source_repr->max_size == 12);      // since there are 12 lines in the source file
+        check(source_info_size(lexer->source_repr) == 12);      // since there are 12 lines in the source file
          
         fprintf(stdout, "[%s] source file [%s] contents:\n\n", __func__, test_filename);
         for(int c = 0; c < lexer->src_len; ++c)

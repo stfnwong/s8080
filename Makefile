@@ -11,7 +11,7 @@ TOOL_DIR=tools
 
 # Flags 
 CC=gcc
-CFLAGS=-Wall -g2 -O0 -std=c11 -I$(SRC_DIR) 
+CFLAGS=-Wall -Wshadow -g2 -O0 -std=c11 -I$(SRC_DIR) 
 LDFLAGS=
 LIBS=-lSDL2
 
@@ -31,7 +31,7 @@ $(DISASSEM_OBJ): $(OBJ_DIR)/%.o : $(DISASSEM_SRC_DIR)/%.c
 obj: $(OBJECTS) 
 
 # ======== TEST ======== #
-TESTS=test_lexer test_token test_opcode test_line_info test_source_info test_assembler test_symbol_table test_instr_buffer test_list test_vector test_instr_vector
+TESTS=test_disassembler test_lexer test_token test_opcode test_line_info test_source_info test_assembler test_symbol_table test_instr_buffer test_list test_vector test_instr_vector
 TEST_SOURCES=$(wildcard test/*.c)	
 TEST_OBJECTS  := $(TEST_SOURCES:test/%.c=$(OBJ_DIR)/%.o)
 

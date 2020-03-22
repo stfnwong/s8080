@@ -45,8 +45,7 @@ spec("ByteVector")
         for(int i = 0; i < total_test_size; ++i)
             test_data[i] = (i+1) % 256;
 
-        // Don't worry about the growth rate here
-        // Would also be nice if I could pass test_data[i] instead of (test_data + i)
+        // Start putting data into the vector
         for(int i = 0; i < total_test_size; ++i)
             byte_vector_push_back(test_vec, test_data + i, 1);
         check(test_vec->size == total_test_size);

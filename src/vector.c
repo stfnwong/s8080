@@ -90,7 +90,7 @@ void byte_vector_extend(ByteVector* v, int ext_size)
     mem = malloc(sizeof(uint8_t) * v->capacity + ext_size);
     if(!mem)
     {
-        fprintf(stdout, "[%s] failed to alloc %d bytes to extend vector\n", __func__, ext_size);
+        fprintf(stdout, "[%s] failed to alloc %d bytes to extend vector\n", __func__, v->capacity * ext_size);
         return;
     }
 
