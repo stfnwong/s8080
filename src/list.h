@@ -27,6 +27,11 @@ struct ByteNode
     ByteNode* prev;
 };
 
+// TODO: bytedata object, which links addresses and data. 
+// This way we can move it out of the LineInfo, and therefore not need
+// some odd trick to make a vector of LineInfos (which is essentially 
+// what a source info is)
+
 ByteNode* byte_node_create(uint8_t* data, int len);
 void      byte_node_destroy(ByteNode* node);
 void      byte_node_zero(ByteNode* node);

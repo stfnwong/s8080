@@ -10,6 +10,9 @@
 
 #define TOKEN_BUF_SIZE 64
 #define LINE_INFO_NUM_REG 2
+// Maximum sizes for label strings, symbol strings
+#define SOURCE_INFO_MAX_LABEL_LEN  32
+#define SOURCE_INFO_MAX_SYMBOL_LEN 32
 
 #include "opcode.h"
 #include "list.h"
@@ -38,9 +41,8 @@ extern const char* REG_TYPE_TO_STR[11];
 typedef struct 
 {
     Opcode*   opcode;
-    char*     label_str;
-    char*     symbol_str;
-    ByteList* byte_list;
+    char      label_str[SOURCE_INFO_MAX_LABEL_LEN];
+    char      symbol_str[SOURCE_INFO_MAX_SYMBOL_LEN];
     int       label_str_len;
     int       symbol_str_len;
     // Position
@@ -50,6 +52,8 @@ typedef struct
     int       has_immediate;
     int       immediate;
     RegType   reg[LINE_INFO_NUM_REG];
+    // Any raw bytes that were written to the program output
+    ByteList* byte_list;        // TODO : this is going to be a hassle
     // error info
     int       error;
 } LineInfo;
@@ -74,9 +78,7 @@ void      line_info_clear_byte_list(LineInfo* info);
  */
 uint8_t   reg_char_to_code(char r);
 
-
 // ==== Buffer for LineInfo Structures
-// TODO : move into *.c file, add forward declaration
 typedef struct SourceInfo SourceInfo;
 
 struct SourceInfo

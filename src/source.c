@@ -45,8 +45,8 @@ LineInfo* line_info_create(void)
     if(!info->byte_list)
         goto LINE_INFO_CREATE_END;
 
-    info->label_str  = NULL;
-    info->symbol_str = NULL;
+    info->label_str[0]  = '\0';
+    info->symbol_str[0] = '\0';
     line_info_init(info);
 
 LINE_INFO_CREATE_END:
@@ -86,17 +86,11 @@ void line_info_init(LineInfo* info)
         info->reg[a] = REG_NONE;
 
     // Ensure that there is no string memory
-    if(info->label_str != NULL)
-    {
-        free(info->label_str);
-        info->label_str = NULL;
-    }
+    if(info->label_str[0] != '\0')  // same as strlen(info->label_str) == 0?
+        info->label_str[0] = '\0';
     info->label_str_len = 0;
-    if(info->symbol_str != NULL)
-    {
-        free(info->symbol_str);
-        info->symbol_str = NULL;
-    }
+    if(info->symbol_str[0] != '\0')
+        info->symbol_str[0] = '\0';
     info->symbol_str_len = 0;
     // This would be a good place to do some 
     // optimization around not destroying and re-creating 
@@ -264,31 +258,17 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
 
     opcode_copy(dst->opcode, src->opcode);
     dst->label_str_len = src->label_str_len;
-    // we may need to allocate some memory here for label string
-    // NOTE : use realloc here?
+
     if(dst->label_str_len > 0)
-    {
-        if(dst->label_str != NULL)
-            free(dst->label_str);
-        dst->label_str = malloc(sizeof(char) * dst->label_str_len);
-        if(!dst->label_str)
-            return -1;
         strncpy(dst->label_str, src->label_str, dst->label_str_len);
-    }
+
     // Also copy the symbol string 
     dst->symbol_str_len = src->symbol_str_len;
     if(dst->symbol_str_len > 0)
-    {
-        if(dst->symbol_str != NULL)
-            free(dst->symbol_str);
-        dst->symbol_str = malloc(sizeof(char) * dst->symbol_str_len);
-        if(!dst->symbol_str)
-            return -1;
         strncpy(dst->symbol_str, src->symbol_str, dst->symbol_str_len);
-    }
+
     // Also copy the byte list
     byte_list_copy(dst->byte_list, src->byte_list);
-
     dst->error = src->error;
 
     return 0;
@@ -307,14 +287,12 @@ int line_info_struct_size(LineInfo* info)
  */
 int line_info_set_label_str(LineInfo* info, char* str, int len)
 {
-    if(info->label_str != NULL)
-        free(info->label_str);
-    info->label_str = malloc(sizeof(char) * len+1);
-    if(!info->label_str)
-        return -1;
-    info->label_str_len = len;
+    if(len < SOURCE_INFO_MAX_LABEL_LEN)
+        info->label_str_len = len;
+    else
+        info->label_str_len = SOURCE_INFO_MAX_LABEL_LEN - 1;
+
     strncpy(info->label_str, str, info->label_str_len);
-    info->label_str[len] = '\0';
 
     return 0;
 }
@@ -324,12 +302,11 @@ int line_info_set_label_str(LineInfo* info, char* str, int len)
  */
 int line_info_set_symbol_str(LineInfo* info, char* str, int len)
 {
-    if(info->symbol_str != NULL)
-        free(info->symbol_str);
-    info->symbol_str = malloc(sizeof(char) * len+1);
-    if(!info->symbol_str)
-        return -1;
-    info->symbol_str_len = len;
+    if(len < SOURCE_INFO_MAX_SYMBOL_LEN)
+        info->symbol_str_len = len;
+    else
+        info->symbol_str_len = SOURCE_INFO_MAX_SYMBOL_LEN;
+
     strncpy(info->symbol_str, str, info->symbol_str_len);
     info->symbol_str[len] = '\0';
 
@@ -434,7 +411,6 @@ SourceInfo* source_info_create(int start_capacity)
     if(!info)
         goto SOURCE_INFO_END;
 
-
     info->capacity = start_capacity;
     info->size     = 0;
     info->buffer   = malloc(sizeof(*info->buffer) * info->capacity);
@@ -498,10 +474,12 @@ void source_info_add_line(SourceInfo* info, LineInfo* line)
 {
     int status; 
 
+    // TODO: extend needs to alloc
     if(info->size >= info->capacity)
         source_info_extend(info, info->capacity);
 
-    memcpy(info->buffer + info->size, line, sizeof(*info->buffer));
+    //memcpy(info->buffer + info->size, line, sizeof(*info->buffer));
+    
     info->size++;
 
     // Bounds check the insert
@@ -525,6 +503,7 @@ void source_info_extend(SourceInfo* info, int ext_size)
     //buf = malloc(sizeof(*buf) * info->capacity * ext_size);
     // TODO : actually not sure if sizeof(*buf->[0] is correct... since this is the size of 
     // a single LineInfo pointer (and not the size of a LineInfo)
+    
     buf = realloc(info->buffer, sizeof(*buf[0]) * ext_size);  // this copies the previous data over 
     if(!buf)
     {
