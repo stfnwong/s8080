@@ -21,6 +21,7 @@ ByteVector* byte_vector_create(int capacity)
     if(!vec)
         return NULL;
 
+    vec->size = 0;
     vec->capacity = capacity;
     vec->data = malloc(sizeof(uint8_t) * vec->capacity);
     if(!vec->data)
