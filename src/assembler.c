@@ -449,16 +449,19 @@ void asm_call(Instr* dst, LineInfo* line)
 /*
  * asm_data()
  */
-void asm_data(InstrVector* vec, LineInfo* line)
+// TODO : re-write to use ByteData alone, which will have address information inside
+void asm_data(InstrVector* vec, ByteList* byte_data)
 {
     int cur_addr;
-    ByteNode* cur_node;
+    ByteData* cur_node;
     Instr cur_instr;
 
-    cur_addr = line->addr;
-    cur_node = byte_list_get(line->byte_list, 0);
+    cur_node = byte_list_get(byte_data, 0);
+    cur_addr = cur_node->start_addr;
 
-    byte_list_print(line->byte_list); 
+    // FIXME : remove this after debug 
+    byte_list_print(byte_data); 
+
     while(cur_node != NULL)
     {
        for(int d = 0; d < cur_node->len; ++d)
@@ -470,6 +473,7 @@ void asm_data(InstrVector* vec, LineInfo* line)
             cur_addr++;
         }
         cur_node = cur_node->next;
+        cur_addr = cur_node->start_addr;
     }
 }
 
@@ -677,10 +681,16 @@ int assembler_assem_line(Assembler* assem, LineInfo* line)
                 break;
 
             // data instructions 
+            // TODO ; make this work more like a directive (which is the case,
+            // but we need to be able to 'parse' it like an instruction since thats 
+            // how programs are often written
             case LEX_DB:
             case LEX_DS:
             case LEX_DW:
-                asm_data(assem->instr_buf, line);
+                // TODO: If the data is in a seperate place (ie: stored in a ByteList 
+                // that isn't part of a LineInfo structure) then the way that this routine works 
+                // needs to be completely refactored.
+                //asm_data(assem->instr_buf, line);
                 status = 0;     // is there anything that can go wrong?
                 goto ASM_LINE_END;
 

@@ -1,0 +1,22 @@
+--- SOURCE_REPR implementation.
+
+Change the source repr object to be more like a vector of LineInfo objects. This way we don't have to guess at the size when we create the object.
+
+The trouble here is that the size of a LineInfo can vary alot because it might contain strings (for labels) and other things. It also contains a pointer to an Opcode.
+
+To do this, we might want to make it so that each structure is a fixed size. No matter what we do, it seems that we will need to perform a lot of copying.
+
+This will have some impacts on the other components of the system
+
+LEXER:
+The data needs to be placed in a different structure. The main effect this has is when lexing LEX_DB and LEX_DS we place the results in the ByteList member of the lexer's SourceInfo.
+
+ASSEMBLER:
+This is more awkward because now we have two paths - One for text instructions and one for data instructions. Either we need to 
+
+1) Make these completely seperate, then combine at the end.
+2) Find another way to keep the ByteList in the LineInfo structure (which in turn means that the SourceInfo can't 'simply' be a vector of LineInfos)
+
+Part of the trouble here is that the DB instruction does everything 'in-place', by which I mean that bytes are inserted at the place where DB is written. This means that if we have a LineInfo that represents a single 'line' of assembly (or more precisely, one instruction) then we need to be able to have a pointer to a variable amount of data that is copied around with the rest of the LineInfo.
+
+Another consideration - if the byte list data (args to DB) is stored seperately from the LineInfo itself (perhaps as another method in the source info), then how do we assemble? If the byte list data is 'in-line', that is, when we go to assemble a LineInfo and the lenght of the byte list is > 0, then we just read the LineInfos in order and assemble as we go. If we try to put the LineInfo's somewhere else, then we may need to do another re-ordering pass first before we can assemble, since the bytes may go in the region between two other LineInfos.

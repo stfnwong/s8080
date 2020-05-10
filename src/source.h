@@ -5,8 +5,8 @@
  * Stefan Wong 2020
  */
 
-#ifndef __EMU_SOURCE_H
-#define __EMU_SOURCE_H
+#ifndef __S8000_SOURCE_H
+#define __S8000_SOURCE_H
 
 #define TOKEN_BUF_SIZE 64
 #define LINE_INFO_NUM_REG 2
@@ -40,7 +40,7 @@ extern const char* REG_TYPE_TO_STR[11];
 // Text segment
 typedef struct 
 {
-    Opcode*   opcode;
+    Opcode*   opcode;   // make this not a reference...
     char      label_str[SOURCE_INFO_MAX_LABEL_LEN];
     char      symbol_str[SOURCE_INFO_MAX_SYMBOL_LEN];
     int       label_str_len;
@@ -53,7 +53,7 @@ typedef struct
     int       immediate;
     RegType   reg[LINE_INFO_NUM_REG];
     // Any raw bytes that were written to the program output
-    ByteList* byte_list;        // TODO : this is going to be a hassle
+    //ByteList* byte_list;        // TODO : this is going to be a hassle
     // error info
     int       error;
 } LineInfo;
@@ -67,10 +67,6 @@ int       line_info_copy(LineInfo* dst, LineInfo* src);
 int       line_info_struct_size(LineInfo* info);
 int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
 int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
-int       line_info_append_byte_array(LineInfo* info, uint8_t* array, int len);
-int       line_info_byte_list_size(LineInfo* info);
-int       line_info_byte_list_num_bytes(LineInfo* info);
-void      line_info_clear_byte_list(LineInfo* info);
 
 /*
  * reg_char_to_code()
@@ -84,8 +80,9 @@ typedef struct SourceInfo SourceInfo;
 struct SourceInfo
 {
     LineInfo** buffer;      // Need pointers here, alloc and copy each time?
-    int size;
-    int capacity;
+    ByteList*  byte_list;
+    int        size;
+    int        capacity;
 };
 
 // TODO : this might not work as well as I hoped, as the size of each LineInfo is not the same....
@@ -101,6 +98,11 @@ int         source_info_empty(SourceInfo* info);
 int         source_info_size(SourceInfo* info);
 int         source_info_capacity(SourceInfo* info);
 
+int         source_info_byte_list_size(SourceInfo* info);
+int         source_info_byte_list_num_bytes(SourceInfo* info);
+void        source_info_clear_byte_list(SourceInfo* info);
+
+int         source_info_append_byte_array(SourceInfo* info, uint8_t* array, int len, int start_addr);
 
 // ======== TOKEN ======== //
 typedef enum {
@@ -129,4 +131,4 @@ Token* create_token(void);
 void   token_init(Token* token);
 void   destroy_token(Token* token);
 
-#endif /*__EMU_SOURCE_H*/
+#endif /*__S8000_SOURCE_H*/

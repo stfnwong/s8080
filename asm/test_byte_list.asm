@@ -6,5 +6,5 @@
 TEST_ARGS: DB, "SOME CHARACTER STRING", 0dh, 0ah, 03h
            DB 65h
 
-; Also throw in an incorrect DB 
+; Also throw in an incorrect DB and assert that fails 
            ;DB           ; missing arguments

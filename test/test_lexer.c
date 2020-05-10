@@ -1120,9 +1120,10 @@ spec("Lexer")
         check(byte_list_len(cur_line->byte_list) == 4);
 
         // check the argument values 
-        ByteNode* cur_node;
+        ByteData* cur_node;
+        // TODO : if the list is in a new place, then at what point do we do the assembly? 
         // 1st arg
-        cur_node = byte_list_get(cur_line->byte_list, 0);
+        cur_node = byte_list_get(cur_line->byte_list, 0);      
         check(cur_node != NULL);
         uint8_t expected_str_data[] = {
             0x53, 0x4F, 0x4D, 0x45, 0x20, 0x43, 0x48, 

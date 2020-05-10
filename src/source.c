@@ -41,16 +41,12 @@ LineInfo* line_info_create(void)
     if(!info->opcode)
         goto LINE_INFO_CREATE_END;
 
-    info->byte_list = byte_list_create();
-    if(!info->byte_list)
-        goto LINE_INFO_CREATE_END;
-
     info->label_str[0]  = '\0';
     info->symbol_str[0] = '\0';
     line_info_init(info);
 
 LINE_INFO_CREATE_END:
-    if(!info || !info->opcode || !info->byte_list)
+    if(!info || !info->opcode)
     {
         fprintf(stderr, "[%s] failed to allocate memory while creating LineInfo\n", __func__);
         return NULL;
@@ -64,7 +60,6 @@ LINE_INFO_CREATE_END:
  */
 void line_info_destroy(LineInfo* info)
 {
-    byte_list_destroy(info->byte_list);
     free(info->opcode);
     free(info->label_str);
     free(info);
@@ -85,19 +80,13 @@ void line_info_init(LineInfo* info)
     for(int a = 0; a < LINE_INFO_NUM_REG; ++a)
         info->reg[a] = REG_NONE;
 
-    // Ensure that there is no string memory
+    // Reset all the strings
     if(info->label_str[0] != '\0')  // same as strlen(info->label_str) == 0?
         info->label_str[0] = '\0';
     info->label_str_len = 0;
     if(info->symbol_str[0] != '\0')
         info->symbol_str[0] = '\0';
     info->symbol_str_len = 0;
-    // This would be a good place to do some 
-    // optimization around not destroying and re-creating 
-    // the list 
-    byte_list_destroy(info->byte_list);
-    info->byte_list = byte_list_create();
-
     info->error = 0;
 }
 
@@ -125,15 +114,6 @@ void line_info_print(LineInfo* info)
     opcode_print(info->opcode);  // <- TODO : memory issues with this call...
     if(info->symbol_str_len > 0)
         fprintf(stdout, " [%s] ", info->symbol_str);
-
-    if(byte_list_len(info->byte_list) > 0)
-    {
-        fprintf(stdout, " [%d byte(s) in %d segment(s)]\n", 
-                byte_list_total_bytes(info->byte_list),
-                byte_list_len(info->byte_list)
-        );
-        byte_list_print(info->byte_list);
-    }
 
     fprintf(stdout, "\n");
 }
@@ -217,10 +197,7 @@ void line_info_print_instr(LineInfo* info)
         // Subroutine return instructions 
 
         // Data instructions
-        case LEX_DB:
-            if(byte_list_len(info->byte_list) > 0)
-                byte_list_print(info->byte_list);
-            break;
+        // NOTE: how will these work now that the data is in a new place
 
         // System instructions 
         //case LEX_RST:
@@ -267,8 +244,6 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
     if(dst->symbol_str_len > 0)
         strncpy(dst->symbol_str, src->symbol_str, dst->symbol_str_len);
 
-    // Also copy the byte list
-    byte_list_copy(dst->byte_list, src->byte_list);
     dst->error = src->error;
 
     return 0;
@@ -312,50 +287,6 @@ int line_info_set_symbol_str(LineInfo* info, char* str, int len)
 
     return 0;
 }
-
-/*
- * line_info_append_byte_array()
- */
-int line_info_append_byte_array(LineInfo* info, uint8_t* array, int len)
-{
-    int status;
-
-    status = byte_list_append_data(
-            info->byte_list,
-            array,
-            len
-    );
-
-    return status;
-}
-
-
-/*
- * line_info_byte_list_size()
- */
-int line_info_byte_list_size(LineInfo* info)
-{
-    return info->byte_list->len;
-}
-
-/*
- * line_info_byte_list_num_bytes()
- */
-int line_info_byte_list_num_bytes(LineInfo* info)
-{
-    return byte_list_total_bytes(info->byte_list);
-}
-
-/*
- * line_info_clear_byte_list()
- */
-// Probably some optimizations can be done here later
-void line_info_clear_byte_list(LineInfo* info)
-{
-    byte_list_destroy(info->byte_list);
-    info->byte_list = byte_list_create();
-}
-
 
 /*
  * reg_char_to_code()
@@ -431,6 +362,12 @@ SourceInfo* source_info_create(int start_capacity)
         info->buffer[b] = line_info_create();
     }
 
+    // Allocate memory for byte list
+    info->byte_list = byte_list_create();
+    if(!info->byte_list)
+        goto SOURCE_INFO_END;
+
+
 SOURCE_INFO_END:
     if(!info || !info->buffer)
     {
@@ -449,6 +386,7 @@ void source_info_destroy(SourceInfo* info)
     for(int l = 0; l < info->size; ++l)
         line_info_destroy(info->buffer[l]);
 
+    byte_list_destroy(info->byte_list);
     free(info);
 
     //if(info == NULL)
@@ -599,6 +537,48 @@ int source_info_capacity(SourceInfo* info)
     return info->capacity;
 }
 
+/*
+ * source_info_byte_list_size()
+ */
+int source_info_byte_list_size(SourceInfo* info)
+{
+    return info->byte_list->len;
+}
+
+/*
+ * source_info_byte_list_num_bytes()
+ */
+int source_info_byte_list_num_bytes(SourceInfo* info)
+{
+    return byte_list_total_bytes(info->byte_list);
+}
+
+/*
+ * line_info_clear_byte_list()
+ */
+// Probably some optimizations can be done here later
+void source_info_clear_byte_list(SourceInfo* info)
+{
+    byte_list_destroy(info->byte_list);
+    info->byte_list = byte_list_create();
+}
+
+/*
+ * source_info_append_byte_array()
+ */
+int source_info_append_byte_array(SourceInfo* info, uint8_t* array, int len, int start_addr)
+{
+    int status;
+
+    status = byte_list_append_data(
+            info->byte_list,
+            array,
+            len,
+            start_addr
+    );
+
+    return status;
+}
 
 // ================ TOKEN ================ //
 /*

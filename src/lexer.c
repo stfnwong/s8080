@@ -874,6 +874,8 @@ int lex_parse_jmp(Lexer* lexer, Token* tok)
 
 /*
  * lex_parse_data_arg()
+ * TODO : now that the bytes are in a different place we need to 
+ * write to the source info directly.
  */
 int lex_parse_data_arg(Lexer* lexer, Token* tok)
 {
@@ -882,19 +884,21 @@ int lex_parse_data_arg(Lexer* lexer, Token* tok)
     {
         fprintf(stdout, "[%s] got LITERAL <%s> \n", __func__, tok->token_str);
         uint8_t literal = lex_extract_literal(lexer, tok);
-        status = line_info_append_byte_array(
+        status = source_info_append_byte_array(
                 lexer->text_seg,
                 &literal,
-                1
+                1,
+                lexer->text_addr
         );
     }
     else if(tok->type == SYM_STRING)
     {
         fprintf(stdout, "[%s] got STRING <%s> of len %ld \n", __func__, tok->token_str, strlen(tok->token_str));
-        status = line_info_append_byte_array(
+        status = source_info_append_byte_array(
                 lexer->text_seg,
                 (uint8_t*) tok->token_str+1,    // skip leading "
-                strlen(tok->token_str)
+                strlen(tok->token_str),
+                lexer->text_addr
         );
     }
     else if(tok->type == SYM_LABEL)
@@ -970,10 +974,11 @@ int lex_parse_string(Lexer* lexer, Token* tok)
     }
     else
     {
-        status = line_info_append_byte_array(
+        status = source_info_append_byte_array(
                 lexer->text_seg,
                 (uint8_t*) tok->token_str,
-                strlen(tok->token_str)
+                strlen(tok->token_str),
+                lexer->text_addr
         );
     }
 
@@ -1254,8 +1259,9 @@ int lex_line(Lexer* lexer)
             // data instructions 
             case LEX_DB:
             case LEX_DW:        // Word size handled in assembler
+                // TODO : more refactoring for seperate byte list stuff 
                 status = lex_parse_data(lexer, &tok_a);
-                instr_size = line_info_byte_list_num_bytes(lexer->text_seg) ;
+                instr_size = source_info_byte_list_num_bytes(lexer->text_seg) ;
                 break;
 
             case LEX_DS:

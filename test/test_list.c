@@ -16,7 +16,7 @@ spec("List")
     it("Should init a node correctly")
     {
         int test_data_len = 64;
-        ByteNode* test_node;
+        ByteData* test_node;
         uint8_t* test_data;
         test_data = malloc(sizeof(uint8_t) * test_data_len);
         check(test_data != NULL);
@@ -24,7 +24,7 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             test_data[i] = (i + 1) % 256;       
 
-        test_node = byte_node_create(test_data, test_data_len);
+        test_node = byte_data_create(test_data, test_data_len);
         check(test_node != NULL);
         check(test_node->data != NULL);
         check(test_node->next == NULL);
@@ -32,11 +32,11 @@ spec("List")
         check(test_node->len == test_data_len);
 
         // try and set all the data to zero 
-        byte_node_zero(test_node);
+        byte_data_zero(test_node);
         for(int i = 0; i < test_node->len; ++i)
             check(test_node->data[i] == 0);
 
-        byte_node_destroy(test_node);
+        byte_data_destroy(test_node);
     }
 
     it("Should init list head correctly")
@@ -85,7 +85,7 @@ spec("List")
         check(test_list->len == 3);
 
         // Check pointers 
-        ByteNode* check_node = test_list->first;
+        ByteData* check_node = test_list->first;
         check(check_node != NULL);
         check(check_node->prev == NULL);
         check(check_node->next != NULL);
@@ -147,7 +147,7 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             test_data[i] = (i + 2) % 256;
 
-        ByteNode* test_node = byte_node_create(test_data, test_data_len);
+        ByteData* test_node = byte_data_create(test_data, test_data_len);
         check(test_node != NULL); 
 
         status = byte_list_append_node(test_list, test_node);
@@ -165,7 +165,7 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             ref_data[i] = (i + 2) % 256;
 
-        ByteNode* out_node;
+        ByteData* out_node;
         out_node = byte_list_get(test_list, 5);
         check(out_node == NULL);
         out_node = byte_list_get(test_list, 0);
@@ -221,7 +221,7 @@ spec("List")
         check(test_list->len == 3);
 
         // Check pointers 
-        ByteNode* check_node = test_list->first;
+        ByteData* check_node = test_list->first;
         check(check_node != NULL);
         check(check_node->prev == NULL);
         check(check_node->next != NULL);
@@ -326,7 +326,7 @@ spec("List")
         check(test_list->len == 3);
 
         // Check pointers 
-        ByteNode* check_node = test_list->first;
+        ByteData* check_node = test_list->first;
         check(check_node != NULL);
         check(check_node->prev == NULL);
         check(check_node->next != NULL);
@@ -451,8 +451,8 @@ spec("List")
         check(byte_list_total_bytes(dst_list) == byte_list_total_bytes(src_list));
 
         // Check that all the elements were copied
-        ByteNode* src_node;
-        ByteNode* dst_node;
+        ByteData* src_node;
+        ByteData* dst_node;
 
         for(int i = 0; i < byte_list_len(src_list); ++i)
         {
