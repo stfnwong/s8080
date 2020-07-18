@@ -23,9 +23,9 @@ spec("LineInfo")
         check(test_info->addr == 0);
         check(test_info->has_immediate == 0);
         check(test_info->immediate == 0);
-        check(test_info->label_str == NULL);
+        check(strcmp(test_info->label_str, "\0") == 0);
         check(test_info->label_str_len == 0);
-        check(test_info->symbol_str == NULL);
+        check(strcmp(test_info->symbol_str, "\0") == 0);
         check(test_info->symbol_str_len == 0);
         check(test_info->byte_list != NULL);
         check(test_info->error == 0);
@@ -89,7 +89,10 @@ spec("LineInfo")
     /*
      * Note that the motivation for this requirement is due to static 
      * data being 'inline' in 8080 assembly. In other words, there isn't
-     * a data segment. 
+     * a data segment. The DB instruction also accepts a comma seperated 
+     * list of arguments, and so we can in principle add as many 'things' 
+     * (including strings, byte arrays, and so on) inline using that
+     * instruction.
      */
     it("Should allow inline data to be appended")
     {
@@ -118,16 +121,21 @@ spec("LineInfo")
         // is a string of bytes that is an argument to DB
         check(line_info_num_bytes(test_info) == 0);
         status = line_info_append_byte_array(test_info, test_data, data_size, test_addr);
+        fprintf(stdout, "[%s] byte list contains %d nodes\n", __func__, byte_list_len(test_info->byte_list));
         check(status == 0);
-        check(line_info_num_bytes(test_info) == 1);
+        check(line_info_num_bytes(test_info) == data_size);
+        //check(line_info_num_bytes(test_info) == 1);
 
         byte_list_print(test_info->byte_list);
         fprintf(stdout, "\n");
 
         // We can add another single byte
+        // TODO : note this address doesn't make sense...
         status = line_info_append_byte_array(test_info, test_data, 1, test_addr+1);
+        fprintf(stdout, "[%s] byte list contains %d nodes\n", __func__, byte_list_len(test_info->byte_list));
         check(status == 0);
-        check(line_info_num_bytes(test_info) == 2);
+        fprintf(stdout, "[%s] line_info contains %d bytes\n", __func__, line_info_num_bytes(test_info));
+        check(line_info_num_bytes(test_info) == data_size + 1);
 
         byte_list_print(test_info->byte_list);
         fprintf(stdout, "\n");
@@ -136,6 +144,7 @@ spec("LineInfo")
         for(int i = 0; i < data_size; ++i)
             test_data[i] = (i+2) % 256;
 
+        // add half the data
         status = line_info_append_byte_array(test_info, test_data, data_size >> 1, test_addr + data_size + 1);
         check(status == 0);
         check(line_info_num_bytes(test_info) == 3);

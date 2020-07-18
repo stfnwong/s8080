@@ -9,3 +9,5 @@ tags
 bin/asm8080
 bin/dis8080
 bin/emu8080
+# Ignore coredumps 
+vgcore*

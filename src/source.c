@@ -67,7 +67,6 @@ LINE_INFO_CREATE_END:
 void line_info_destroy(LineInfo* info)
 {
     free(info->opcode);
-    free(info->label_str);
     free(info);
 }
 
@@ -295,7 +294,7 @@ int line_info_set_symbol_str(LineInfo* info, char* str, int len)
 }
 
 /*
- * line_info_num_bytes()
+ * line_info_delete_bytes()
  */
 void line_info_delete_bytes(LineInfo* info)
 {

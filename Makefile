@@ -1,7 +1,9 @@
-# EMULATOR 101
-# Makefile for projects 
+# s8080 Emulator 
+# Intel 8080 emulator and tools
 #
 # Stefan Wong 
+
+# TODO : options to dump assembly output of files
 
 # Directories
 BIN_DIR=bin

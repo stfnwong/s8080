@@ -41,6 +41,7 @@ spec("List")
             check(test_node->data[i] == 0);
 
         byte_node_destroy(test_node);
+        free(test_data);
     }
 
     it("Should init list head correctly")
@@ -73,17 +74,17 @@ spec("List")
         check(status == 0);
         check(test_list->len == 1);
         check(test_list->first != NULL);
-
-        check(test_addr == test_data_len);
+        check(byte_list_total_bytes(test_list) == test_data_len);
 
         // Adjust all the data for the next node
         for(int i = 0; i < test_data_len; ++i)
             test_data[i]++;
-        test_addr += test_data_len;
 
+        test_addr += test_data_len;
         status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 2);
+        check(byte_list_total_bytes(test_list) == 2 * test_data_len);
 
         // Adjust all the data for the next node
         for(int i = 0; i < test_data_len; ++i)
@@ -114,8 +115,6 @@ spec("List")
         check(check_node->next == NULL);
         check(check_node->data[0] == 0x4);
 
-        byte_list_print(test_list);
-
         //// Remove the last node
         //byte_list_remove_end(test_list);
         //check(test_list->len == 2);
@@ -136,6 +135,7 @@ spec("List")
         //check(check_node->data[0] == 0x02);
 
         byte_list_destroy(test_list);
+        free(test_data);
     }
 
     it("Should append Nodes to list head")
@@ -167,8 +167,6 @@ spec("List")
         check(test_list->len == 1);
         check(test_list->first != NULL);
 
-        byte_list_print(test_list);
-
         // Check the data 
         uint8_t* ref_data = malloc(sizeof(uint8_t) * test_data_len);
         check(ref_data != NULL);
@@ -188,6 +186,37 @@ spec("List")
 
         byte_list_destroy(test_list);
         free(ref_data);
+        free(test_data);
+    }
+
+    it("Should append data to list in new nodes")
+    {
+        int status;
+        ByteList* test_list;
+
+        test_list = byte_list_create();
+        check(test_list != NULL);
+        check(test_list->len == 0);
+        check(test_list->first == NULL);
+
+        // make some dummy data for the test 
+        int test_data_len = 32;
+        uint8_t* test_data;
+        uint16_t test_addr = 0xDEED;
+        test_data = malloc(sizeof(uint8_t) * test_data_len);
+        check(test_data != NULL);
+        check(byte_list_len(test_list) == 0);
+
+        // Add some data to the list
+        for(int i = 0; i < 4; ++i)
+        {
+            status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
+            check(status == 0);
+            check(byte_list_len(test_list) == i+1);
+            check(byte_list_total_bytes(test_list) == (i+1) * test_data_len);
+        }
+        byte_list_destroy(test_list);
+        free(test_data);
     }
 
     it("Should allow insert and remove from end")
@@ -260,8 +289,6 @@ spec("List")
         check(check_node->next == NULL);
         check(check_node->data[0] == 0x4);
 
-        byte_list_print(test_list);
-
         // Now remove from the end
         byte_list_remove_end(test_list);
         check(test_list->len == 2);
@@ -302,6 +329,7 @@ spec("List")
         check(check_node == NULL);
 
         byte_list_destroy(test_list);
+        free(test_data);
     }
 
     it("Should allow insert and remove from middle")
@@ -368,8 +396,6 @@ spec("List")
         check(check_node->next == NULL);
         check(check_node->data[0] == 0x4);
 
-        byte_list_print(test_list);
-
         // Now remove the middle element
         byte_list_remove_idx(test_list, 1);
         check(test_list->len == 2);
@@ -381,9 +407,6 @@ spec("List")
         check(check_node != NULL);
         check(check_node->data[0] == 0x04);
 
-        fprintf(stdout, "After removing element 1 of list...:\n\n");
-        byte_list_print(test_list);
-
         // Now remove the first element
         byte_list_remove_idx(test_list, 0);
         check(test_list->len == 1);
@@ -393,9 +416,6 @@ spec("List")
         check(check_node->data[0] == 0x4);
         check_node = byte_list_get(test_list, 1);
         check(check_node == NULL);
-
-        fprintf(stdout, "After removing element 0 of list...:\n\n");
-        byte_list_print(test_list);
 
         // Removing the end will empty the list 
         byte_list_remove_idx(test_list, 0);
@@ -441,8 +461,6 @@ spec("List")
         check(byte_list_total_bytes(src_list) == test_data_len);
         check(src_list->first != NULL);
 
-        byte_list_print(src_list);
-
         // Data for node 2
         for(int i = 0; i < test_data_len; ++i)
             test_data[i] = (i + 3) % 256;
@@ -454,9 +472,6 @@ spec("List")
         check(status == 0);
         check(byte_list_len(src_list) == 2);
         check(byte_list_total_bytes(src_list) == 2 * test_data_len);
-
-        byte_list_print(src_list);
-        fprintf(stdout, "[%s] node contains %d bytes total\n", __func__, byte_list_total_bytes(src_list));
 
         // Create the list to copy to
         dst_list = byte_list_create();

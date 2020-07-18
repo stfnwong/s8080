@@ -48,7 +48,6 @@ void      byte_node_print(ByteNode* node);
 // List of ByteNode
 typedef struct ByteList ByteList;
 
-// TODO: change first -> node
 struct ByteList
 {
     int       len;

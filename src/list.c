@@ -181,7 +181,21 @@ void byte_list_init(ByteList* list)
  */
 int byte_list_len(ByteList* list)
 {
-    return list->len;
+    //return list->len;
+
+    // TODO : actually traverse to find out, since there seems
+    // to be a bug here
+    int num_nodes = 0;
+
+    ByteNode* cur_node = list->first;
+
+    while(cur_node != NULL)
+    {
+        num_nodes++;
+        cur_node = cur_node->next;
+    }
+
+    return num_nodes;
 }
 
 /*
@@ -192,11 +206,16 @@ int byte_list_total_bytes(ByteList* list)
     int total = 0;
     ByteNode* cur_node = list->first;
 
+    // TODO: debug only, remove 
+    int num_nodes = 0;
     while(cur_node != NULL)
     {
+        num_nodes++;
         total += cur_node->len;
         cur_node = cur_node->next;
     }
+
+    fprintf(stdout, "[%s] traversed %d nodes and found %d bytes\n", __func__, num_nodes, total);
 
     return total;
 }
@@ -221,7 +240,7 @@ int byte_list_append_node(ByteList* list, ByteNode* node)
     node->prev  = list_end;
     list->len++;
 
-    return 0; // Can this fail?
+    return 0; // What ways can this fail?
 }
 
 /*
