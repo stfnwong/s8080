@@ -14,18 +14,18 @@
 #include <stdint.h>
 // TODO : forward declare structs and move to implementation
 
-// ByteData 
+// ByteNode 
 // A linked list where each node holds arbitrary 
 // array of bytes.
-typedef struct ByteData ByteData;
+typedef struct ByteNode ByteNode;       // Nodes
 
-struct ByteData
+struct ByteNode
 {
     uint8_t*  data;
     uint16_t  start_addr;
     int       len;
-    ByteData* next;
-    ByteData* prev;
+    ByteNode* next;
+    ByteNode* prev;
 };
 
 
@@ -34,33 +34,33 @@ struct ByteData
 // some odd trick to make a vector of LineInfos (which is essentially 
 // what a source info is)
 
-ByteData* byte_data_create(uint8_t* data, int len, int addr);
-void      byte_data_destroy(ByteData* node);
-void      byte_data_zero(ByteData* node);
-void      byte_data_copy(ByteData* dst, ByteData* src);
+ByteNode* byte_node_create(uint8_t* data, int len, int addr);
+void      byte_node_destroy(ByteNode* node);
+void      byte_node_zero(ByteNode* node);
+void      byte_node_copy(ByteNode* dst, ByteNode* src);
 
 // FIXME: this is for structure hiding API
-void      byte_data_set_next(ByteData* node, ByteData* n);
-void      byte_data_set_prev(ByteData* node, ByteData* p);
+void      byte_node_set_next(ByteNode* node, ByteNode* n);
+void      byte_node_set_prev(ByteNode* node, ByteNode* p);
 // display
-void      byte_data_print(ByteData* node);
+void      byte_node_print(ByteNode* node);
 
-// List of ByteData
+// List of ByteNode
 typedef struct ByteList ByteList;
 
 struct ByteList
 {
     int       len;
-    ByteData* first;
+    ByteNode* first;
 };
 
 ByteList*     byte_list_create(void);
 void          byte_list_destroy(ByteList* list);
 int           byte_list_len(ByteList* list);
 int           byte_list_total_bytes(ByteList* list);
-int           byte_list_append_node(ByteList* list, ByteData* node);
+int           byte_list_append_node(ByteList* list, ByteNode* node);
 int           byte_list_append_data(ByteList* list, uint8_t* data, int len, int addr);
-ByteData*     byte_list_get(ByteList* list, int idx);
+ByteNode*     byte_list_get(ByteList* list, int idx);
 void          byte_list_remove_end(ByteList* list);
 void          byte_list_remove_idx(ByteList* list, int idx);
 void          byte_list_copy(ByteList* dst, ByteList* src);

@@ -1120,7 +1120,7 @@ spec("Lexer")
         check(byte_list_len(cur_line->byte_list) == 4);
 
         // check the argument values 
-        ByteData* cur_node;
+        ByteNode* cur_node;
         // TODO : if the list is in a new place, then at what point do we do the assembly? 
         // 1st arg
         cur_node = byte_list_get(cur_line->byte_list, 0);      

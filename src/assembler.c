@@ -449,11 +449,11 @@ void asm_call(Instr* dst, LineInfo* line)
 /*
  * asm_data()
  */
-// TODO : re-write to use ByteData alone, which will have address information inside
+// TODO : re-write to use ByteNode alone, which will have address information inside
 void asm_data(InstrVector* vec, ByteList* byte_data)
 {
     int cur_addr;
-    ByteData* cur_node;
+    ByteNode* cur_node;
     Instr cur_instr;
 
     cur_node = byte_list_get(byte_data, 0);
