@@ -11,32 +11,36 @@
 // testing framework
 #include "bdd-for-c.h"
 
+// TODO : lots of duplication here, probably can eliminate some of that
+
 spec("List")
 {
     it("Should init a node correctly")
     {
         int test_data_len = 64;
-        ByteData* test_node;
+        ByteNode* test_node;
         uint8_t* test_data;
+        uint16_t test_addr = 0xDEED;
         test_data = malloc(sizeof(uint8_t) * test_data_len);
         check(test_data != NULL);
 
         for(int i = 0; i < test_data_len; ++i)
             test_data[i] = (i + 1) % 256;       
 
-        test_node = byte_data_create(test_data, test_data_len);
+        test_node = byte_node_create(test_data, test_data_len, test_addr);
         check(test_node != NULL);
         check(test_node->data != NULL);
         check(test_node->next == NULL);
         check(test_node->prev == NULL);
         check(test_node->len == test_data_len);
+        check(test_node->start_addr == test_addr);
 
         // try and set all the data to zero 
-        byte_data_zero(test_node);
+        byte_node_zero(test_node);
         for(int i = 0; i < test_node->len; ++i)
             check(test_node->data[i] == 0);
 
-        byte_data_destroy(test_node);
+        byte_node_destroy(test_node);
     }
 
     it("Should init list head correctly")
@@ -56,6 +60,7 @@ spec("List")
         // make some dummy data for the test 
         int test_data_len = 32;
         uint8_t* test_data;
+        uint16_t test_addr = 0xDEED;
         test_data = malloc(sizeof(uint8_t) * test_data_len);
         check(test_data != NULL);
 
@@ -63,16 +68,20 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             test_data[i] = (i + 2) % 256;
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        // insert at the start 
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 1);
         check(test_list->first != NULL);
 
+        check(test_addr == test_data_len);
+
         // Adjust all the data for the next node
         for(int i = 0; i < test_data_len; ++i)
             test_data[i]++;
+        test_addr += test_data_len;
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 2);
 
@@ -80,12 +89,13 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             test_data[i]++;
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        test_addr += test_data_len;
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 3);
 
         // Check pointers 
-        ByteData* check_node = test_list->first;
+        ByteNode* check_node = test_list->first;
         check(check_node != NULL);
         check(check_node->prev == NULL);
         check(check_node->next != NULL);
@@ -141,13 +151,14 @@ spec("List")
         // make some dummy data for the test 
         int test_data_len = 128;
         uint8_t* test_data;
+        uint16_t test_addr = 0xDEED;
         test_data = malloc(sizeof(uint8_t) * test_data_len);
         check(test_data != NULL);
 
         for(int i = 0; i < test_data_len; ++i)
             test_data[i] = (i + 2) % 256;
 
-        ByteData* test_node = byte_data_create(test_data, test_data_len);
+        ByteNode* test_node = byte_node_create(test_data, test_data_len, test_addr);
         check(test_node != NULL); 
 
         status = byte_list_append_node(test_list, test_node);
@@ -165,7 +176,7 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             ref_data[i] = (i + 2) % 256;
 
-        ByteData* out_node;
+        ByteNode* out_node;
         out_node = byte_list_get(test_list, 5);
         check(out_node == NULL);
         out_node = byte_list_get(test_list, 0);
@@ -191,6 +202,7 @@ spec("List")
 
         // make some dummy data for the test 
         int test_data_len = 32;
+        uint16_t test_addr =  0xDEED;
         uint8_t* test_data;
         test_data = malloc(sizeof(uint8_t) * test_data_len);
         check(test_data != NULL);
@@ -199,29 +211,37 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             test_data[i] = (i + 2) % 256;
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 1);
         check(test_list->first != NULL);
 
         // Adjust all the data for the next node
         for(int i = 0; i < test_data_len; ++i)
+        {
             test_data[i]++;
+            test_addr++;
+        }
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        check(test_addr == 0xDEED + test_data_len);
+
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 2);
 
         // Adjust all the data for the next node
         for(int i = 0; i < test_data_len; ++i)
+        {
             test_data[i]++;
+            test_addr++;
+        }
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 3);
 
         // Check pointers 
-        ByteData* check_node = test_list->first;
+        ByteNode* check_node = test_list->first;
         check(check_node != NULL);
         check(check_node->prev == NULL);
         check(check_node->next != NULL);
@@ -297,6 +317,7 @@ spec("List")
         // make some dummy data for the test 
         int test_data_len = 32;
         uint8_t* test_data;
+        uint16_t test_addr = 0xDEED;
         test_data = malloc(sizeof(uint8_t) * test_data_len);
         check(test_data != NULL);
 
@@ -304,7 +325,7 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             test_data[i] = (i + 2) % 256;
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 1);
         check(test_list->first != NULL);
@@ -313,7 +334,8 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             test_data[i]++;
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        test_addr += test_data_len;
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 2);
 
@@ -321,12 +343,13 @@ spec("List")
         for(int i = 0; i < test_data_len; ++i)
             test_data[i]++;
 
-        status = byte_list_append_data(test_list, test_data, test_data_len);
+        test_addr += test_data_len;
+        status = byte_list_append_data(test_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(test_list->len == 3);
 
         // Check pointers 
-        ByteData* check_node = test_list->first;
+        ByteNode* check_node = test_list->first;
         check(check_node != NULL);
         check(check_node->prev == NULL);
         check(check_node->next != NULL);
@@ -401,6 +424,7 @@ spec("List")
         // make some dummy data for the test 
         int test_data_len = 32;
         uint8_t* test_data;
+        uint16_t test_addr = 0XDEED;
         test_data = malloc(sizeof(uint8_t) * test_data_len);
         check(test_data != NULL);
 
@@ -411,7 +435,7 @@ spec("List")
         fprintf(stdout, "[%s] adding %d bytes to list\n", __func__, test_data_len);
 
         // Start adding data to the source list
-        status = byte_list_append_data(src_list, test_data, test_data_len);
+        status = byte_list_append_data(src_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(byte_list_len(src_list) == 1);
         check(byte_list_total_bytes(src_list) == test_data_len);
@@ -425,7 +449,8 @@ spec("List")
         
         fprintf(stdout, "[%s] adding %d bytes to list\n", __func__, test_data_len);
 
-        status = byte_list_append_data(src_list, test_data, test_data_len);
+        test_addr += test_data_len;
+        status = byte_list_append_data(src_list, test_data, test_data_len, test_addr);
         check(status == 0);
         check(byte_list_len(src_list) == 2);
         check(byte_list_total_bytes(src_list) == 2 * test_data_len);
@@ -451,8 +476,8 @@ spec("List")
         check(byte_list_total_bytes(dst_list) == byte_list_total_bytes(src_list));
 
         // Check that all the elements were copied
-        ByteData* src_node;
-        ByteData* dst_node;
+        ByteNode* src_node;
+        ByteNode* dst_node;
 
         for(int i = 0; i < byte_list_len(src_list); ++i)
         {

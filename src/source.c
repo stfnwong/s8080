@@ -45,10 +45,16 @@ LineInfo* line_info_create(void)
     info->symbol_str[0] = '\0';
     line_info_init(info);
 
+    // Init byte list 
+    info->byte_list = byte_list_create();
+
 LINE_INFO_CREATE_END:
-    if(!info || !info->opcode)
+    if(!info || !info->opcode || !info->byte_list)
     {
         fprintf(stderr, "[%s] failed to allocate memory while creating LineInfo\n", __func__);
+        free(info->opcode);
+        free(info->byte_list);
+
         return NULL;
     }
 
@@ -287,6 +293,36 @@ int line_info_set_symbol_str(LineInfo* info, char* str, int len)
 
     return 0;
 }
+
+/*
+ * line_info_num_bytes()
+ */
+void line_info_delete_bytes(LineInfo* info)
+{
+    byte_list_init(info->byte_list);
+}
+
+/*
+ * line_info_num_bytes()
+ */
+int line_info_num_bytes(LineInfo* info)
+{
+    return byte_list_total_bytes(info->byte_list);
+}
+
+/*
+ * line_info_append_byte_array()
+ */
+int line_info_append_byte_array(LineInfo* info, uint8_t* data, int len, uint16_t addr)
+{
+    ByteNode* new_node;
+
+    new_node = byte_node_create(data, len, addr);
+    if(!new_node)
+        return -1;
+    return byte_list_append_node(info->byte_list, new_node);
+}
+
 
 /*
  * reg_char_to_code()

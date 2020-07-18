@@ -150,6 +150,15 @@ BYTE_LIST_HEAD_END:
  */
 void byte_list_destroy(ByteList* list)
 {
+    byte_list_init(list);
+    free(list);
+}
+
+/*
+ * byte_list_init()
+ */
+void byte_list_init(ByteList* list)
+{
     if(list->len > 0)
     {
         ByteNode* cur_node = list->first;
@@ -165,8 +174,6 @@ void byte_list_destroy(ByteList* list)
         }
         byte_node_destroy(list->first);
     }
-
-    free(list);
 }
 
 /*
@@ -249,6 +256,41 @@ int byte_list_append_data(ByteList* list, uint8_t* data, int len, int addr)
     list->len++;
 
     return 0;
+}
+
+
+/*
+ * byte_list_first_addr()
+ */
+uint16_t byte_list_first_addr(ByteList* list)
+{
+    uint16_t first_addr = 0;
+
+    if(list->first == NULL)
+        return first_addr;
+
+    return list->first->start_addr;
+}
+    
+
+/*
+ * byte_list_last_addr()
+ */
+uint16_t byte_list_last_addr(ByteList* list)
+{
+    uint16_t last_addr = 0;
+
+    if(list->first == NULL)
+        return last_addr;
+
+    ByteNode* node = list->first;
+    do
+    {
+        last_addr = node->start_addr + node->len;
+        node = node->next;
+    } while(node->next != NULL);
+
+    return last_addr;
 }
 
 /*

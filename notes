@@ -1,5 +1,7 @@
 --- SOURCE_REPR implementation.
 
+So the first thing that I should be keeping in mind is that there isn't really an 'object' format for this processor. You just have some memory space where you store various bytes in succession. Even data is just 'inlined' (inserted in place) rather than being in some other 'data' segment.
+
 Change the source repr object to be more like a vector of LineInfo objects. This way we don't have to guess at the size when we create the object.
 
 The trouble here is that the size of a LineInfo can vary alot because it might contain strings (for labels) and other things. It also contains a pointer to an Opcode.
@@ -10,6 +12,9 @@ This will have some impacts on the other components of the system
 
 LEXER:
 The data needs to be placed in a different structure. The main effect this has is when lexing LEX_DB and LEX_DS we place the results in the ByteList member of the lexer's SourceInfo.
+
+
+
 
 ASSEMBLER:
 This is more awkward because now we have two paths - One for text instructions and one for data instructions. Either we need to 

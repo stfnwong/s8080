@@ -108,6 +108,7 @@ spec("LineInfo")
 
         int data_size = 32;
         uint8_t* test_data = malloc(sizeof(uint8_t) * data_size);
+        uint16_t test_addr = 0xDEED;
         check(test_data != NULL);
 
         for(int i = 0; i < data_size; ++i)
@@ -115,18 +116,18 @@ spec("LineInfo")
 
         // Append some test data to the line. Imagine that this 
         // is a string of bytes that is an argument to DB
-        check(line_info_byte_list_size(test_info) == 0);
-        status = line_info_append_byte_array(test_info, test_data, data_size);
+        check(line_info_num_bytes(test_info) == 0);
+        status = line_info_append_byte_array(test_info, test_data, data_size, test_addr);
         check(status == 0);
-        check(line_info_byte_list_size(test_info) == 1);
+        check(line_info_num_bytes(test_info) == 1);
 
         byte_list_print(test_info->byte_list);
         fprintf(stdout, "\n");
 
         // We can add another single byte
-        status = line_info_append_byte_array(test_info, test_data, 1);
+        status = line_info_append_byte_array(test_info, test_data, 1, test_addr+1);
         check(status == 0);
-        check(line_info_byte_list_size(test_info) == 2);
+        check(line_info_num_bytes(test_info) == 2);
 
         byte_list_print(test_info->byte_list);
         fprintf(stdout, "\n");
@@ -135,16 +136,16 @@ spec("LineInfo")
         for(int i = 0; i < data_size; ++i)
             test_data[i] = (i+2) % 256;
 
-        status = line_info_append_byte_array(test_info, test_data, data_size >> 1);
+        status = line_info_append_byte_array(test_info, test_data, data_size >> 1, test_addr + data_size + 1);
         check(status == 0);
-        check(line_info_byte_list_size(test_info) == 3);
+        check(line_info_num_bytes(test_info) == 3);
 
         byte_list_print(test_info->byte_list);
         fprintf(stdout, "\n");
 
         // If we clear the list now the size will reduce to zero
-        line_info_clear_byte_list(test_info);
-        check(line_info_byte_list_size(test_info) == 0);
+        line_info_delete_bytes(test_info);
+        check(line_info_num_bytes(test_info) == 0);
         check(byte_list_total_bytes(test_info->byte_list) == 0);
 
         byte_list_print(test_info->byte_list);

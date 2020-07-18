@@ -53,7 +53,7 @@ typedef struct
     int       immediate;
     RegType   reg[LINE_INFO_NUM_REG];
     // Any raw bytes that were written to the program output
-    //ByteList* byte_list;        // TODO : this is going to be a hassle
+    ByteList* byte_list;        // TODO : this is going to be a hassle....
     // error info
     int       error;
 } LineInfo;
@@ -67,6 +67,9 @@ int       line_info_copy(LineInfo* dst, LineInfo* src);
 int       line_info_struct_size(LineInfo* info);
 int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
 int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
+void      line_info_delete_bytes(LineInfo* info);
+int       line_info_num_bytes(LineInfo* info);
+int       line_info_append_byte_array(LineInfo* info, uint8_t* data, int len, uint16_t addr);
 
 /*
  * reg_char_to_code()

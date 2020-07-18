@@ -1,4 +1,5 @@
 # Ignore swap file 
+*.swo
 *.swp
 # Ignore zip files 
 *.zip

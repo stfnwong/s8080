@@ -3,6 +3,7 @@
 ;
 ; Stefan Wong 2020
 
+; Its legal to pass multiple comma seperated inputs to DB 
 TEST_ARGS: DB, "SOME CHARACTER STRING", 0dh, 0ah, 03h
            DB 65h
 
