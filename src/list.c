@@ -150,31 +150,22 @@ BYTE_LIST_HEAD_END:
  */
 void byte_list_destroy(ByteList* list)
 {
-    byte_list_init(list);
-    free(list);
-}
-
-/*
- * byte_list_init()
- */
-void byte_list_init(ByteList* list)
-{
     if(list->len > 0)
     {
         ByteNode* cur_node = list->first;
-
-        // go to the end
+        // get to the end, then delete backwards 
         while(cur_node->next != NULL)
             cur_node = cur_node->next;
-
-        while(cur_node != list->first)
+        while(cur_node->prev != NULL)
         {
-            cur_node = cur_node->prev;
             byte_node_destroy(cur_node->next);
+            cur_node = cur_node->prev;
         }
         byte_node_destroy(list->first);
     }
+    free(list);
 }
+
 
 /*
  * byte_list_len()
@@ -240,7 +231,7 @@ int byte_list_append_node(ByteList* list, ByteNode* node)
     node->prev  = list_end;
     list->len++;
 
-    return 0; // What ways can this fail?
+    return 0; // TODO : What ways can this fail?
 }
 
 /*

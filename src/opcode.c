@@ -147,7 +147,7 @@ void opcode_print(Opcode* opcode)
     // TODO ; memory error here... the SourceInfo clone and copy stuff 
     // needs to be modified to account for the fact that 
     if(opcode != NULL)
-        fprintf(stdout, "%s (%04X)", opcode->mnemonic, opcode->instr);
+        fprintf(stdout, "%8s (%04X)", opcode->mnemonic, opcode->instr);
 }
 
 /*

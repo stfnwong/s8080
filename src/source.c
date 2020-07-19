@@ -43,10 +43,10 @@ LineInfo* line_info_create(void)
 
     info->label_str[0]  = '\0';
     info->symbol_str[0] = '\0';
-    line_info_init(info);
 
     // Init byte list 
     info->byte_list = byte_list_create();
+    line_info_init(info);
 
 LINE_INFO_CREATE_END:
     if(!info || !info->opcode || !info->byte_list)
@@ -66,6 +66,7 @@ LINE_INFO_CREATE_END:
  */
 void line_info_destroy(LineInfo* info)
 {
+    byte_list_destroy(info->byte_list);
     free(info->opcode);
     free(info);
 }
@@ -298,7 +299,8 @@ int line_info_set_symbol_str(LineInfo* info, char* str, int len)
  */
 void line_info_delete_bytes(LineInfo* info)
 {
-    byte_list_init(info->byte_list);
+    byte_list_destroy(info->byte_list);
+    info->byte_list = byte_list_create();       // TODO : status check/return status code?
 }
 
 /*
@@ -393,12 +395,6 @@ SourceInfo* source_info_create(int start_capacity)
         info->buffer[b] = line_info_create();
     }
 
-    // Allocate memory for byte list
-    info->byte_list = byte_list_create();
-    if(!info->byte_list)
-        goto SOURCE_INFO_END;
-
-
 SOURCE_INFO_END:
     if(!info || !info->buffer)
     {
@@ -417,7 +413,6 @@ void source_info_destroy(SourceInfo* info)
     for(int l = 0; l < info->size; ++l)
         line_info_destroy(info->buffer[l]);
 
-    byte_list_destroy(info->byte_list);
     free(info);
 
     //if(info == NULL)
@@ -568,48 +563,6 @@ int source_info_capacity(SourceInfo* info)
     return info->capacity;
 }
 
-/*
- * source_info_byte_list_size()
- */
-int source_info_byte_list_size(SourceInfo* info)
-{
-    return info->byte_list->len;
-}
-
-/*
- * source_info_byte_list_num_bytes()
- */
-int source_info_byte_list_num_bytes(SourceInfo* info)
-{
-    return byte_list_total_bytes(info->byte_list);
-}
-
-/*
- * line_info_clear_byte_list()
- */
-// Probably some optimizations can be done here later
-void source_info_clear_byte_list(SourceInfo* info)
-{
-    byte_list_destroy(info->byte_list);
-    info->byte_list = byte_list_create();
-}
-
-/*
- * source_info_append_byte_array()
- */
-int source_info_append_byte_array(SourceInfo* info, uint8_t* array, int len, int start_addr)
-{
-    int status;
-
-    status = byte_list_append_data(
-            info->byte_list,
-            array,
-            len,
-            start_addr
-    );
-
-    return status;
-}
 
 // ================ TOKEN ================ //
 /*

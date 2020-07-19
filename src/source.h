@@ -83,7 +83,6 @@ typedef struct SourceInfo SourceInfo;
 struct SourceInfo
 {
     LineInfo** buffer;      // Need pointers here, alloc and copy each time?
-    ByteList*  byte_list;
     int        size;
     int        capacity;
 };
@@ -101,11 +100,7 @@ int         source_info_empty(SourceInfo* info);
 int         source_info_size(SourceInfo* info);
 int         source_info_capacity(SourceInfo* info);
 
-int         source_info_byte_list_size(SourceInfo* info);
-int         source_info_byte_list_num_bytes(SourceInfo* info);
-void        source_info_clear_byte_list(SourceInfo* info);
-
-int         source_info_append_byte_array(SourceInfo* info, uint8_t* array, int len, int start_addr);
+// TODO : init method which resets sourceinfo?
 
 // ======== TOKEN ======== //
 typedef enum {

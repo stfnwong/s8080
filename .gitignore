@@ -10,5 +10,6 @@ bin/asm8080
 bin/dis8080
 bin/emu8080
 bin/byte_list_mem_check
+bin/line_info_mem_check
 # Ignore coredumps 
 vgcore*
