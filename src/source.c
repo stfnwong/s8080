@@ -314,13 +314,9 @@ int line_info_num_bytes(LineInfo* info)
  */
 int line_info_append_byte_array(LineInfo* info, uint8_t* data, int len, uint16_t addr)
 {
-    ByteNode* new_node;
-
-    new_node = byte_node_create(data, len, addr);
-    if(!new_node)
-        return -1;
-    return byte_list_append_node(info->byte_list, new_node);
+    return byte_list_append_data(info->byte_list, data, len, addr);
 }
+
 
 
 /*

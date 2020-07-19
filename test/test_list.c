@@ -167,8 +167,10 @@ spec("List")
         status = byte_list_append_node(test_list, test_node);
         check(status == 0);
 
-        check(test_list->len == 1);
+        check(test_list->len == 1);     // TODO : update this...  at the moment I am not caching the value
         check(test_list->first != NULL);
+        check(byte_list_len(test_list) == 1);
+        check(byte_list_total_bytes(test_list) == test_data_len);
 
         // Check the data 
         uint8_t* ref_data = malloc(sizeof(uint8_t) * test_data_len);

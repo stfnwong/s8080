@@ -121,8 +121,8 @@ spec("LineInfo")
         // is a string of bytes that is an argument to DB
         check(line_info_num_bytes(test_info) == 0);
         status = line_info_append_byte_array(test_info, test_data, data_size, test_addr);
-        fprintf(stdout, "[%s] byte list contains %d nodes\n", __func__, byte_list_len(test_info->byte_list));
         check(status == 0);
+        fprintf(stdout, "[%s] byte list contains %d nodes\n", __func__, byte_list_len(test_info->byte_list));
         check(line_info_num_bytes(test_info) == data_size);
         //check(line_info_num_bytes(test_info) == 1);
 
@@ -130,10 +130,10 @@ spec("LineInfo")
         fprintf(stdout, "\n");
 
         // We can add another single byte
-        // TODO : note this address doesn't make sense...
-        status = line_info_append_byte_array(test_info, test_data, 1, test_addr+1);
-        fprintf(stdout, "[%s] byte list contains %d nodes\n", __func__, byte_list_len(test_info->byte_list));
+        test_addr++;
+        status = line_info_append_byte_array(test_info, test_data, 1, test_addr);
         check(status == 0);
+        fprintf(stdout, "[%s] byte list contains %d nodes\n", __func__, byte_list_len(test_info->byte_list));
         fprintf(stdout, "[%s] line_info contains %d bytes\n", __func__, line_info_num_bytes(test_info));
         check(line_info_num_bytes(test_info) == data_size + 1);
 
@@ -147,7 +147,7 @@ spec("LineInfo")
         // add half the data
         status = line_info_append_byte_array(test_info, test_data, data_size >> 1, test_addr + data_size + 1);
         check(status == 0);
-        check(line_info_num_bytes(test_info) == 3);
+        check(line_info_num_bytes(test_info) == data_size + (data_size >> 1) + 1);
 
         byte_list_print(test_info->byte_list);
         fprintf(stdout, "\n");
