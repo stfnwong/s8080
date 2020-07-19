@@ -9,5 +9,6 @@ tags
 bin/asm8080
 bin/dis8080
 bin/emu8080
+bin/byte_list_mem_check
 # Ignore coredumps 
 vgcore*

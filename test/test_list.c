@@ -12,6 +12,9 @@
 #include "bdd-for-c.h"
 
 // TODO : lots of duplication here, probably can eliminate some of that
+// The before() and after() features in BDD-for-C require all test vars to 
+// be marked as static (since they are actual function calls with the usual 
+// scope rules)
 
 spec("List")
 {
