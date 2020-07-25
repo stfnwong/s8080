@@ -141,58 +141,6 @@ spec("List")
         free(test_data);
     }
 
-    it("Should append Nodes to list head")
-    {
-        int status;
-        ByteList* test_list;
-
-        test_list = byte_list_create();
-        check(test_list != NULL);
-        check(test_list->len == 0);
-        check(test_list->first == NULL);
-
-        // make some dummy data for the test 
-        int test_data_len = 128;
-        uint8_t* test_data;
-        uint16_t test_addr = 0xDEED;
-        test_data = malloc(sizeof(uint8_t) * test_data_len);
-        check(test_data != NULL);
-
-        for(int i = 0; i < test_data_len; ++i)
-            test_data[i] = (i + 2) % 256;
-
-        ByteNode* test_node = byte_node_create(test_data, test_data_len, test_addr);
-        check(test_node != NULL); 
-
-        status = byte_list_append_node(test_list, test_node);
-        check(status == 0);
-
-        check(test_list->len == 1);     // TODO : update this...  at the moment I am not caching the value
-        check(test_list->first != NULL);
-        check(byte_list_len(test_list) == 1);
-        check(byte_list_total_bytes(test_list) == test_data_len);
-
-        // Check the data 
-        uint8_t* ref_data = malloc(sizeof(uint8_t) * test_data_len);
-        check(ref_data != NULL);
-
-        for(int i = 0; i < test_data_len; ++i)
-            ref_data[i] = (i + 2) % 256;
-
-        ByteNode* out_node;
-        out_node = byte_list_get(test_list, 5);
-        check(out_node == NULL);
-        out_node = byte_list_get(test_list, 0);
-        check(out_node != NULL);
-        check(out_node->len == test_data_len);
-        
-        for(int i = 0; i < test_data_len; ++i)
-            check(test_data[i] == out_node->data[i]);
-
-        byte_list_destroy(test_list);
-        free(ref_data);
-        free(test_data);
-    }
 
     it("Should append data to list in new nodes")
     {

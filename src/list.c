@@ -150,18 +150,22 @@ BYTE_LIST_HEAD_END:
  */
 void byte_list_destroy(ByteList* list)
 {
-    if(list->len > 0)
+    ByteNode* cur_node = list->first;
+
+    if(cur_node != NULL)
     {
-        ByteNode* cur_node = list->first;
-        // get to the end, then delete backwards 
+        // get to the end of the list 
         while(cur_node->next != NULL)
             cur_node = cur_node->next;
+        // walk backwards, delete what's in front
         while(cur_node->prev != NULL)
         {
-            byte_node_destroy(cur_node->next);
             cur_node = cur_node->prev;
+            byte_node_destroy(cur_node->next);
         }
-        byte_node_destroy(list->first);
+
+        // we must be on the first element now
+        byte_node_destroy(cur_node);
     }
     free(list);
 }
@@ -197,42 +201,15 @@ int byte_list_total_bytes(ByteList* list)
     int total = 0;
     ByteNode* cur_node = list->first;
 
-    // TODO: debug only, remove 
-    int num_nodes = 0;
     while(cur_node != NULL)
     {
-        num_nodes++;
         total += cur_node->len;
         cur_node = cur_node->next;
     }
 
-    fprintf(stdout, "[%s] traversed %d nodes and found %d bytes\n", __func__, num_nodes, total);
-
     return total;
 }
 
-/*
- * byte_list_append_node()
- */
-int byte_list_append_node(ByteList* list, ByteNode* node)
-{
-    if(node == NULL)
-        return -1;
-
-    ByteNode* list_end;
-    if(list->first == NULL)
-        list->first = node;
-    else
-    {
-        while(list_end->next != NULL)
-            list_end = list_end->next;
-        list_end->next = node;
-    }
-    node->prev  = list_end;
-    list->len++;
-
-    return 0; // TODO : What ways can this fail?
-}
 
 /*
  * byte_list_append_data()
