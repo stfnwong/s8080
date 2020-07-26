@@ -58,6 +58,7 @@ void byte_node_destroy(ByteNode* node)
     free(node);
 }
 
+
 /*
  * byte_node_zero()
  */
@@ -100,6 +101,38 @@ void byte_node_set_next(ByteNode* node, ByteNode* n)
 void byte_node_set_prev(ByteNode* node, ByteNode* p)
 {
     node->prev = p;
+}
+
+/*
+ * byte_node_equal()
+ */
+int byte_node_equal(ByteNode* a, ByteNode* b)
+{
+    if(a == NULL && b == NULL)
+    {
+        fprintf(stdout, "[%s] both null, returning 1\n", __func__);
+        return 1;
+    }
+
+    if(a == NULL || b == NULL)
+    {
+        fprintf(stdout, "[%s] one null, returning 0\n", __func__);
+        return 0;
+    }
+
+    if(a->len != b->len)
+    {
+        fprintf(stdout, "[%s] a->len (%d) != b->len (%d)\n", __func__, a->len, b->len);
+        return 0;
+    }
+
+    for(int i = 0; i < a->len; ++i)
+    {
+        if(a->data[i] != b->data[i])
+            return 0;
+    }
+
+    return 1;
 }
 
 
@@ -176,21 +209,7 @@ void byte_list_destroy(ByteList* list)
  */
 int byte_list_len(ByteList* list)
 {
-    //return list->len;
-
-    // TODO : actually traverse to find out, since there seems
-    // to be a bug here
-    int num_nodes = 0;
-
-    ByteNode* cur_node = list->first;
-
-    while(cur_node != NULL)
-    {
-        num_nodes++;
-        cur_node = cur_node->next;
-    }
-
-    return num_nodes;
+    return list->len;
 }
 
 /*
@@ -240,6 +259,7 @@ int byte_list_append_data(ByteList* list, uint8_t* data, int len, int addr)
         list_end->next = node;
         node->prev     = list_end;
     }
+
     list->len++;
 
     return 0;
@@ -377,6 +397,7 @@ void byte_list_remove_idx(ByteList* list, int idx)
 
 /*
  * byte_list_copy()
+ * Note that this implementation is slow because we destroy then create the list
  */
 void byte_list_copy(ByteList* dst, ByteList* src)
 {
@@ -386,7 +407,12 @@ void byte_list_copy(ByteList* dst, ByteList* src)
     int status = 0;
     int cur_node_num = 0;
 
+    // destroy the existing byte list 
+    byte_list_destroy(dst);
+    dst = byte_list_create();
+
     ByteNode* src_node = src->first;
+
     while(src_node != NULL)
     {
         status = byte_list_append_data(
@@ -403,6 +429,35 @@ void byte_list_copy(ByteList* dst, ByteList* src)
         cur_node_num++;
         src_node = src_node->next;
     }
+}
+
+/*
+ * byte_list_equal()
+ */
+int byte_list_equal(ByteList* a, ByteList* b)
+{
+    if(a->len != b->len)
+        return 0;
+
+    ByteNode* a_node = a->first;
+    ByteNode* b_node = b->first;
+
+    if(a_node == NULL && b_node == NULL)
+        return 1;
+
+    if(a_node == NULL || b_node == NULL)
+        return 0;
+
+    while(a_node != NULL && b_node != NULL)
+    {
+        if(!byte_node_equal(a_node, b_node))
+            return 0;
+        
+        a_node = a_node->next;
+        b_node = b_node->next;
+    }
+
+    return 1;
 }
 
 /*

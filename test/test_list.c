@@ -484,4 +484,51 @@ spec("List")
         byte_list_destroy(dst_list);
         free(test_data);
     }
+
+    it("Should be comparable")
+    {
+        int status;
+        ByteList* a_list;
+        ByteList* b_list;
+
+        // Create two lists
+        a_list = byte_list_create();
+        check(a_list != NULL);
+        check(a_list->len == 0);
+        check(a_list->first == NULL);
+
+        b_list = byte_list_create();
+        check(b_list != NULL);
+        check(b_list->len == 0);
+        check(b_list->first == NULL);
+
+        // make some dummy data for the test 
+        int test_data_len = 32;
+        uint8_t* test_data;
+        uint16_t test_addr = 0XDEED;
+        test_data = malloc(sizeof(uint8_t) * test_data_len);
+        check(test_data != NULL);
+
+        status = byte_list_append_data(a_list, test_data, test_data_len, test_addr);
+        check(status == 0);
+        check(byte_list_len(a_list) == 1);
+        check(byte_list_total_bytes(a_list) == test_data_len);
+        check(a_list->first != NULL);
+
+        // comaparing the lists now should fail 
+        check(byte_list_equal(a_list, b_list) == 0);
+        // copy and compare
+        byte_list_copy(b_list, a_list);
+        check(byte_list_equal(a_list, b_list) == 1);
+
+        // Adding more data to either list will cause check to fail 
+        status = byte_list_append_data(b_list, test_data, test_data_len, test_addr);
+        check(status == 0);
+        check(byte_list_len(b_list) == 2);
+        check(byte_list_equal(a_list, b_list) == 0);
+
+        byte_list_destroy(a_list);
+        byte_list_destroy(b_list);
+        free(test_data);
+    }
 }

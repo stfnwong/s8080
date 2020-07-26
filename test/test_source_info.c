@@ -139,6 +139,8 @@ spec("SourceInfo")
         test_op.instr = LEX_MOV;
         strncpy(test_op.mnemonic, "MOV\0", 4);
         opcode_copy(test_line->opcode, &test_op);
+        check(test_line->opcode->instr == test_op.instr);
+        check(strcmp(test_line->opcode->mnemonic, test_op.mnemonic) == 0);
         line_info_print(test_line);
 
         // Insert that LineInfo
@@ -146,9 +148,12 @@ spec("SourceInfo")
 
         // Check the line we just inserted.
         check(test_info->size == 1);
+        // Check that if we inspect the line inside the structure that its the same 
+        check(test_info->buffer[0]->line_num == test_line->line_num);
 
         out_line = source_info_get_idx(test_info, 0);
-        line_info_print(out_line);
+        check(out_line != NULL);
+        line_info_print(out_line);          // info->opcode not allocated
 
         check(out_line->line_num == test_line->line_num);
         check(out_line->addr == test_line->addr);

@@ -42,6 +42,7 @@ void      byte_node_copy(ByteNode* dst, ByteNode* src);
 // FIXME: this is for structure hiding API
 void      byte_node_set_next(ByteNode* node, ByteNode* n);
 void      byte_node_set_prev(ByteNode* node, ByteNode* p);
+int       byte_node_equal(ByteNode* a, ByteNode* b);
 // display
 void      byte_node_print(ByteNode* node);
 
@@ -57,7 +58,6 @@ struct ByteList
 ByteList*     byte_list_create(void);
 // Reset the byte list to be as if it were new, but don't destroy the root
 void          byte_list_destroy(ByteList* list);
-void          byte_list_init(ByteList* list);
 int           byte_list_len(ByteList* list);
 int           byte_list_total_bytes(ByteList* list);
 int           byte_list_append_data(ByteList* list, uint8_t* data, int len, int addr);
@@ -67,6 +67,7 @@ ByteNode*     byte_list_get(ByteList* list, int idx);
 void          byte_list_remove_end(ByteList* list);
 void          byte_list_remove_idx(ByteList* list, int idx);
 void          byte_list_copy(ByteList* dst, ByteList* src);
+int           byte_list_equal(ByteList* a, ByteList* b);
 
 
 void          byte_list_print(ByteList* list);

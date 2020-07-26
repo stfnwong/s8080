@@ -39,8 +39,23 @@ int main(int argc, char *argv[])
 
     }
 
+    // Check copy doesn't leak memory
+    ByteList* dst_list;
+
+    dst_list = byte_list_create();
+    if(!dst_list)
+    {
+        fprintf(stdout, "[%s] failed to create copy dest byte list\n", __func__);
+        return -1;
+    }
+
+    byte_list_copy(dst_list, list);
+    if(!byte_list_equal(dst_list, list))
+        fprintf(stdout, "[%s] WARNING: lists are not equal\n", __func__);
+
 
     byte_list_destroy(list);
+    byte_list_destroy(dst_list);
     free(data);
 
     return 0;

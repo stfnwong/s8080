@@ -252,6 +252,9 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
 
     dst->error = src->error;
 
+    // Also copy the byte list
+    byte_list_copy(dst->byte_list, src->byte_list);
+
     return 0;
 }
 
@@ -442,19 +445,10 @@ void source_info_add_line(SourceInfo* info, LineInfo* line)
     if(info->size >= info->capacity)
         source_info_extend(info, info->capacity);
 
+    // TODO: memcpy here isn't sufficient since we also need to deal with byte_list, opcode, etc
     //memcpy(info->buffer + info->size, line, sizeof(*info->buffer));
-    
+    line_info_copy(info->buffer + info->size, line);
     info->size++;
-
-    // Bounds check the insert
-    //if(info->size == info->capacity)
-    //    return -1;
-    //  
-    //status = line_info_copy(info->buffer[info->size], line);
-    //if(status >= 0)
-    //    info->size++;
-
-    //return status;
 }
 
 /*
@@ -464,10 +458,6 @@ void source_info_extend(SourceInfo* info, int ext_size)
 {
     LineInfo** buf;
 
-    //buf = malloc(sizeof(*buf) * info->capacity * ext_size);
-    // TODO : actually not sure if sizeof(*buf->[0] is correct... since this is the size of 
-    // a single LineInfo pointer (and not the size of a LineInfo)
-    
     buf = realloc(info->buffer, sizeof(*buf[0]) * ext_size);  // this copies the previous data over 
     if(!buf)
     {
