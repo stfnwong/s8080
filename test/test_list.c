@@ -382,7 +382,114 @@ spec("List")
         free(test_data);
     }
 
-    it("Should be copyable")
+    //it("Should be copyable")
+    //{
+    //    int status;
+    //    ByteList* src_list;
+    //    ByteList* dst_list;
+
+    //    // Create the list to copy from
+    //    src_list = byte_list_create();
+    //    check(src_list != NULL);
+    //    check(src_list->len == 0);
+    //    check(src_list->first == NULL);
+
+    //    // make some dummy data for the test 
+    //    int test_data_len = 32;
+    //    uint8_t* test_data;
+    //    uint16_t test_addr = 0XDEED;
+    //    test_data = malloc(sizeof(uint8_t) * test_data_len);
+    //    check(test_data != NULL);
+
+    //    // Data for node 1
+    //    for(int i = 0; i < test_data_len; ++i)
+    //        test_data[i] = (i + 2) % 256;
+
+    //    fprintf(stdout, "[%s] adding %d bytes to list\n", __func__, test_data_len);
+
+    //    // Start adding data to the source list
+    //    status = byte_list_append_data(src_list, test_data, test_data_len, test_addr);
+    //    check(status == 0);
+    //    check(byte_list_len(src_list) == 1);
+    //    check(byte_list_total_bytes(src_list) == test_data_len);
+    //    check(src_list->first != NULL);
+
+    //    // Data for node 2
+    //    for(int i = 0; i < test_data_len; ++i)
+    //        test_data[i] = (i + 3) % 256;
+    //    
+    //    fprintf(stdout, "[%s] adding %d bytes to list\n", __func__, test_data_len);
+
+    //    test_addr += test_data_len;
+    //    status = byte_list_append_data(src_list, test_data, test_data_len, test_addr);
+    //    check(status == 0);
+    //    check(byte_list_len(src_list) == 2);
+    //    check(byte_list_total_bytes(src_list) == 2 * test_data_len);
+
+    //    // Create the list to copy to
+    //    dst_list = byte_list_create();
+    //    check(dst_list != NULL);
+    //    check(dst_list != NULL);
+    //    check(dst_list->len == 0);
+    //    check(dst_list->first == NULL);
+
+    //    // Perform the copy
+    //    byte_list_copy(dst_list, src_list);
+    //    check(byte_list_len(src_list) == byte_list_len(dst_list));
+    //    fprintf(stdout, "[%s] %d bytes in src_list, %d bytes in dst_list\n",
+    //            __func__, 
+    //            byte_list_total_bytes(src_list), 
+    //            byte_list_total_bytes(dst_list)
+    //    );
+    //    check(byte_list_total_bytes(dst_list) == byte_list_total_bytes(src_list));
+
+    //    // Check that all the elements were copied
+    //    ByteNode* src_node;
+    //    ByteNode* dst_node;
+
+    //    for(int i = 0; i < byte_list_len(src_list); ++i)
+    //    {
+    //        src_node = byte_list_get(src_list, i);
+    //        dst_node = byte_list_get(src_list, i);
+    //        check(src_node != NULL);
+    //        check(dst_node != NULL);
+    //        check(src_node->len == dst_node->len);
+    //        for(int d = 0; d < src_node->len; ++d)
+    //            check(src_node->data[d] == dst_node->data[d]);
+    //        // Pointers won't match, but the pattern should be the same
+    //        if(i == 0)
+    //        {
+    //            check(src_node->prev == NULL);
+    //            check(dst_node->prev == NULL);
+    //            check(src_node->next != NULL);
+    //            check(dst_node->next != NULL);
+    //        }
+    //        else if(i == byte_list_len(src_list)-1)
+    //        {
+    //           check(src_node->next == NULL);
+    //           check(dst_node->next == NULL);
+    //           check(src_node->prev != NULL);
+    //           check(dst_node->prev != NULL);
+    //        }
+    //        else
+    //        {
+    //            check(src_node->next != NULL);
+    //            check(src_node->prev != NULL);
+    //            check(dst_node->next != NULL);
+    //            check(dst_node->prev != NULL);
+    //        }
+    //    }
+
+    //    byte_list_destroy(src_list);
+    //    byte_list_destroy(dst_list);
+    //    free(test_data);
+    //}
+
+    // NOTE: the difference between copy and clone is that clone makes a new
+    // list object, copy was originally supposed to copy in place (which might not be a good idea)
+    //
+    // In fact, it would be simpler (even if worse in terms of efficiency) for nodes to be 'immutable'
+    it("Should be clonable")
     {
         int status;
         ByteList* src_list;
@@ -401,84 +508,29 @@ spec("List")
         test_data = malloc(sizeof(uint8_t) * test_data_len);
         check(test_data != NULL);
 
-        // Data for node 1
-        for(int i = 0; i < test_data_len; ++i)
-            test_data[i] = (i + 2) % 256;
+        dst_list = byte_list_clone(src_list);
+        check(dst_list != NULL);
+        check(byte_list_equal(src_list, dst_list) == 1);
 
-        fprintf(stdout, "[%s] adding %d bytes to list\n", __func__, test_data_len);
-
-        // Start adding data to the source list
+        // Now add some data
         status = byte_list_append_data(src_list, test_data, test_data_len, test_addr);
         check(status == 0);
-        check(byte_list_len(src_list) == 1);
-        check(byte_list_total_bytes(src_list) == test_data_len);
-        check(src_list->first != NULL);
+        check(byte_list_equal(src_list, dst_list) == 0);
 
-        // Data for node 2
-        for(int i = 0; i < test_data_len; ++i)
-            test_data[i] = (i + 3) % 256;
-        
-        fprintf(stdout, "[%s] adding %d bytes to list\n", __func__, test_data_len);
+        byte_list_destroy(dst_list);
+        dst_list = byte_list_clone(src_list);
 
-        test_addr += test_data_len;
-        status = byte_list_append_data(src_list, test_data, test_data_len, test_addr);
-        check(status == 0);
-        check(byte_list_len(src_list) == 2);
-        check(byte_list_total_bytes(src_list) == 2 * test_data_len);
-
-        // Create the list to copy to
-        dst_list = byte_list_create();
-        check(dst_list != NULL);
-        check(dst_list != NULL);
-        check(dst_list->len == 0);
-        check(dst_list->first == NULL);
-
-        // Perform the copy
-        byte_list_copy(dst_list, src_list);
-        check(byte_list_len(src_list) == byte_list_len(dst_list));
-        fprintf(stdout, "[%s] %d bytes in src_list, %d bytes in dst_list\n",
+        // check that the fields are in fact equal
+        fprintf(stdout, "[%s] %d nodes (%d bytes) in src_list, %d nodes (%d bytes) in dst_list\n",
                 __func__, 
+                byte_list_len(src_list),
                 byte_list_total_bytes(src_list), 
+                byte_list_len(dst_list),
                 byte_list_total_bytes(dst_list)
         );
+        check(byte_list_len(src_list) == byte_list_len(dst_list));
         check(byte_list_total_bytes(dst_list) == byte_list_total_bytes(src_list));
-
-        // Check that all the elements were copied
-        ByteNode* src_node;
-        ByteNode* dst_node;
-
-        for(int i = 0; i < byte_list_len(src_list); ++i)
-        {
-            src_node = byte_list_get(src_list, i);
-            dst_node = byte_list_get(src_list, i);
-            check(src_node != NULL);
-            check(dst_node != NULL);
-            check(src_node->len == dst_node->len);
-            for(int d = 0; d < src_node->len; ++d)
-                check(src_node->data[d] == dst_node->data[d]);
-            // Pointers won't match, but the pattern should be the same
-            if(i == 0)
-            {
-                check(src_node->prev == NULL);
-                check(dst_node->prev == NULL);
-                check(src_node->next != NULL);
-                check(dst_node->next != NULL);
-            }
-            else if(i == byte_list_len(src_list)-1)
-            {
-               check(src_node->next == NULL);
-               check(dst_node->next == NULL);
-               check(src_node->prev != NULL);
-               check(dst_node->prev != NULL);
-            }
-            else
-            {
-                check(src_node->next != NULL);
-                check(src_node->prev != NULL);
-                check(dst_node->next != NULL);
-                check(dst_node->prev != NULL);
-            }
-        }
+        check(byte_list_equal(src_list, dst_list) == 1);
 
         byte_list_destroy(src_list);
         byte_list_destroy(dst_list);

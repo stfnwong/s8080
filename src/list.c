@@ -316,6 +316,37 @@ ByteNode* byte_list_get(ByteList* list, int idx)
 }
 
 /*
+ * byte_list_clone()
+ */
+ByteList* byte_list_clone(ByteList* src)
+{
+    ByteList* dst;
+    ByteNode* cur_node;
+    int status;
+
+    dst = byte_list_create();
+    cur_node = src->first;
+
+    while(cur_node != NULL)
+    {
+        status = byte_list_append_data(
+                dst, 
+                cur_node->data, 
+                cur_node->len,
+                cur_node->start_addr
+        );
+        if(status < 0)
+        {
+            fprintf(stdout, "[%s] failed to append node to dst list\n", __func__);
+            return NULL;
+        }
+        cur_node = cur_node->next;
+    }
+
+    return dst;
+}
+
+/*
  * byte_list_remove_end()
  */
 void byte_list_remove_end(ByteList* list)
@@ -405,7 +436,6 @@ void byte_list_copy(ByteList* dst, ByteList* src)
         return;
 
     int status = 0;
-    int cur_node_num = 0;
 
     // destroy the existing byte list 
     byte_list_destroy(dst);
@@ -426,7 +456,6 @@ void byte_list_copy(ByteList* dst, ByteList* src)
             fprintf(stdout, "[%s] failed to append node to dst list\n", __func__);
             return;
         }
-        cur_node_num++;
         src_node = src_node->next;
     }
 }
