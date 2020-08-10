@@ -216,13 +216,20 @@ void line_info_print_instr(LineInfo* info)
     }
 }
 
+
 /*
- * line_info_copy()
+ * line_info_clone()
  */
-int line_info_copy(LineInfo* dst, LineInfo* src)
+LineInfo* line_info_clone(LineInfo* src)
 {
-    if(src == NULL || dst == NULL)
-        return -1;
+    LineInfo* dst;
+
+    dst = line_info_create();
+    if(!dst)
+    {
+        fprintf(stderr, "[%s] failed to allocate memory for LineInfo\n", __func__);
+        return NULL;
+    }
 
     dst->line_num      = src->line_num;
     dst->addr          = src->addr;
@@ -230,14 +237,6 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
     dst->immediate     = src->immediate;
     for(int r = 0; r < LINE_INFO_NUM_REG; ++r)
         dst->reg[r] = src->reg[r];
-
-    // copy pointers
-    if(dst->opcode == NULL)
-    {
-        dst->opcode = opcode_create();
-        if(!dst->opcode)
-            return -1;
-    }
 
     opcode_copy(dst->opcode, src->opcode);
     dst->label_str_len = src->label_str_len;
@@ -253,9 +252,9 @@ int line_info_copy(LineInfo* dst, LineInfo* src)
     dst->error = src->error;
 
     // Also copy the byte list
-    byte_list_copy(dst->byte_list, src->byte_list);
+    dst->byte_list = byte_list_clone(src->byte_list);
 
-    return 0;
+    return dst;
 }
 
 /*
@@ -312,6 +311,16 @@ void line_info_delete_bytes(LineInfo* info)
 int line_info_num_bytes(LineInfo* info)
 {
     return byte_list_total_bytes(info->byte_list);
+}
+
+/*
+ * line_info_sizeof()
+ */
+int line_info_sizeof(LineInfo* info)
+{
+    fprintf(stdout, "[%s] sizeof(info) = %d\n", __func__, sizeof(info));
+    fprintf(stdout, "[%s] sizeof(*info) = %d\n", __func__, sizeof(*info));
+    return byte_list_total_bytes(info->byte_list) + sizeof(info);
 }
 
 /*
@@ -447,7 +456,8 @@ void source_info_add_line(SourceInfo* info, LineInfo* line)
 
     // TODO: memcpy here isn't sufficient since we also need to deal with byte_list, opcode, etc
     //memcpy(info->buffer + info->size, line, sizeof(*info->buffer));
-    line_info_copy(info->buffer + info->size, line);
+    //line_info_copy(info->buffer + info->size, line);
+    info->buffer[info->size] = line_info_clone(line);
     info->size++;
 }
 
@@ -466,8 +476,10 @@ void source_info_extend(SourceInfo* info, int ext_size)
     }
 
     info->capacity = info->capacity + ext_size;
-    memcpy(buf, info->buffer, sizeof(*buf) * info->size);
-    free(info->buffer);
+    // sizes may not be equal...
+    fprintf(stdout, "[%s] sizeof(*buf) = %ld\n", __func__, sizeof(*buf));
+    fprintf(stdout, "[%s] sizeof(*buf) * info->size = %ld\n", __func__, sizeof(*buf) * info->size);
+    
     info->buffer = buf;
 }
 
@@ -482,7 +494,8 @@ int source_info_edit_line(SourceInfo* info, LineInfo* line, int idx)
         return -1;
 
     // TODO : how does the copy work in the vector implementation?
-    status = line_info_copy(info->buffer[idx], line);
+    //line_infwo
+    //status = line_info_copy(info->buffer[idx], line);
     if(status >= 0)
         info->size++;
 
@@ -553,6 +566,41 @@ int source_info_capacity(SourceInfo* info)
     return info->capacity;
 }
 
+/*
+ * source_info_num_bytes()
+ */
+int source_info_num_bytes(SourceInfo* info)
+{
+    int num_bytes = 0;
+    for(int l = 0; l < info->size; ++l)
+    {
+        fprintf(stdout, "[%s] line (%d/%d) -> %d bytes\n", 
+                __func__, l+1, 
+                info->size, 
+                line_info_num_bytes(info->buffer[l])
+        );
+        num_bytes += line_info_num_bytes(info->buffer[l]);
+    }
+
+    return num_bytes;
+}
+
+/* 
+ * source_info_print_sizes()
+ */
+void source_info_print_sizes(SourceInfo* info)
+{
+    int total_bytes = 0;
+
+    for(int l = 0; l < info->size; ++l)
+    {
+        fprintf(stdout, "[line %d] : %d bytes\n", l, line_info_num_bytes(info->buffer[l]));
+        total_bytes += line_info_sizeof(info->buffer[l]);
+    }
+    total_bytes += sizeof(info);
+
+    fprintf(stdout, "%d lines, %d bytes total.\n", info->size, total_bytes);
+}
 
 // ================ TOKEN ================ //
 /*

@@ -131,11 +131,7 @@ spec("SourceInfo")
         test_line->addr     = 0xBEEF;
         test_line->reg[0]   = REG_A;
         test_line->reg[1]   = REG_C;
-        // add a labelc
-        //test_line->label_str = malloc(sizeof(char) * strlen(label));
-        //check(test_line->label_str != NULL);
         strncpy(test_line->label_str, label, strlen(label));
-        // add an opcode
         test_op.instr = LEX_MOV;
         strncpy(test_op.mnemonic, "MOV\0", 4);
         opcode_copy(test_line->opcode, &test_op);
@@ -143,7 +139,7 @@ spec("SourceInfo")
         check(strcmp(test_line->opcode->mnemonic, test_op.mnemonic) == 0);
         line_info_print(test_line);
 
-        // Insert that LineInfo
+        // insert line info into source info
         source_info_add_line(test_info, test_line);
 
         // Check the line we just inserted.
@@ -157,7 +153,7 @@ spec("SourceInfo")
 
         check(out_line->line_num == test_line->line_num);
         check(out_line->addr == test_line->addr);
-        for(int r = 0; r < 3; ++r)
+        for(int r = 0; r < LINE_INFO_NUM_REG; ++r)
             check(out_line->reg[r] == test_line->reg[r]);
 
         // calling this again should insert into next position
@@ -222,6 +218,8 @@ spec("SourceInfo")
         // The object should now be full
         check(test_info->size == num_elems);
         check(source_info_empty(test_info) == 0);
+
+        source_info_print_sizes(test_info);
 
         // If we add another item we should get the status code -1
         source_info_add_line(test_info, test_line);

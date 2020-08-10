@@ -45,7 +45,8 @@ $(TESTS): $(TEST_OBJECTS) $(OBJECTS)
 		-o bin/test/$@ $(LIBS) $(TEST_LIBS)
 
 # ======== TOOLS ======== #
-TOOLS=asm8080 dis8080 emu8080 byte_list_mem_check line_info_mem_check
+TOOLS=asm8080 dis8080 emu8080 \
+	  byte_list_mem_check line_info_mem_check source_info_mem_check
 TOOL_SOURCES := $(wildcard $(TOOL_DIR)/*.c)
 TOOL_OBJECTS := $(TOOL_SOURCES:$(TOOL_DIR)/%.c=$(OBJ_DIR)/%.o)
 

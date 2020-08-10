@@ -43,7 +43,7 @@ spec("LineInfo")
         line_info_destroy(test_info);
     }
 
-    it("Should copy correctly")
+    it("Should clone correctly")
     {
         LineInfo* src_info;
         LineInfo* dst_info;
@@ -69,8 +69,9 @@ spec("LineInfo")
         src_info->reg[0] = REG_A;
         src_info->reg[1] = REG_H;
 
-        status = line_info_copy(dst_info, src_info);
-        check(status == 0);
+        //status = line_info_copy(dst_info, src_info);
+        //check(status == 0);
+        dst_info = line_info_clone(src_info);
 
         // Compare the fields
         check(src_info->line_num == dst_info->line_num);
@@ -82,7 +83,7 @@ spec("LineInfo")
         check(strncmp(src_info->label_str, dst_info->label_str, src_info->label_str_len) == 0);
         check(strncmp(src_info->symbol_str, dst_info->symbol_str, src_info->symbol_str_len) == 0);
 
-        check(byte_list_equal(src_info->byte_list, dst_info->byte_list) == 0);        
+        check(byte_list_equal(src_info->byte_list, dst_info->byte_list) == 1);        
 
         line_info_destroy(src_info);
         line_info_destroy(dst_info);

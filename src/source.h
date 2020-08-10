@@ -63,7 +63,7 @@ void      line_info_destroy(LineInfo* info);
 void      line_info_init(LineInfo* info);
 void      line_info_print(LineInfo* info);
 void      line_info_print_instr(LineInfo* info);
-int       line_info_copy(LineInfo* dst, LineInfo* src);
+LineInfo* line_info_clone(LineInfo* info);
 int       line_info_struct_size(LineInfo* info);
 int       line_info_set_label_str(LineInfo* info, char* label_str, int len);
 int       line_info_set_symbol_str(LineInfo* info, char* symbol_str, int len);
@@ -94,11 +94,18 @@ void        source_info_destroy(SourceInfo* info);
 void        source_info_extend(SourceInfo* info, int ext_size);
 void        source_info_add_line(SourceInfo* info, LineInfo* line); 
 int         source_info_edit_line(SourceInfo* info, LineInfo* line, int idx);
+/*
+ * Returns a pointer to a line in a SourceInfo object
+ */
 LineInfo*   source_info_get_idx(SourceInfo* info, int idx);
 SourceInfo* source_info_clone(SourceInfo* src);
 int         source_info_empty(SourceInfo* info);
 int         source_info_size(SourceInfo* info);
 int         source_info_capacity(SourceInfo* info);
+int         source_info_num_bytes(SourceInfo* info);
+
+// Debug method to show number of bytes in each lineinfo
+void        source_info_print_sizes(SourceInfo* info);
 
 // TODO : init method which resets sourceinfo?
 
